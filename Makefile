@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 init:  # ENV SETUP
-	uv sync --all-groups
+	uv sync --extra dev
 	uv run pre-commit install
 	@echo "Environment initialized with uv."
 
@@ -26,7 +26,7 @@ clean:
 	rm -rf build/
 	rm -rf dist/
 	rm -rf junit-pytest.xml
-	rm -rf logs/*
+	rm -rf data/logs/*
 	find . -name ".coverage*" -delete
 	find . -name "coverage.xml" -delete
 	find . -name "__pycache__" -exec rm -r {} +
@@ -53,4 +53,3 @@ build:
 	uv build
 	unzip -l dist/*.whl
 	unzip -p dist/*.whl */METADATA
-
