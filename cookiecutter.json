@@ -1,0 +1,11 @@
+{
+  "repo_name": "new-repo",
+  "module_name": "new_repo",
+  "package_name": "{{ cookiecutter.repo_name }}",
+  "org_name": "TUM-Aries-Lab",
+  "description": "Basic description of the repo.",
+  "author_name": "First Last",
+  "author_email": "first.last@tum.de",
+  "python_version": "3.12",
+  "version": "0.0.1alpha"
+}

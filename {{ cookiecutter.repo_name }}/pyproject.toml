@@ -1,0 +1,104 @@
+[project]
+name = "{{ cookiecutter.package_name }}"
+version = "{{ cookiecutter.version }}"
+description = "{{ cookiecutter.description }}"
+readme = "README.md"
+authors = [
+    { name = "Tony Smoragiewicz", email = "tony.smoragiewicz@tum.de" },
+    { name = "{{ cookiecutter.author_name }}", email = "{{ cookiecutter.author_email }}" }
+]
+requires-python = ">=3.11,<3.14"
+
+dependencies = [
+    "numpy>=2.2.3",
+    "loguru>=0.7.3",
+]
+
+[dependency-groups]
+dev = [
+    "ruff==0.14.6",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "pre-commit>=4.1.0",
+    "coveralls>=4.0.1",
+    "pyright>=1.1.407",
+]
+
+[project.urls]
+homepage = "https://github.com/{{ cookiecutter.org_name }}/{{ cookiecutter.repo_name }}"
+
+# -------------------------
+#       RUFF (LINT + TYPE CHECK)
+# -------------------------
+[tool.ruff]
+line-length = 88
+preview = true  # enables type-checking (Pyright engine)
+
+lint.select = [
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "W",      # warnings
+    "C90",    # mccabe (complexity)
+    "I",      # isort
+    "N",      # naming
+    "D",      # docstring checks
+    "UP",     # pyupgrade
+    "B",      # bugbear
+    "S",      # security
+    "YTT",    # Python 2 checks
+    "Q",      # quotes
+    "PL",     # pylint rules
+    "RUF",    # Ruff-specific rules
+    "T20",    # print detector
+    "ERA001", # commented-out code
+    "F841",   # unused variable
+]
+
+lint.ignore = [
+    "D203",
+    "D213",
+    "E501",
+    "N803",
+    "N806",
+    "D415",
+    "S101",
+    "E203",
+    "E731",
+    "D107",
+    "PLR2004",
+    "S607",
+    "S605",
+    "S603",
+]
+
+fix = true
+
+[tool.ruff.lint.isort]
+known-first-party = ["{{ cookiecutter.package_name }}"]
+combine-as-imports = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+# Tell hatchling where the package lives (src layout)
+[tool.hatch.build.targets.wheel]
+packages = ["src/{{ cookiecutter.package_name }}"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/{{ cookiecutter.package_name }}",
+  "README.md",
+  "LICENSE",
+]
