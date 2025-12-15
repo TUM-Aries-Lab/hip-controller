@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 WORKDIR /app
 RUN printf '%s\n' \
   "import importlib, os, sys" \
-  "pkg = os.environ.get('PKG', 'hip_controller').split('[')[0]" \
+  "pkg = os.environ.get('PKG')" \
   "print('✅ import ok:', getattr(pkg, '__version__', 'unknown'), 'on', sys.version)" \
   > smoke.py
 
