@@ -222,7 +222,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6.9" },
     { name = "scipy", specifier = ">=1.16.3" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["dev", "hw", "no-hw"]
 
 [[package]]
 name = "identify"

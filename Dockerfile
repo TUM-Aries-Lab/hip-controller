@@ -8,7 +8,7 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONUNBUFFERED=1
 
 # Select package + version at build-time
-ARG PKG=hip_controller
+ARG PKG=hip_controller[no_hw]
 ARG VER=latest
 ENV PKG=${PKG} VER=${VER}
 
@@ -22,11 +22,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         pip install --root-user-action=ignore "$PKG==$VER"; \
     fi
 
-# Simple smoke test script
+# Smoke test
 WORKDIR /app
 RUN printf '%s\n' \
   "import importlib, os, sys" \
-  "pkg = os.environ.get('PKG')" \
+  "pkg_name = os.environ.get('PKG', 'hip_controller').split('[')[0]" \
+  "pkg = importlib.import_module(pkg_name)" \
   "print('✅ import ok:', getattr(pkg, '__version__', 'unknown'), 'on', sys.version)" \
   > smoke.py
 

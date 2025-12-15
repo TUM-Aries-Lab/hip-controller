@@ -25,6 +25,10 @@ dev = [
   "coveralls>=4.0.1",
   "pyright>=1.1.407",
 ]
+hw = [
+]
+no_hw = [
+]
 
 [project.urls]
 homepage = "https://github.com/TUM-Aries-Lab/hip-controller"
@@ -63,7 +67,7 @@ lint.ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["hip_controller"]
+known-first-party = ["imu_python"]
 combine-as-imports = true
 
 [tool.ruff.format]
