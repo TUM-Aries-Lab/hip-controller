@@ -53,4 +53,3 @@ build:
 	uv build
 	unzip -l dist/*.whl
 	unzip -p dist/*.whl */METADATA
-

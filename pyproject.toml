@@ -93,11 +93,11 @@ allow-direct-references = true
 
 # Tell hatchling where the package lives (src layout)
 [tool.hatch.build.targets.wheel]
-packages = ["src/hip-controller"]
+packages = ["src/hip_controller"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "src/hip-controller",
+  "src/hip_controller",
   "README.md",
   "LICENSE",
 ]
