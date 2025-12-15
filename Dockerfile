@@ -8,7 +8,7 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONUNBUFFERED=1
 
 # Select package + version at build-time
-ARG PKG=hip_controller[no_hw]
+ARG PKG=hip_controller
 ARG VER=latest
 ENV PKG=${PKG} VER=${VER}
 
@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 WORKDIR /app
 RUN printf '%s\n' \
   "import importlib, os, sys" \
-  "pkg_name = os.environ.get('PKG', 'hip_controller').split('[')[0]" \
+  "pkg_name = os.environ.get('PKG', 'hip_controller')" \
   "pkg = importlib.import_module(pkg_name)" \
   "print('✅ import ok:', getattr(pkg, '__version__', 'unknown'), 'on', sys.version)" \
   > smoke.py

@@ -67,7 +67,7 @@ lint.ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["imu_python"]
+known-first-party = ["hip_controller"]
 combine-as-imports = true
 
 [tool.ruff.format]
