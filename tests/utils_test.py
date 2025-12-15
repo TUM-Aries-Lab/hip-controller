@@ -3,8 +3,8 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from {{ cookiecutter.module_name }}.definitions import LogLevel
-from {{ cookiecutter.module_name }}.utils import setup_logger
+from hip_controller.definitions import LogLevel
+from hip_controller.utils import setup_logger
 
 
 def test_logger_init() -> None:

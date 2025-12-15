@@ -1,4 +1,4 @@
-{% raw %}
+
 name: Docker Build & Publish
 
 on:
@@ -96,20 +96,20 @@ jobs:
           provenance: false
           tags: |
             ${{ env.REGISTRY }}/${{ steps.repo.outputs.image_name_lc }}:${{ steps.meta.outputs.sha_tag }}
-{% endraw %}
-            {% raw %}${{ steps.meta.outputs.version_tag }}{% endraw %}{{ "" if not cookiecutter.module_name else "" }}
-{% raw %}
-            {% endraw %}
-            {% raw %}${{ steps.meta.outputs.latest_tag }}{% endraw %}{{ "" if not cookiecutter.module_name else "" }}
-{% raw %}
+
+            ${{ steps.meta.outputs.version_tag }}
+
+            
+            ${{ steps.meta.outputs.latest_tag }}
+
 
       - name: Smoke test (branch image)
         if: env.IS_MAIN != 'true' && env.IS_TAG != 'true' && env.MULTIARCH_ON_BRANCHES != 'true'
         run: |
           IMAGE="${{ env.REGISTRY }}/${{ steps.repo.outputs.image_name_lc }}:${{ steps.meta.outputs.sha_tag }}"
-{% endraw %}
-          docker run --rm "$IMAGE" python -c "import {{ cookiecutter.module_name }}, sys; print('✅ import ok:', getattr({{ cookiecutter.module_name }},'__version__','?'), 'on', sys.version)"
-{% raw %}
+
+          docker run --rm "$IMAGE" python -c "import hip_controller, sys; print('✅ import ok:', getattr(hip_controller,'__version__','?'), 'on', sys.version)"
+
 
       - name: Smoke test (pushed image)
         if: env.IS_MAIN == 'true' || env.IS_TAG == 'true' || env.MULTIARCH_ON_BRANCHES == 'true'
@@ -117,7 +117,7 @@ jobs:
           IMAGE="${{ env.REGISTRY }}/${{ steps.repo.outputs.image_name_lc }}:${{ steps.meta.outputs.sha_tag }}"
           docker pull "$IMAGE"
 
-{% endraw %}
-          docker run --rm "$IMAGE" python -c "import {{ cookiecutter.module_name }}, sys; print('✅ import ok:', getattr({{ cookiecutter.module_name }},'__version__','?'), 'on', sys.version)"
-{% raw %}
-{% endraw %}
+
+          docker run --rm "$IMAGE" python -c "import hip_controller, sys; print('✅ import ok:', getattr(hip_controller,'__version__','?'), 'on', sys.version)"
+
+

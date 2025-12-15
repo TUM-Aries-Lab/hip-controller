@@ -1,11 +1,11 @@
 [project]
-name = "{{ cookiecutter.package_name }}"
-version = "{{ cookiecutter.version }}"
-description = "{{ cookiecutter.description }}"
+name = "hip-controller"
+version = "0.0.1alpha"
+description = "Hip controller for the lower limb exosuit"
 readme = "README.md"
 authors = [
     { name = "Tony Smoragiewicz", email = "tony.smoragiewicz@tum.de" },
-    { name = "{{ cookiecutter.author_name }}", email = "{{ cookiecutter.author_email }}" }
+    { name = "Tony Smoragiewicz", email = "tony.smoragiewicz@tum.de" }
 ]
 requires-python = ">=3.11,<3.14"
 
@@ -25,7 +25,7 @@ dev = [
 ]
 
 [project.urls]
-homepage = "https://github.com/{{ cookiecutter.org_name }}/{{ cookiecutter.repo_name }}"
+homepage = "https://github.com/TUM-Aries-Lab/hip-controller"
 
 # -------------------------
 #       RUFF (LINT + TYPE CHECK)
@@ -74,7 +74,7 @@ lint.ignore = [
 fix = true
 
 [tool.ruff.lint.isort]
-known-first-party = ["{{ cookiecutter.package_name }}"]
+known-first-party = ["hip-controller"]
 combine-as-imports = true
 
 [tool.ruff.lint.pydocstyle]
@@ -94,11 +94,11 @@ allow-direct-references = true
 
 # Tell hatchling where the package lives (src layout)
 [tool.hatch.build.targets.wheel]
-packages = ["src/{{ cookiecutter.package_name }}"]
+packages = ["src/hip-controller"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "src/{{ cookiecutter.package_name }}",
+  "src/hip-controller",
   "README.md",
   "LICENSE",
 ]

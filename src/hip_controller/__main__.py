@@ -4,9 +4,9 @@ import argparse
 
 from loguru import logger
 
-from {{ cookiecutter.module_name }}.app import main
-from {{ cookiecutter.module_name }}.definitions import DEFAULT_LOG_LEVEL, LogLevel
-from {{ cookiecutter.module_name }}.utils import setup_logger
+from hip_controller.app import main
+from hip_controller.definitions import DEFAULT_LOG_LEVEL, LogLevel
+from hip_controller.utils import setup_logger
 
 
 if __name__ == "__main__":  # pragma: no cover
