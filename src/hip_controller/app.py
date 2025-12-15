@@ -1,10 +1,9 @@
 """Sample doc string."""
 
-import argparse
-
-from hip_controller.definitions import DEFAULT_LOG_LEVEL, LogLevel
-from hip_controller.utils import setup_logger
 from loguru import logger
+
+from hip_controller.definitions import DEFAULT_LOG_LEVEL
+from hip_controller.utils import setup_logger
 
 
 def main(

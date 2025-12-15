@@ -4,6 +4,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from loguru import logger
+
 from hip_controller.definitions import (
     DATE_FORMAT,
     DEFAULT_LOG_FILENAME,
@@ -11,7 +13,6 @@ from hip_controller.definitions import (
     ENCODING,
     LOG_DIR,
 )
-from loguru import logger
 
 
 def create_timestamped_filepath(suffix: str, output_dir: Path, prefix: str) -> Path:

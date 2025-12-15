@@ -2,12 +2,8 @@
 
 import argparse
 
-from loguru import logger
-
 from hip_controller.app import main
 from hip_controller.definitions import DEFAULT_LOG_LEVEL, LogLevel
-from hip_controller.utils import setup_logger
-
 
 if __name__ == "__main__":  # pragma: no cover
     parser = argparse.ArgumentParser("Run the pipeline.")
