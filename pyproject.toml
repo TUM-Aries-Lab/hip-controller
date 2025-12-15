@@ -1,7 +1,7 @@
 [project]
 name = "hip_controller"
 version = "0.0.2"
-description = "IMU sensor codes in Python for the exosuit"
+description = "Lower limb exosuit hip controller."
 readme = "README.md"
 authors = [
   { name = "Tsmorz", email = "tony.smoragiewicz@tum.de" },
