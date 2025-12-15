@@ -192,7 +192,7 @@ wheels = [
 
 [[package]]
 name = "hip-controller"
-version = "0.0.1a1"
+version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "loguru" },

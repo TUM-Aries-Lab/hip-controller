@@ -69,8 +69,8 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       └── utils.py
 ├── tests
 │   ├── __init__.py
-│   ├── conftest.py
 │   ├── app_test.py
+│   ├── conftest.py
 │   └── utils_test.py
 ├── .dockerignore
 ├── .gitignore

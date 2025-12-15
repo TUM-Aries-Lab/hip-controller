@@ -1,11 +1,10 @@
 [project]
 name = "hip-controller"
-version = "0.0.1alpha1"
+version = "0.0.1"
 description = "Hip controller for the lower limb exosuit"
 readme = "README.md"
 authors = [
     { name = "Tony Smoragiewicz", email = "tony.smoragiewicz@tum.de" },
-    { name = "Tony Smoragiewicz", email = "tony.smoragiewicz@tum.de" }
 ]
 requires-python = ">=3.11,<3.14"
 
