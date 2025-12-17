@@ -43,17 +43,6 @@ DEFAULT_LOG_LEVEL = LogLevel.info
 DEFAULT_LOG_FILENAME = "log_file"
 
 
-# Kalman filter values
-A = np.eye(2)
-B = np.eye(2)
-C = np.eye(2)
-D = np.eye(2)
-Q = np.eye(2)
-R = np.eye(2)
-
-
 # Kalman filter definitions
-DEFAULT_VARIANCE = 1e-2
 PROCESS_NOISE = 1e-5
 MEASUREMENT_NOISE = 2e-2
-DEFAULT_CONTROL = np.array([[0.0], [0.0]])
