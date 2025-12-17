@@ -64,14 +64,19 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   └── paper.pdf
 ├── src
 │   ├── hip_controller
-│   │   ├── __init__.py
-│   │   ├── __main__.py
-│   │   ├── app.py
-│   │   ├── definitions.py
+│   │   ├── control
+│   │   │   ├── __init__.py
+│   │   │   ├── high_level.py
+│   │   │   ├── kalman.py
+│   │   │   ├── low_level.py
+│   │   │   └── state_space.py
+│   │   ├── math_utils.py
 │   │   └── utils.py
 │   └── matlab-files
 │       └── hip_controller_021125.slx
 ├── tests
+│   ├── controller_test
+│   │   └── kalman_test.py
 │   ├── __init__.py
 │   ├── app_test.py
 │   ├── conftest.py
