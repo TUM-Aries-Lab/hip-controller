@@ -41,3 +41,12 @@ class LogLevel:
 
 DEFAULT_LOG_LEVEL = LogLevel.info
 DEFAULT_LOG_FILENAME = "log_file"
+
+
+# Kalman filter values
+A = np.eye(2)
+B = np.eye(2)
+C = np.eye(2)
+D = np.eye(2)
+Q = np.eye(2)
+R = np.eye(2)
