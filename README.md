@@ -60,14 +60,27 @@ uv run python -m hip_controller
 The following tree shows the important permanent files. Run `make tree` to update.
 <!-- TREE-START -->
 ```
+├── docs
+│   └── paper.pdf
 ├── src
-│   └── hip_controller
-│       ├── __init__.py
-│       ├── __main__.py
-│       ├── app.py
-│       ├── definitions.py
-│       └── utils.py
+│   ├── hip_controller
+│   │   ├── control
+│   │   │   ├── __init__.py
+│   │   │   ├── high_level.py
+│   │   │   ├── kalman.py
+│   │   │   ├── low_level.py
+│   │   │   └── state_space.py
+│   │   ├── __init__.py
+│   │   ├── __main__.py
+│   │   ├── app.py
+│   │   ├── definitions.py
+│   │   ├── math_utils.py
+│   │   └── utils.py
+│   └── matlab-files
+│       └── hip_controller_021125.slx
 ├── tests
+│   ├── controller_test
+│   │   └── kalman_test.py
 │   ├── __init__.py
 │   ├── app_test.py
 │   ├── conftest.py
