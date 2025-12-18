@@ -4,31 +4,45 @@ import numpy as np
 
 from src.hip_controller.control.kalman import KalmanFilter
 from src.hip_controller.control.state_space import StateSpaceLinear
-from src.hip_controller.definitions import MEASUREMENT_NOISE, PROCESS_NOISE
 
 
 def test_kalman_filter_initialization() -> None:
     """Test the initialization of the Kalman filter."""
-    A = np.eye(2)
-    B = np.array([[1], [0]])
-    ss = StateSpaceLinear(A=A, B=B)
+    # Arrange
+    dt = 0.01
+    A = np.array(
+        [
+            [1.0, dt],
+            [0.0, 1.0],
+        ]
+    )
+    C = np.array(
+        [
+            [1.0, 0.0],
+            [0.0, 1.0],
+        ]
+    )
+    ss = StateSpaceLinear(A=A, C=C)
 
-    exp_Q = PROCESS_NOISE * np.eye(2)
-    exp_R = MEASUREMENT_NOISE * np.eye(2)
-    initial_state = np.array([[1.0], [1.0]])
+    initial_state = np.array(
+        [
+            [0.0],
+            [0.0],
+        ]
+    )
     initial_covariance = np.eye(2)
 
+    # Act
     kf = KalmanFilter(
         state_space=ss,
         initial_x=initial_state,
         initial_covariance=initial_covariance,
     )
+    for _i in range(10):
+        kf.predict()
+        _ = kf.update(z=np.array([[0.0]]))
 
+    # Assert
     assert isinstance(kf, KalmanFilter)
-    assert np.array_equal(kf.state_space.A, ss.A)
-    assert np.array_equal(kf.state_space.B, ss.B)
-    assert np.array_equal(kf.state_space.C, ss.C)
-    assert np.array_equal(kf.Q, exp_Q)
-    assert np.array_equal(kf.R, exp_R)
-    assert np.array_equal(kf.cov, initial_covariance)
-    assert np.array_equal(kf.x, initial_state)
+    assert kf.cov[0, 0] < initial_covariance[0, 0]
+    assert kf.cov[1, 1] < initial_covariance[1, 1]

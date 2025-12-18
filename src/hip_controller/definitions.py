@@ -19,8 +19,6 @@ ENCODING: str = "utf-8"
 
 DATE_FORMAT = "%Y-%m-%d_%H-%M-%S"
 
-DUMMY_VARIABLE = "dummy_variable"
-
 
 @dataclass
 class LogLevel:
@@ -44,5 +42,5 @@ DEFAULT_LOG_FILENAME = "log_file"
 
 
 # Kalman filter definitions
-PROCESS_NOISE = 1e-5
-MEASUREMENT_NOISE = 2e-2
+PROCESS_NOISE = 2e-2
+MEASUREMENT_NOISE = 0.75
