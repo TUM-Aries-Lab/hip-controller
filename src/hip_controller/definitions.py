@@ -44,3 +44,6 @@ DEFAULT_LOG_FILENAME = "log_file"
 # Kalman filter definitions
 PROCESS_NOISE = 2e-2
 MEASUREMENT_NOISE = 0.75
+
+# S Gait stopping threshold
+STOP_THRESHOLD = 0.5
