@@ -2,6 +2,7 @@
 
 import numpy as np
 from loguru import logger
+from numpy.typing import NDArray
 
 
 class StateSpaceLinear:
@@ -9,10 +10,10 @@ class StateSpaceLinear:
 
     def __init__(
         self,
-        A: np.ndarray,
-        B: np.ndarray | None = None,
-        C: np.ndarray | None = None,
-        D: np.ndarray | None = None,
+        A: NDArray,
+        B: NDArray | None = None,
+        C: NDArray | None = None,
+        D: NDArray | None = None,
     ):
         """Initialize the state-space model.
 
@@ -41,11 +42,18 @@ class StateSpaceLinear:
             D = np.zeros((C.shape[0], B.shape[1]))
         self.D = D
 
-    def step(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
+    def step(self, x: NDArray, u: NDArray | None = None) -> NDArray:
         """Step the state-space model by one step.
 
         :param x: Current state
         :param u: Control input
         :return: Next state
         """
+        if u is None:
+            u = np.zeros((self.B.shape[1], 1))
+
         return self.A @ x + self.B @ u
+
+    def __repr__(self) -> str:
+        """Return a string representation of the state space."""
+        return f"A:{self.A} \nB:{self.B} \nC:{self.C} \nD:{self.D}"
