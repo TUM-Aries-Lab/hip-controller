@@ -16,27 +16,14 @@ def test_kalman_filter_initialization() -> None:
             [0.0, 1.0],
         ]
     )
-    C = np.array(
-        [
-            [1.0, 0.0],
-            [0.0, 1.0],
-        ]
-    )
+    C = np.eye(2)
     ss = StateSpaceLinear(A=A, C=C)
-
-    initial_state = np.array(
-        [
-            [0.0],
-            [0.0],
-        ]
-    )
-    initial_covariance = np.eye(2)
 
     # Act
     kf = KalmanFilter(
         state_space=ss,
-        initial_x=initial_state,
-        initial_covariance=initial_covariance,
+        initial_x=np.zeros((2, 1)),
+        initial_covariance=np.eye(2),
     )
     for _i in range(10):
         kf.predict()
@@ -44,5 +31,4 @@ def test_kalman_filter_initialization() -> None:
 
     # Assert
     assert isinstance(kf, KalmanFilter)
-    assert kf.cov[0, 0] < initial_covariance[0, 0]
-    assert kf.cov[1, 1] < initial_covariance[1, 1]
+    assert np.all(np.diag(kf.cov) < np.diag(np.eye(2)))
