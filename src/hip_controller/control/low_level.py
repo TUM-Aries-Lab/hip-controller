@@ -5,15 +5,12 @@ import numpy as np
 from hip_controller.definitions import STOP_THRESHOLD
 
 
-def stop_condition(theta: float, theta_dot: float) -> bool:
+def stop_condition(gait_speed: float) -> bool:
     """Calculate whether the stop condition has been met.
 
-    :param float theta: Angle in radians.
-    :param float theta_dot: Angle in radians / sec.
+    :param float gait_speed: gait speed
     :return: Whether the stop condition has been met.
     """
-    gait_speed = get_gait_speed(theta=theta, theta_dot=theta_dot)
-
     return gait_speed < STOP_THRESHOLD
 
 
