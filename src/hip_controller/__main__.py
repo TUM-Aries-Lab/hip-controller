@@ -4,7 +4,7 @@ import argparse
 
 from hip_controller.app import WalkOnController
 from hip_controller.definitions import DEFAULT_LOG_LEVEL, LogLevel
-from hip_controller.utils import setup_logger
+from hip_controller.utils import get_sensor_data, setup_logger
 
 
 def main(
@@ -20,7 +20,8 @@ def main(
 
     controller = WalkOnController(freq=1.0)
     while True:
-        controller.step()
+        theta, theta_dot = get_sensor_data()
+        controller.step(theta=theta, theta_dot=theta_dot)
 
 
 if __name__ == "__main__":  # pragma: no cover
