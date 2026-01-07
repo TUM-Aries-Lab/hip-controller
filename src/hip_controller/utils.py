@@ -1,9 +1,11 @@
 """Configure the logger."""
 
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
+import numpy as np
 from loguru import logger
 
 from hip_controller.definitions import (
@@ -57,3 +59,9 @@ def setup_logger(
     logger.add(filepath_with_time, level=log_level, encoding=ENCODING, enqueue=True)
     logger.info(f"Logging to '{filepath_with_time}'.")
     return filepath_with_time
+
+
+def get_sensor_data() -> tuple[float, float]:
+    """Get fake sensor data."""
+    logger.debug("Getting fake sensor data.")
+    return np.sin(time.monotonic() / 2), np.cos(time.monotonic() / 2)
