@@ -13,6 +13,7 @@ dependencies = [
   "numpy>=2.2.3",
   "loguru>=0.7.3",
   "scipy>=1.16.3",
+  "pandas>=2.3.3",
 ]
 
 # --- Optional dependency groups (PEP 621 standard) ---
