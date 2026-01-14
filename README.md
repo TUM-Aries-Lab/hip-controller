@@ -74,16 +74,97 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   ├── __main__.py
 │   │   ├── app.py
 │   │   ├── definitions.py
+│   │   ├── file_converter.py
 │   │   ├── math_utils.py
 │   │   └── utils.py
 │   └── matlab-files
-│       └── hip_controller_021125.slx
+│       ├── slprj
+│       │   ├── _jitprj
+│       │   │   ├── jitEngineAccessInfo.mat
+│       │   │   ├── s3YhGNuHXBwPWvvFC57xfBF.l
+│       │   │   ├── s3YhGNuHXBwPWvvFC57xfBF.mat
+│       │   │   ├── sWlDYazaCyy94pHZxwmrpb.l
+│       │   │   ├── sWlDYazaCyy94pHZxwmrpb.mat
+│       │   │   ├── sdEb4aXIC4VuNmNdZ3a91tD.l
+│       │   │   ├── sdEb4aXIC4VuNmNdZ3a91tD.mat
+│       │   │   ├── shTSMgjHa4b0mB7kr7zwKFG.l
+│       │   │   ├── shTSMgjHa4b0mB7kr7zwKFG.mat
+│       │   │   ├── swL9UczTXKMbqsY04UWKxO.l
+│       │   │   └── swL9UczTXKMbqsY04UWKxO.mat
+│       │   ├── _sfprj
+│       │   │   ├── EMLReport
+│       │   │   │   ├── KHvmcaaMzvuRnVOi3hwZZ
+│       │   │   │   ├── s3YhGNuHXBwPWvvFC57xfBF
+│       │   │   │   ├── sWlDYazaCyy94pHZxwmrpb
+│       │   │   │   ├── sdEb4aXIC4VuNmNdZ3a91tD
+│       │   │   │   ├── sggyYzn1hEjizLvjwY9di5E
+│       │   │   │   ├── shTSMgjHa4b0mB7kr7zwKFG
+│       │   │   │   ├── swL9UczTXKMbqsY04UWKxO
+│       │   │   │   ├── KHvmcaaMzvuRnVOi3hwZZ.mat
+│       │   │   │   ├── emlReportAccessInfo.mat
+│       │   │   │   ├── s3YhGNuHXBwPWvvFC57xfBF.mat
+│       │   │   │   ├── sWlDYazaCyy94pHZxwmrpb.mat
+│       │   │   │   ├── sdEb4aXIC4VuNmNdZ3a91tD.mat
+│       │   │   │   ├── sggyYzn1hEjizLvjwY9di5E.mat
+│       │   │   │   ├── shTSMgjHa4b0mB7kr7zwKFG.mat
+│       │   │   │   └── swL9UczTXKMbqsY04UWKxO.mat
+│       │   │   ├── hip_controller_181225
+│       │   │   │   ├── _self
+│       │   │   │   │   └── sfun
+│       │   │   │   │       └── info
+│       │   │   │   │           └── binfo.mat
+│       │   │   │   └── amsi_serial.mat
+│       │   │   ├── hip_controller_2026_01_07
+│       │   │   │   ├── _self
+│       │   │   │   │   └── sfun
+│       │   │   │   │       └── info
+│       │   │   │   │           └── binfo.mat
+│       │   │   │   └── amsi_serial.mat
+│       │   │   └── precompile
+│       │   │       ├── 1i6H3kBppWyhuKypIZcdvG.mat
+│       │   │       ├── 5eKMsKv6LcFcQcxCOpsg6D.mat
+│       │   │       ├── 7xIDczRjzRd9tvAMjiHAi.mat
+│       │   │       ├── B86mTIjlKpOAVoQRl95ANE.mat
+│       │   │       ├── F3qfwQ2JnuOJelRlpBVH6E.mat
+│       │   │       ├── L1JRUKwS14bzYfYOaKNUXB.mat
+│       │   │       ├── autoInferAccessInfo.mat
+│       │   │       ├── beipnmcJWbQzbhAlQzZxxD.mat
+│       │   │       ├── dN7sE2ZdtpUkr10cCnCO4C.mat
+│       │   │       └── xbLOCYIZ9D6QEJ8pw0rDdD.mat
+│       │   └── sim
+│       │       └── varcache
+│       │           ├── hip_controller_181225
+│       │           │   ├── tmwinternal
+│       │           │   │   └── simulink_cache.xml
+│       │           │   ├── checksumOfCache.mat
+│       │           │   └── varInfo.mat
+│       │           └── hip_controller_2026_01_07
+│       │               ├── tmwinternal
+│       │               │   └── simulink_cache.xml
+│       │               ├── checksumOfCache.mat
+│       │               └── varInfo.mat
+│       ├── angle&vel_LR_filtered.mldatx
+│       ├── angle&vel_LR_raw.mldatx
+│       ├── hip_controller.xml
+│       ├── hip_controller_021125.slx
+│       ├── hip_controller_181225.slx
+│       ├── hip_controller_181225.slx.original
+│       ├── hip_controller_181225.slxc
+│       ├── hip_controller_2026_01_07.slx
+│       ├── hip_controller_2026_01_07.slx.autosave
+│       ├── hip_controller_2026_01_07.slxc
+│       ├── output_data.mldatx
+│       ├── sensor_data.mat
+│       ├── train_detection.slx
+│       └── train_detection.slx:Zone.Identifier
 ├── tests
 │   ├── controller_test
+│   │   ├── high_level_test.py
 │   │   └── kalman_test.py
 │   ├── __init__.py
 │   ├── app_test.py
 │   ├── conftest.py
+│   ├── file_converter_test.py
 │   └── utils_test.py
 ├── .dockerignore
 ├── .gitignore
