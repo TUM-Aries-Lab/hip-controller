@@ -53,5 +53,8 @@ STOP_THRESHOLD = 0.5
 # High-level controller
 
 # centering & normalization
-HIT_CROSSING_OFFSET = 0
-MIN_TIME_THRESHOLD = float("inf")
+
+
+# Tmin and Tmax in seconds
+MIN_STATE_CHANGE_TIME_THRESHOLD = 0.0
+MAX_STATE_CHANGE_TIME_THRESHOLD = 0.6

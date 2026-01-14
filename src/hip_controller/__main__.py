@@ -1,10 +1,10 @@
 """Sample doc string."""
 
-import argparse
+import argparse  # pragma: no cover
 
-from hip_controller.app import WalkOnController
-from hip_controller.definitions import DEFAULT_LOG_LEVEL, LogLevel
-from hip_controller.utils import get_sensor_data, setup_logger
+from hip_controller.app import WalkOnController  # pragma: no cover
+from hip_controller.definitions import DEFAULT_LOG_LEVEL, LogLevel  # pragma: no cover
+from hip_controller.utils import get_sensor_data, setup_logger  # pragma: no cover
 
 
 def main(
