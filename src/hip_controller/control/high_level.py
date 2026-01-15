@@ -59,81 +59,129 @@ def velocity_min_trigger(curr_angle: float, prev_angle: float) -> bool:
     return hit_zero_crossing_from_upper(prev_angle, curr_angle)
 
 
-def extrema_trigger(
-    curr_angle: float, prev_angle: float, curr_velocity: float, prev_velocity: float
-) -> ExtremaTrigger:
-    """Check for extrema triggers and return the detected state.
-
-    Returns: vel_max, ang_max, vel_min, ang_min.
-    """
-    vel_max = velocity_max_trigger(curr_angle, prev_angle)
-    ang_max = angle_max_trigger(curr_velocity, prev_velocity)
-    vel_min = velocity_min_trigger(curr_angle, prev_angle)
-    ang_min = angle_min_trigger(curr_velocity, prev_velocity)
-    return ExtremaTrigger(vel_max, ang_max, vel_min, ang_min)
+def check_timeout(dt: float) -> bool:
+    """Check if the time threshold for state change has been exceeded."""
+    return dt >= TMAX
 
 
-def update_state(
-    state: MotionState,
-    trigger: ExtremaTrigger,
-    dt: float,
-    curr_angle: float,
-    curr_velocity: float,
-) -> MotionState:
-    """Check if the given state is valid. If valid, update the current state.
+class HighLevelController:
+    """High-level controller for managing motion states."""
 
-    A state transition is valid if:
-    - Time threshold has been exceeded, OR
-    - State follows expected cyclic order
+    def __init__(self):
+        """Initialize the high-level controller."""
+        self.state = MotionState.INITIAL
 
-        :param dt: Time passed since last state change.
-    """
-    output_state = state
-    if dt >= TMAX:
-        return MotionState.INITIAL
+        self.prev_angle: float = 0.0
+        self.prev_velocity: float = 0.0
+        self.curr_angle: float = 0.0
+        self.curr_velocity: float = 0.0
 
-    elif dt < TMIN:
-        return state
+        self.angle_max: float
+        self.angle_min: float
+        self.velocity_max: float
+        self.velocity_min: float
 
-    # State machine transitions
-    # before: inclusive, after: exclusive
-    if state == MotionState.INITIAL:
-        return handle_initial_state(
-            trigger=trigger,
-            curr_angle=curr_angle,
-            curr_velocity=curr_velocity,
-        )
+    def extrema_trigger(
+        self,
+        curr_angle: float,
+        prev_angle: float,
+        curr_velocity: float,
+        prev_velocity: float,
+    ) -> ExtremaTrigger:
+        """Check for extrema triggers and return the detected state.
 
-    if state == MotionState.ANGLE_MAX and trigger.ang_max and curr_angle > 0:
-        output_state = MotionState.VELOCITY_MIN
+        Returns: vel_max, ang_max, vel_min, ang_min.
+        """
+        vel_max = velocity_max_trigger(curr_angle, prev_angle) and curr_velocity > 0
+        ang_max = angle_max_trigger(curr_velocity, prev_velocity) and curr_angle > 0
+        vel_min = velocity_min_trigger(curr_angle, prev_angle) and curr_velocity < 0
+        ang_min = angle_min_trigger(curr_velocity, prev_velocity) and curr_angle < 0
+        return ExtremaTrigger(vel_max, ang_max, vel_min, ang_min)
 
-    elif state == MotionState.ANGLE_MIN and trigger.ang_min and curr_angle < 0:
-        output_state = MotionState.VELOCITY_MAX
+    def update_state(
+        self,
+        current_state: MotionState,
+        trigger: ExtremaTrigger,
+        dt: float,
+    ) -> bool:
+        """Check if the given state is valid. If valid, update the current state.
 
-    elif state == MotionState.VELOCITY_MAX and trigger.vel_max and curr_velocity > 0:
-        output_state = MotionState.ANGLE_MAX
+        If two triggers occur simultaneously, priority is given of the next one in the order of vel_max, angle_max, vel_min, angle_min.
 
-    elif state == MotionState.VELOCITY_MIN and trigger.vel_min and curr_velocity < 0:
-        output_state = MotionState.ANGLE_MIN
-    return output_state
+        A state transition is valid if:
+        - Time threshold has been exceeded, OR
+        - State follows expected cyclic order
 
+            :param dt: Time passed since last state change.
+        """
+        state_changed = False
 
-def handle_initial_state(
-    trigger: ExtremaTrigger,
-    curr_angle: float,
-    curr_velocity: float,
-) -> MotionState:
-    """Help handle INITIAL state transitions since the update_state function is too complex. If two triggers occur simultaneously, priority is given of the next one in the order of vel_max, angle_max, vel_min, angle_min."""
-    # TODO: check the order of these transitions and handle simultaneous triggers
+        # before: inclusive, after: exclusive
+        if dt >= TMAX:
+            self.state = MotionState.INITIAL
+            return True
 
-    if trigger.ang_min and curr_angle < 0:
-        return MotionState.VELOCITY_MAX
+        elif dt < TMIN:
+            return False
 
-    if trigger.vel_max and curr_velocity > 0:
-        return MotionState.ANGLE_MAX
-    if trigger.ang_max and curr_angle > 0:
-        return MotionState.VELOCITY_MIN
-    if trigger.vel_min and curr_velocity < 0:
-        return MotionState.ANGLE_MIN
+        # State machine transitions
+        if current_state == MotionState.INITIAL:
+            return self.handle_initial_state(
+                trigger=trigger,
+            )
 
-    return MotionState.INITIAL
+        if current_state == MotionState.ANGLE_MAX and trigger.ang_max:
+            self.state = MotionState.VELOCITY_MIN
+            state_changed = True
+
+        elif current_state == MotionState.ANGLE_MIN and trigger.ang_min:
+            self.state = MotionState.VELOCITY_MAX
+            state_changed = True
+
+        elif current_state == MotionState.VELOCITY_MAX and trigger.vel_max:
+            self.state = MotionState.ANGLE_MAX
+            state_changed = True
+
+        elif current_state == MotionState.VELOCITY_MIN and trigger.vel_min:
+            self.state = MotionState.ANGLE_MIN
+            state_changed = True
+        return state_changed
+
+    def handle_initial_state(
+        self,
+        trigger: ExtremaTrigger,
+    ) -> bool:
+        """Help handle INITIAL state transitions since the update_state function is too complex."""
+        if trigger.vel_max:
+            self.state = MotionState.ANGLE_MAX
+            return True
+        elif trigger.ang_max:
+            self.state = MotionState.VELOCITY_MIN
+            return True
+        elif trigger.vel_min:
+            self.state = MotionState.ANGLE_MIN
+            return True
+        elif trigger.ang_min:
+            self.state = MotionState.VELOCITY_MAX
+            return True
+
+        return False
+
+    def set_state(self, new_state: MotionState) -> None:
+        """Set the current state to the given state.
+
+        :param new_state: The new state to set.
+        :return: None
+        """
+        # reset state timer
+        self.dt = 0.0
+        if new_state == MotionState.INITIAL:
+            return
+        elif new_state == MotionState.ANGLE_MAX:
+            self.angle_max = self.curr_angle
+        elif new_state == MotionState.ANGLE_MIN:
+            self.angle_min = self.curr_angle
+        elif new_state == MotionState.VELOCITY_MAX:
+            self.velocity_max = self.curr_velocity
+        elif new_state == MotionState.VELOCITY_MIN:
+            self.velocity_min = self.curr_velocity
