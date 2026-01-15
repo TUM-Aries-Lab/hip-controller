@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from hip_controller.file_converter import convert_xlsx_to_csv, main, read_csv
+from data_editor.file_converter import convert_xlsx_to_csv, main, read_csv
 
 
 def _make_excel(path: Path, sheets: dict[str, pd.DataFrame]):

@@ -30,6 +30,9 @@ MANUAL_IGNORE = {
     "data",
     "simulink",
     ".github",
+    "*.mat",
+    "slprj",
+    "matlab-files"
 }
 
 

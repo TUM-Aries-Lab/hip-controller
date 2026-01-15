@@ -16,7 +16,9 @@ from hip_controller.control.high_level import (
 @pytest.fixture(scope="module")
 def zero_crossing_data():
     """Load motion data from CSV file."""
-    df = pd.read_csv("data/sensor_data/high_level_testing/zero_crossing_trigger_L.csv")
+    df = pd.read_csv(
+        "data/sensor_data/high_level_testing/zero_crossing_left_2026_01_09.csv"
+    )
     return df
 
 

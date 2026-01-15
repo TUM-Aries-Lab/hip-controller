@@ -2,13 +2,13 @@
 
 Simple usage examples:
   Convert a single Excel file:
-    python -m hip_controller.file_converter --file data/sensor_data/file.xlsx --convert
+    uv run python -m src.data_editor.file_converter --file data/sensor_data/high_level_testing/valid_trigger_left_2026_01_15.xlsx --convert
 
   Read a CSV file and print its head:
-    python -m hip_controller.file_converter --file data/sensor_data/file.csv --read
+    python -m data_editor.file_converter --file data/sensor_data/file.csv --read
 
 Programmatic usage:
-  from hip_controller.file_converter import convert_xlsx_to_csv, read_csv
+  from data_editor.file_converter import convert_xlsx_to_csv, read_csv
   csv = convert_xlsx_to_csv(Path('data.xlsx'))
   df = read_csv(csv)
 """
