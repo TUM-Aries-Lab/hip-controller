@@ -1,4 +1,4 @@
-time,valid_vel_min_left,valid_ang_min_left,valid_ang_max_left,valid_vel_max_left,ang_min_trigg_left,ang_max_trigg_left,vel_max_trigg_left,vel_min_trigg_left,angle_L_filtered,vel_L_filtered
+time (s),valid_vel_min_left,valid_ang_min_left,valid_ang_max_left,valid_vel_max_left,ang_min_trigg_left,ang_max_trigg_left,vel_max_trigg_left,vel_min_trigg_left,angle_left (rad),vel_left (rad/s)
 0.0,False,False,False,False,False,False,False,False,0.0,0.0
 0.01,False,False,False,False,False,False,False,False,0.0,0.0
 0.02,False,False,False,False,False,False,False,False,0.0,0.0

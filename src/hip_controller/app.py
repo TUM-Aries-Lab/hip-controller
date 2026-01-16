@@ -18,9 +18,8 @@ class WalkOnController:
         :return: None
         """
         self.freq = freq
-
+        self.timestamp = 0.0
         self.high_level_controller = HighLevelController()
-        self.dt = 0.0
 
     def step(self, theta: float, theta_dot: float):
         """Step the controller ahead.
@@ -31,12 +30,12 @@ class WalkOnController:
         """
         logger.debug("Stepping controller ahead.")
 
-        self.dt += 1 / self.freq
-
-        self.curr_angle = theta
-        self.curr_velocity = theta_dot
+        self.timestamp += 1 / self.freq
 
         # High-level
+        self.high_level_controller.update(
+            curr_angle=theta, curr_vel=theta_dot, timestamp=self.timestamp
+        )
 
         # Mid-level
 
@@ -50,5 +49,3 @@ class WalkOnController:
             logger.error(f"{err} - Something went wrong.")
 
         time.sleep(1 / self.freq)
-        self.prev_angle = self.curr_angle
-        self.prev_velocity = self.curr_velocity

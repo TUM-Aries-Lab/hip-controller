@@ -1,4 +1,4 @@
-time,ang_min_trigg_L,ang_max_trigg_L,speed_max_trigg_L,speed_min_trigg_L,angle_L_filtered,vel_L_filtered
+time (s),ang_min_trigg_left,ang_max_trigg_left,vel_max_trigg_left,vel_min_trigg_left,angle_left (rad),vel_left (rad/s)
 0.0,False,False,False,False,0.0,0.0
 0.01,False,False,False,False,0.0,0.0
 0.02,False,False,False,False,0.0,0.0
