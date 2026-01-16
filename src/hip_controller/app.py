@@ -4,6 +4,7 @@ import time
 
 from loguru import logger
 
+from hip_controller.control.high_level import HighLevelController
 from hip_controller.control.low_level import get_gait_speed, stop_condition
 
 
@@ -17,6 +18,8 @@ class WalkOnController:
         :return: None
         """
         self.freq = freq
+        self.timestamp = 0.0
+        self.high_level_controller = HighLevelController()
 
     def step(self, theta: float, theta_dot: float):
         """Step the controller ahead.
@@ -27,7 +30,12 @@ class WalkOnController:
         """
         logger.debug("Stepping controller ahead.")
 
+        self.timestamp += 1 / self.freq
+
         # High-level
+        self.high_level_controller.update(
+            curr_angle=theta, curr_vel=theta_dot, timestamp=self.timestamp
+        )
 
         # Mid-level
 

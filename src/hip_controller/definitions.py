@@ -19,6 +19,8 @@ ENCODING: str = "utf-8"
 
 DATE_FORMAT = "%Y-%m-%d_%H-%M-%S"
 
+DUMMY_VARIABLE = "dummy_variable"
+
 
 @dataclass
 class LogLevel:
@@ -47,3 +49,12 @@ MEASUREMENT_NOISE = 0.75
 
 # S Gait stopping threshold
 STOP_THRESHOLD = 0.5
+
+# High-level controller
+
+# centering & normalization
+
+
+# Tmin and Tmax in seconds
+MIN_STATE_CHANGE_TIME_THRESHOLD = 0.0
+MAX_STATE_CHANGE_TIME_THRESHOLD = 0.6

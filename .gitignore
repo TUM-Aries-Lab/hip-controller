@@ -170,3 +170,6 @@ cython_debug/
 *.egg-info
 
 /logs/log_*
+
+# matlab
+src/matlab-files

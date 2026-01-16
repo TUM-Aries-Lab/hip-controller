@@ -63,27 +63,29 @@ The following tree shows the important permanent files. Run `make tree` to updat
 ├── docs
 │   └── paper.pdf
 ├── src
-│   ├── hip_controller
-│   │   ├── control
-│   │   │   ├── __init__.py
-│   │   │   ├── high_level.py
-│   │   │   ├── kalman.py
-│   │   │   ├── low_level.py
-│   │   │   └── state_space.py
-│   │   ├── __init__.py
-│   │   ├── __main__.py
-│   │   ├── app.py
-│   │   ├── definitions.py
-│   │   ├── math_utils.py
-│   │   └── utils.py
-│   └── matlab-files
-│       └── hip_controller_021125.slx
+│   ├── data_editor
+│   │   └── file_converter.py
+│   └── hip_controller
+│       ├── control
+│       │   ├── __init__.py
+│       │   ├── high_level.py
+│       │   ├── kalman.py
+│       │   ├── low_level.py
+│       │   └── state_space.py
+│       ├── __init__.py
+│       ├── __main__.py
+│       ├── app.py
+│       ├── definitions.py
+│       ├── math_utils.py
+│       └── utils.py
 ├── tests
 │   ├── controller_test
+│   │   ├── high_level_test.py
 │   │   └── kalman_test.py
 │   ├── __init__.py
 │   ├── app_test.py
 │   ├── conftest.py
+│   ├── file_converter_test.py
 │   └── utils_test.py
 ├── .dockerignore
 ├── .gitignore
