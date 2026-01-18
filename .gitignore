@@ -173,3 +173,6 @@ cython_debug/
 
 # matlab
 src/matlab-files
+
+# vscode
+.vscode

@@ -4,6 +4,8 @@ import pandas as pd
 import pytest
 
 from hip_controller.control.high_level import (
+    HighLevelController,
+    MotionState,
     angle_max_trigger,
     angle_min_trigger,
     hit_zero_crossing_from_lower,
@@ -90,3 +92,36 @@ def test_extrema_trigger(zero_crossing_data) -> None:
         assert angle_max == expected_ang_max, f"Row {i}"
         assert velocity_min == expected_vel_min, f"Row {i}"
         assert angle_min == expected_ang_min, f"Row {i}"
+
+
+def test_valid_trigger(valid_trigger_data) -> None:
+    """Test angle extrema detection based on velocity zero-crossings."""
+    df = valid_trigger_data
+    controller = HighLevelController()
+
+    for i in range(0, len(df)):
+        curr = df.iloc[i]
+
+        timestamp = curr["time (s)"]
+        curr_velocity = curr["vel_left (rad/s)"]
+        curr_angle = curr["angle_left (rad)"]
+
+        controller.update(
+            curr_angle=curr_angle, curr_vel=curr_velocity, timestamp=timestamp
+        )
+
+        vel_max = curr["valid_vel_max_left"]
+        ang_max = curr["valid_ang_max_left"]
+        vel_min = curr["valid_vel_min_left"]
+        ang_min = curr["valid_ang_min_left"]
+
+        if vel_max:
+            assert controller.state == MotionState.VELOCITY_MAX, (
+                f"Row {i}, vel_max {vel_max}"
+            )
+        if ang_max:
+            assert controller.state == MotionState.ANGLE_MAX, f"Row {i}"
+        if vel_min:
+            assert controller.state == MotionState.VELOCITY_MIN, f"Row {i}"
+        if ang_min:
+            assert controller.state == MotionState.ANGLE_MIN, f"Row {i}"

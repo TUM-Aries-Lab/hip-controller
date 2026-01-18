@@ -76,18 +76,18 @@ def extrema_trigger(
     return ExtremaTrigger(vel_max, ang_max, vel_min, ang_min)
 
 
-def handle_initial_state(
+def _handle_initial_state(
     trigger: ExtremaTrigger,
 ) -> MotionState:
-    """Help handle INITIAL state transitions since the update_state function is too complex."""
+    """Handle INITIAL state transitions."""
     if trigger.vel_max:
-        return MotionState.ANGLE_MAX
-    elif trigger.ang_max:
-        return MotionState.VELOCITY_MIN
-    elif trigger.vel_min:
-        return MotionState.ANGLE_MIN
-    elif trigger.ang_min:
         return MotionState.VELOCITY_MAX
+    elif trigger.ang_max:
+        return MotionState.ANGLE_MAX
+    elif trigger.vel_min:
+        return MotionState.VELOCITY_MIN
+    elif trigger.ang_min:
+        return MotionState.ANGLE_MIN
     return MotionState.INITIAL
 
 
@@ -95,7 +95,7 @@ def detect_state(
     current_state: MotionState,
     trigger: ExtremaTrigger,
 ) -> MotionState:
-    """Check if the given state is valid. If valid, update the current state.
+    """Check if the given state is valid.
 
     If two triggers occur simultaneously, priority is given of the next one in the order of vel_max, angle_max, vel_min, angle_min.
 
@@ -103,25 +103,25 @@ def detect_state(
     - Time threshold has been exceeded, OR
     - State follows expected cyclic order
 
-        :param dt: Time passed since last state change.
+    :return: state to be updated
     """
     new_state = current_state
     # State machine transitions
     if current_state == MotionState.INITIAL:
-        return handle_initial_state(
+        return _handle_initial_state(
             trigger=trigger,
         )
 
-    elif current_state == MotionState.ANGLE_MAX and trigger.ang_max:
+    elif current_state == MotionState.ANGLE_MAX and trigger.vel_min:
         new_state = MotionState.VELOCITY_MIN
 
-    elif current_state == MotionState.ANGLE_MIN and trigger.ang_min:
+    elif current_state == MotionState.ANGLE_MIN and trigger.vel_max:
         new_state = MotionState.VELOCITY_MAX
 
-    elif current_state == MotionState.VELOCITY_MAX and trigger.vel_max:
+    elif current_state == MotionState.VELOCITY_MAX and trigger.ang_max:
         new_state = MotionState.ANGLE_MAX
 
-    elif current_state == MotionState.VELOCITY_MIN and trigger.vel_min:
+    elif current_state == MotionState.VELOCITY_MIN and trigger.ang_min:
         new_state = MotionState.ANGLE_MIN
 
     return new_state
@@ -144,15 +144,15 @@ class HighLevelController:
         self.velocity_max: float
         self.velocity_min: float
 
-        self.tick: float = 0.0
+        self.tick: float | None
 
-    def on_enter_state(self, state: MotionState, timestamp: float) -> None:
+    def _enter_state(self, state: MotionState, timestamp: float | None) -> None:
         """Set the current state to the given state.
 
         :param new_state: The new state to set.
         :return: None
         """
-        # reset state timer
+        self.state = state
         self.tick = timestamp
 
         if state == MotionState.INITIAL:
@@ -171,19 +171,19 @@ class HighLevelController:
             self.velocity_min = self.curr_velocity
 
     def update(self, curr_angle, curr_vel, timestamp) -> None:
-        """Update state regarding time."""
+        """Update state regarding time.
+
+        :param curr_angle: TODO
+        :param curr_vel:
+        :param timestamp:
+        """
         self.prev_angle = self.curr_angle
         self.prev_velocity = self.curr_velocity
         self.curr_angle = curr_angle
         self.curr_velocity = curr_vel
 
-        dt = timestamp - self.tick
-        # before: inclusive, after: exclusive
-        if dt >= TMAX:
-            self.on_enter_state(state=MotionState.INITIAL, timestamp=timestamp)
-
-        elif dt < TMIN:
-            pass
+        if self._check_timeout(timestamp=timestamp):
+            return
 
         else:
             trigger = extrema_trigger(
@@ -191,4 +191,24 @@ class HighLevelController:
             )
             new_state = detect_state(self.state, trigger)
             if self.state != new_state:
-                self.on_enter_state(state=new_state, timestamp=timestamp)
+                self._enter_state(state=new_state, timestamp=timestamp)
+
+    def _check_timeout(self, timestamp: float) -> bool:
+        """Check if a timeout has occurred."""
+        if self.state == MotionState.INITIAL:
+            return False
+
+        if self.tick is None:
+            return False
+
+        dt = timestamp - self.tick
+
+        # before: inclusive, after: exclusive
+        if dt < TMIN:
+            return True
+
+        elif dt >= TMAX:
+            self._enter_state(MotionState.INITIAL, timestamp=None)
+            return True
+
+        return False
