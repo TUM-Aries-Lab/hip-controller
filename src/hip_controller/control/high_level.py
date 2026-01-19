@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
-from hip_controller.definitions import STATE_CHANGE_TIME_THRESHOLD
+from hip_controller.definitions import StateChangeTimeThreshold
 
 
 class MotionState(Enum):
@@ -213,7 +213,7 @@ class HighLevelController:
         if state == MotionState.INITIAL:
             return
 
-        if state == MotionState.ANGLE_MAX:
+        elif state == MotionState.ANGLE_MAX:
             self.angle_max = self.curr_angle
 
         elif state == MotionState.ANGLE_MIN:
@@ -269,12 +269,11 @@ class HighLevelController:
 
         dt = timestamp - self.tick
 
-        tmin, tmax = STATE_CHANGE_TIME_THRESHOLD
         # before: inclusive, after: exclusive
-        if dt < tmin:
+        if dt < StateChangeTimeThreshold.TMIN:
             return True
 
-        elif dt >= tmax:
+        elif dt >= StateChangeTimeThreshold.TMAX:
             self._set_state(MotionState.INITIAL, timestamp=None)
             return True
 

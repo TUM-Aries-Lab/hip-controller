@@ -19,8 +19,6 @@ ENCODING: str = "utf-8"
 
 DATE_FORMAT = "%Y-%m-%d_%H-%M-%S"
 
-DUMMY_VARIABLE = "dummy_variable"
-
 
 @dataclass
 class LogLevel:
@@ -55,5 +53,9 @@ STOP_THRESHOLD = 0.5
 # centering & normalization
 
 
-# Tmin and Tmax in seconds
-STATE_CHANGE_TIME_THRESHOLD = (0.0, 0.6)
+@dataclass(frozen=True)
+class StateChangeTimeThreshold:
+    """TMIN and TMAX in seconds."""
+
+    TMIN: float = 0.0
+    TMAX: float = 0.6

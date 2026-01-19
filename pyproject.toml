@@ -1,6 +1,6 @@
 [project]
 name = "hip_controller"
-version = "0.0.2"
+version = "0.0.3"
 description = "Lower limb exosuit hip controller."
 readme = "README.md"
 authors = [
