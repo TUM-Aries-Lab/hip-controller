@@ -3,10 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
-from hip_controller.definitions import (
-    MAX_STATE_CHANGE_TIME_THRESHOLD as TMAX,
-    MIN_STATE_CHANGE_TIME_THRESHOLD as TMIN,
-)
+from hip_controller.definitions import STATE_CHANGE_TIME_THRESHOLD
 
 
 class MotionState(Enum):
@@ -29,34 +26,68 @@ class ExtremaTrigger:
     ang_min: bool
 
 
-def hit_zero_crossing_from_upper(prev: float, curr: float) -> bool:
-    """Detect zero-crossing from upper to lower."""
+def hit_zero_crossing_from_upper(curr: float, prev: float) -> bool:
+    """Detect zero-crossing from upper to lower.
+
+    Checks if a value transitions from non-negative to negative.
+
+    :param curr: Current value.
+    :param prev: Previous value.
+    :return: True if zero-crossing from upper to lower detected, False otherwise.
+    """
     return prev >= 0 and curr < 0
 
 
-def hit_zero_crossing_from_lower(prev: float, curr: float) -> bool:
-    """Detect zero-crossing from lower to upper."""
+def hit_zero_crossing_from_lower(curr: float, prev: float) -> bool:
+    """Detect zero-crossing from lower to upper.
+
+    Checks if a value transitions from non-positive to positive.
+
+    :param curr: Current value.
+    :param prev: Previous value.
+    :return: True if zero-crossing from lower to upper detected, False otherwise.
+    """
     return prev <= 0 and curr > 0
 
 
 def angle_max_trigger(curr_velocity: float, prev_velocity: float) -> bool:
-    """Detect angle maximum based on velocity zero-crossing from positive to negative."""
-    return hit_zero_crossing_from_upper(prev_velocity, curr_velocity)
+    """Detect angle maximum based on velocity zero-crossing from positive to negative.
+
+    :param curr_velocity: Current velocity value.
+    :param prev_velocity: Previous velocity value.
+    :return: True if angle maximum is detected, False otherwise.
+    """
+    return hit_zero_crossing_from_upper(curr=curr_velocity, prev=prev_velocity)
 
 
 def angle_min_trigger(curr_velocity: float, prev_velocity: float) -> bool:
-    """Detect angle minimum based on velocity zero-crossing from negative to positive."""
-    return hit_zero_crossing_from_lower(prev_velocity, curr_velocity)
+    """Detect angle minimum based on velocity zero-crossing from negative to positive.
+
+    :param curr_velocity: Current velocity value.
+    :param prev_velocity: Previous velocity value.
+    :return: True if angle minimum is detected, False otherwise.
+    """
+    return hit_zero_crossing_from_lower(curr=curr_velocity, prev=prev_velocity)
 
 
 def velocity_max_trigger(curr_angle: float, prev_angle: float) -> bool:
-    """Detect velocity maximum based on angle zero-crossing from negative to positive."""
-    return hit_zero_crossing_from_lower(prev_angle, curr_angle)
+    """Detect velocity maximum based on angle zero-crossing from negative to positive.
+
+    :param curr_angle: Current angle value.
+    :param prev_angle: Previous angle value.
+    :return: True if velocity maximum is detected, False otherwise.
+    """
+    return hit_zero_crossing_from_lower(curr=curr_angle, prev=prev_angle)
 
 
 def velocity_min_trigger(curr_angle: float, prev_angle: float) -> bool:
-    """Detect velocity minimum based on angle zero-crossing from positive to negative."""
-    return hit_zero_crossing_from_upper(prev_angle, curr_angle)
+    """Detect velocity minimum based on angle zero-crossing from positive to negative.
+
+    :param curr_angle: Current angle value.
+    :param prev_angle: Previous angle value.
+    :return: True if velocity minimum is detected, False otherwise.
+    """
+    return hit_zero_crossing_from_upper(curr=curr_angle, prev=prev_angle)
 
 
 def extrema_trigger(
@@ -67,7 +98,14 @@ def extrema_trigger(
 ) -> ExtremaTrigger:
     """Check validity for extrema triggers and return valid triggers.
 
-    Returns: vel_max, ang_max, vel_min, ang_min.
+    Validates all four extrema triggers (velocity max/min, angle max/min) based on
+    zero-crossings and sign conditions.
+
+    :param curr_angle: Current angle value.
+    :param prev_angle: Previous angle value.
+    :param curr_velocity: Current velocity value.
+    :param prev_velocity: Previous velocity value.
+    :return: ExtremaTrigger dataclass containing four boolean flags (vel_max, ang_max, vel_min, ang_min).
     """
     vel_max = velocity_max_trigger(curr_angle, prev_angle) and curr_velocity > 0
     ang_max = angle_max_trigger(curr_velocity, prev_velocity) and curr_angle > 0
@@ -79,7 +117,14 @@ def extrema_trigger(
 def _handle_initial_state(
     trigger: ExtremaTrigger,
 ) -> MotionState:
-    """Handle INITIAL state transitions."""
+    """Handle INITIAL state transitions.
+
+    Determines the first state to transition to from INITIAL based on which extrema
+    trigger is detected, with priority: vel_max > ang_max > vel_min > ang_min.
+
+    :param trigger: ExtremaTrigger dataclass containing active triggers.
+    :return: New MotionState to transition to, or INITIAL if no valid trigger.
+    """
     if trigger.vel_max:
         return MotionState.VELOCITY_MAX
     elif trigger.ang_max:
@@ -95,15 +140,17 @@ def detect_state(
     current_state: MotionState,
     trigger: ExtremaTrigger,
 ) -> MotionState:
-    """Check if the given state is valid.
+    """Determine the next motion state based on current state and active triggers.
 
-    If two triggers occur simultaneously, priority is given of the next one in the order of vel_max, angle_max, vel_min, angle_min.
+    Implements the state machine logic for cyclic transitions:
+    INITIAL → VELOCITY_MAX → ANGLE_MAX → VELOCITY_MIN → ANGLE_MIN → (back to VELOCITY_MAX)
 
-    A state transition is valid if:
-    - Time threshold has been exceeded, OR
-    - State follows expected cyclic order
+    If two triggers occur simultaneously, priority is given in order:
+    vel_max > angle_max > vel_min > angle_min.
 
-    :return: state to be updated
+    :param current_state: The current motion state.
+    :param trigger: ExtremaTrigger dataclass containing active triggers.
+    :return: Next MotionState to transition to, or current state if no valid transition.
     """
     new_state = current_state
     # State machine transitions
@@ -131,7 +178,11 @@ class HighLevelController:
     """High-level controller for managing motion states."""
 
     def __init__(self):
-        """Initialize the high-level controller."""
+        """Initialize the high-level controller.
+
+        Sets up initial state as INITIAL and initializes tracking variables for
+        angle, velocity, extrema values, and timing information.
+        """
         self.state = MotionState.INITIAL
 
         self.prev_angle: float = 0.0
@@ -146,10 +197,14 @@ class HighLevelController:
 
         self.tick: float | None
 
-    def _enter_state(self, state: MotionState, timestamp: float | None) -> None:
-        """Set the current state to the given state.
+    def _set_state(self, state: MotionState, timestamp: float | None) -> None:
+        """Set the current state and record extrema values when applicable.
 
-        :param new_state: The new state to set.
+        Updates the internal state and stores the current extrema value (angle or velocity)
+        based on the new state. Records the timestamp of state transition.
+
+        :param state: The new MotionState to set.
+        :param timestamp: Timestamp of the state transition, or None to clear timing.
         :return: None
         """
         self.state = state
@@ -171,11 +226,15 @@ class HighLevelController:
             self.velocity_min = self.curr_velocity
 
     def update(self, curr_angle, curr_vel, timestamp) -> None:
-        """Update state regarding time.
+        """Update controller state based on current angle, velocity, and timestamp.
 
-        :param curr_angle: TODO
-        :param curr_vel:
-        :param timestamp:
+        Checks for timeout conditions and detects state transitions based on extrema triggers.
+        Updates internal tracking variables for next iteration.
+
+        :param curr_angle: Current angle measurement.
+        :param curr_vel: Current velocity measurement.
+        :param timestamp: Current timestamp.
+        :return: None
         """
         self.prev_angle = self.curr_angle
         self.prev_velocity = self.curr_velocity
@@ -191,10 +250,17 @@ class HighLevelController:
             )
             new_state = detect_state(self.state, trigger)
             if self.state != new_state:
-                self._enter_state(state=new_state, timestamp=timestamp)
+                self._set_state(state=new_state, timestamp=timestamp)
 
     def _check_timeout(self, timestamp: float) -> bool:
-        """Check if a timeout has occurred."""
+        """Check if a timeout has occurred and reset state if necessary.
+
+        Returns True if in timeout period (update should be skipped). Resets to INITIAL
+        state if timeout threshold is exceeded.
+
+        :param timestamp: Current timestamp.
+        :return: True if currently in timeout period, False otherwise.
+        """
         if self.state == MotionState.INITIAL:
             return False
 
@@ -203,12 +269,13 @@ class HighLevelController:
 
         dt = timestamp - self.tick
 
+        tmin, tmax = STATE_CHANGE_TIME_THRESHOLD
         # before: inclusive, after: exclusive
-        if dt < TMIN:
+        if dt < tmin:
             return True
 
-        elif dt >= TMAX:
-            self._enter_state(MotionState.INITIAL, timestamp=None)
+        elif dt >= tmax:
+            self._set_state(MotionState.INITIAL, timestamp=None)
             return True
 
         return False

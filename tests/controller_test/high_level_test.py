@@ -117,11 +117,17 @@ def test_valid_trigger(valid_trigger_data) -> None:
 
         if vel_max:
             assert controller.state == MotionState.VELOCITY_MAX, (
-                f"Row {i}, vel_max {vel_max}"
+                f"Row {i}, vel_max {vel_max}, angle_max {ang_max}, vel_min {vel_min}, ang_min {ang_min}"
             )
         if ang_max:
-            assert controller.state == MotionState.ANGLE_MAX, f"Row {i}"
+            assert controller.state == MotionState.ANGLE_MAX, (
+                f"Row {i}, vel_max {vel_max}, angle_max {ang_max}, vel_min {vel_min}, ang_min {ang_min}"
+            )
         if vel_min:
-            assert controller.state == MotionState.VELOCITY_MIN, f"Row {i}"
+            assert controller.state == MotionState.VELOCITY_MIN, (
+                f"Row {i}, vel_max {vel_max}, angle_max {ang_max}, vel_min {vel_min}, ang_min {ang_min}"
+            )
         if ang_min:
-            assert controller.state == MotionState.ANGLE_MIN, f"Row {i}"
+            assert controller.state == MotionState.ANGLE_MIN, (
+                f"Row {i}, vel_max {vel_max}, angle_max {ang_max}, vel_min {vel_min}, ang_min {ang_min}"
+            )
