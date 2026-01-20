@@ -225,7 +225,7 @@ class HighLevelController:
         elif state == MotionState.VELOCITY_MIN:
             self.velocity_min = self.curr_velocity
 
-    def update(self, curr_angle, curr_vel, timestamp) -> None:
+    def update(self, curr_angle: float, curr_vel: float, timestamp: float) -> None:
         """Update controller state based on current angle, velocity, and timestamp.
 
         Checks for timeout conditions and detects state transitions based on extrema triggers.

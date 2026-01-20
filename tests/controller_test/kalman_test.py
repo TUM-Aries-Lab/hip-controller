@@ -7,7 +7,10 @@ from src.hip_controller.control.state_space import StateSpaceLinear
 
 
 def test_kalman_filter_initialization() -> None:
-    """Test the initialization of the Kalman filter."""
+    """Test the initialization of the Kalman filter.
+
+    :return: None
+    """
     # Arrange
     dt = 0.01
     A = np.array(

@@ -1,128 +1,111 @@
-"""Utilities to convert a single Excel file to CSV and to read CSV sensor data.
+"""Excel-to-CSV file converter.
 
-Simple usage examples:
-  Convert a single Excel file:
-    uv run python -m src.data_editor.file_converter --file data/sensor_data/high_level_testing/valid_trigger_left_2026_01_15.xlsx --convert
+This module provides a small command-line utility and library function
+to convert a single Excel file (``.xls`` or ``.xlsx``) into a CSV file.
 
-  Read a CSV file and print its head:
-    python -m data_editor.file_converter --file data/sensor_data/file.csv --read
+Paths passed via the CLI are resolved relative to the project's
+``data/sensor_data/`` directory unless an absolute path is provided.
 
-Programmatic usage:
-  from data_editor.file_converter import convert_xlsx_to_csv, read_csv
-  csv = convert_xlsx_to_csv(Path('data.xlsx'))
-  df = read_csv(csv)
+Command-line usage
+==================
+
+Convert an Excel file to CSV::
+
+    python -m data_editor.file_converter \
+        --file high_level_testing/valid_trigger_left_2026_01_15.xlsx
+
+Programmatic usage
+==================
+
+::
+
+    from pathlib import Path
+    from data_editor.file_converter import convert_xlsx_to_csv
+
+    csv_path = convert_xlsx_to_csv(Path("data.xlsx"))
 """
 
 from __future__ import annotations
 
 import argparse
-import logging
+import sys
 from pathlib import Path
 
 import pandas as pd
+from loguru import logger
 
-LOG = logging.getLogger(__name__)
+from hip_controller.definitions import SENSOR_DATA_DIR
 
 
 def convert_xlsx_to_csv(
     xlsx_path: Path,
     csv_path: Path | None = None,
-    sheet_name: int | str | None = 0,
+    sheet_name: int | None = 0,
 ) -> Path:
     """Convert a single Excel file to CSV.
 
-    Args:
-        xlsx_path: path to the input .xls or .xlsx file.
-        csv_path: optional path for output CSV. If omitted, same stem with .csv in same folder.
-        sheet_name: sheet to read (passed to pandas.read_excel).
-
-    Returns:
-        Path to the written CSV file.
-
+    :param xlsx_path: Path to the input Excel file.
+    :param csv_path: Optional output CSV path.
+    :param sheet_name: Sheet name or index to read.
+    :returns: Path to the written CSV file.
+    :raises FileNotFoundError: If the input file does not exist.
     """
-    xlsx_path = Path(xlsx_path)
     if not xlsx_path.exists():
         raise FileNotFoundError(f"Input file not found: {xlsx_path}")
 
-    if csv_path is None:
-        csv_path = xlsx_path.with_suffix(".csv")
-    csv_path = Path(csv_path)
+    output_path: Path = csv_path or xlsx_path.with_suffix(".csv")
 
-    LOG.info("Reading excel %s (sheet=%s)", xlsx_path, sheet_name)
-    df = pd.read_excel(xlsx_path, sheet_name=sheet_name)
+    logger.info(f"Reading Excel {xlsx_path} (sheet={sheet_name})")
+    data: pd.DataFrame | dict[str, pd.DataFrame] = pd.read_excel(
+        xlsx_path,
+        sheet_name=sheet_name,
+    )
 
-    # pandas.read_excel returns a DataFrame when a single sheet is read,
-    # but returns a dict[str, DataFrame] when multiple sheets are requested
-    # (or sheet_name=None). Handle that here by choosing the first sheet.
-    if isinstance(df, dict):
-        first_sheet = next(iter(df))
-        LOG.warning(
-            "read_excel returned multiple sheets; using first sheet: %s", first_sheet
-        )
-        df = df[first_sheet]
+    if isinstance(data, dict):
+        first_sheet: str = next(iter(data))
+        logger.warning(f"Multiple sheets found; using first sheet: {first_sheet}")
+        data = data[first_sheet]
 
-    LOG.info("Writing csv %s", csv_path)
-    df.to_csv(csv_path, index=False)
-    return csv_path
+    logger.info(f"Writing CSV {output_path}")
+    data.to_csv(output_path, index=False)
+
+    return output_path
 
 
-def read_csv(csv_path: Path, **kwargs) -> pd.DataFrame:
-    """Read a CSV file into a pandas DataFrame.
-
-    Any extra kwargs are forwarded to `pandas.read_csv`.
-    """
-    csv_path = Path(csv_path)
-    if not csv_path.exists():
-        raise FileNotFoundError(f"CSV file not found: {csv_path}")
-    return pd.read_csv(csv_path, **kwargs)
-
-
-def main(argv: list[str] | None = None) -> int:  # pragma: no cover
-    """Use Main function for command-line."""
+def main() -> None:  # pragma: no cover
+    """Command-line entry point for Excel-to-CSV conversion."""
     parser = argparse.ArgumentParser(
-        description="Convert a single Excel file to CSV or read a CSV"
+        description="Convert a single Excel file to CSV",
     )
-    parser.add_argument("--file", type=Path, help="Single file to convert or read")
+
     parser.add_argument(
-        "--convert",
-        action="store_true",
-        help="Convert given Excel file to CSV (use with --file)",
+        "--file",
+        type=Path,
+        required=True,
+        help="Path to Excel file (absolute or relative to sensor_data/)",
     )
+
     parser.add_argument(
-        "--read",
-        action="store_true",
-        help="Read and print head of CSV (use with --file)",
-    )
-    parser.add_argument("--sheet", default=0, help="Excel sheet name or index to read")
-    parser.add_argument("--verbose", action="store_true")
-    args = parser.parse_args(argv)
-
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(levelname)s: %(message)s",
+        "--sheet",
+        type=int,
+        default=0,
+        help="Excel sheet name or index to read",
     )
 
-    if not args.file:
-        parser.print_help()
-        return 1
+    args = parser.parse_args(sys.argv)
 
-    try:
-        if args.convert:
-            out = convert_xlsx_to_csv(args.file, sheet_name=args.sheet)
-            LOG.info("Converted %s -> %s", args.file, out)
-            return 0
+    # Resolve relative paths against SENSOR_DATA_DIR
+    file_path: Path = args.file
+    if not file_path.is_absolute():
+        file_path = SENSOR_DATA_DIR / file_path
 
-        if args.read:
-            df = read_csv(args.file)
-            LOG.info(df.head())
-            return 0
+    output_path: Path = convert_xlsx_to_csv(
+        file_path,
+        sheet_name=args.sheet,
+    )
 
-        parser.print_help()
-        return 1
-    except Exception as exc:
-        LOG.error("Operation failed: %s", exc)
-        return 2
+    logger.info(f"Converted {file_path} -> {output_path}")
 
 
 if __name__ == "__main__":  # pragma: no cover
-    raise SystemExit(main())
+    main()

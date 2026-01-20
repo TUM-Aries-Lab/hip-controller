@@ -1,7 +1,6 @@
 """Tests for high-level control functions. Unit tests in arrange-act-assert format."""
 
 import pandas as pd
-import pytest
 
 from hip_controller.control.high_level import (
     HighLevelController,
@@ -13,28 +12,14 @@ from hip_controller.control.high_level import (
     velocity_max_trigger,
     velocity_min_trigger,
 )
-
-
-@pytest.fixture(scope="module")
-def zero_crossing_data():
-    """Load motion data from CSV file."""
-    df = pd.read_csv(
-        "data/sensor_data/high_level_testing/zero_crossing_left_2026_01_09.csv"
-    )
-    return df
-
-
-@pytest.fixture(scope="module")
-def valid_trigger_data():
-    """Load motion data from CSV file."""
-    df = pd.read_csv(
-        "data/sensor_data/high_level_testing/valid_trigger_left_2026_01_15.csv"
-    )
-    return df
+from hip_controller.definitions import ColumnName, HighLevelDataDir
 
 
 def test_hit_zero_crossing_from_upper() -> None:
-    """Test zero-crossing detection from upper to lower."""
+    """Test zero-crossing detection from upper to lower.
+
+    :return: None
+    """
     assert hit_zero_crossing_from_upper(prev=0.1, curr=-0.1)
     assert hit_zero_crossing_from_upper(prev=0.0, curr=-0.1)
 
@@ -45,7 +30,10 @@ def test_hit_zero_crossing_from_upper() -> None:
 
 
 def test_hit_zero_crossing_from_lower() -> None:
-    """Test zero-crossing detection from lower to upper."""
+    """Test zero-crossing detection from lower to upper.
+
+    :return: None
+    """
     assert hit_zero_crossing_from_lower(prev=-0.1, curr=0.1)
     assert hit_zero_crossing_from_lower(prev=0.0, curr=0.1)
 
@@ -55,18 +43,21 @@ def test_hit_zero_crossing_from_lower() -> None:
     assert not hit_zero_crossing_from_lower(prev=-1.0, curr=0.0)
 
 
-def test_extrema_trigger(zero_crossing_data) -> None:
-    """Test angle extrema detection based on velocity zero-crossings."""
-    df = zero_crossing_data
+def test_extrema_trigger() -> None:
+    """Test angle extrema detection based on velocity zero-crossings.
+
+    :return: None
+    """
+    df = pd.read_csv(HighLevelDataDir.DATA_ZERO_CROSSING)
 
     for i in range(1, len(df)):
         prev = df.iloc[i - 1]
         curr = df.iloc[i]
 
-        curr_velocity = curr["vel_left (rad/s)"]
-        prev_velocity = prev["vel_left (rad/s)"]
-        curr_angle = curr["angle_left (rad)"]
-        prev_angle = prev["angle_left (rad)"]
+        curr_velocity = curr[ColumnName.VELOCITY]
+        prev_velocity = prev[ColumnName.VELOCITY]
+        curr_angle = curr[ColumnName.ANGLE]
+        prev_angle = prev[ColumnName.ANGLE]
 
         angle_max = angle_max_trigger(
             curr_velocity=curr_velocity, prev_velocity=prev_velocity
@@ -83,10 +74,10 @@ def test_extrema_trigger(zero_crossing_data) -> None:
             curr_angle=curr_angle, prev_angle=prev_angle
         )
 
-        expected_vel_max = curr["vel_max_trigg_left"]
-        expected_ang_max = curr["ang_max_trigg_left"]
-        expected_vel_min = curr["vel_min_trigg_left"]
-        expected_ang_min = curr["ang_min_trigg_left"]
+        expected_vel_max = curr[ColumnName.TRIGG_VEL_MAX]
+        expected_ang_max = curr[ColumnName.TRIGG_ANG_MAX]
+        expected_vel_min = curr[ColumnName.TRIGG_VEL_MIN]
+        expected_ang_min = curr[ColumnName.TRIGG_ANG_MIN]
 
         assert velocity_max == expected_vel_max, f"Row {i}"
         assert angle_max == expected_ang_max, f"Row {i}"
@@ -94,26 +85,29 @@ def test_extrema_trigger(zero_crossing_data) -> None:
         assert angle_min == expected_ang_min, f"Row {i}"
 
 
-def test_valid_trigger(valid_trigger_data) -> None:
-    """Test angle extrema detection based on velocity zero-crossings."""
-    df = valid_trigger_data
+def test_valid_trigger() -> None:
+    """Test angle extrema detection based on velocity zero-crossings.
+
+    :return: None
+    """
+    df = pd.read_csv(HighLevelDataDir.DATA_VALID_TRIGGER)
     controller = HighLevelController()
 
     for i in range(0, len(df)):
         curr = df.iloc[i]
 
-        timestamp = curr["time (s)"]
-        curr_velocity = curr["vel_left (rad/s)"]
-        curr_angle = curr["angle_left (rad)"]
+        timestamp = curr[ColumnName.TIMESTAMP]
+        curr_velocity = curr[ColumnName.VELOCITY]
+        curr_angle = curr[ColumnName.ANGLE]
 
         controller.update(
             curr_angle=curr_angle, curr_vel=curr_velocity, timestamp=timestamp
         )
 
-        vel_max = curr["valid_vel_max_left"]
-        ang_max = curr["valid_ang_max_left"]
-        vel_min = curr["valid_vel_min_left"]
-        ang_min = curr["valid_ang_min_left"]
+        vel_max = curr[ColumnName.VALID_TRIGG_VEL_MAX]
+        ang_max = curr[ColumnName.VALID_TRIGG_ANG_MAX]
+        vel_min = curr[ColumnName.VALID_TRIGG_VEL_MIN]
+        ang_min = curr[ColumnName.VALID_TRIGG_ANG_MIN]
 
         if vel_max:
             assert controller.state == MotionState.VELOCITY_MAX, (

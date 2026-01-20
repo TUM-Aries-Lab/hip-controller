@@ -21,7 +21,10 @@ def test_logger_init() -> None:
 
 
 def test_log_level() -> None:
-    """Test the log level."""
+    """Test the log level.
+
+    :return: None
+    """
     # Act
     log_levels = list(LogLevel())
 
@@ -29,8 +32,11 @@ def test_log_level() -> None:
     assert type(log_levels) is list
 
 
-def test_symmetrize_matrix():
-    """Test symmetrize_matrix function."""
+def test_symmetrize_matrix() -> None:
+    """Test symmetrize_matrix function.
+
+    :return: None
+    """
     # asymmetrical square matrix -> symmetrized
     m = np.array([[1.0, 2.0], [3.0, 4.0]])
     expected = np.array([[1.0, 2.5], [2.5, 4.0]])

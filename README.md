@@ -60,6 +60,16 @@ uv run python -m hip_controller
 The following tree shows the important permanent files. Run `make tree` to update.
 <!-- TREE-START -->
 ```
+├── data
+│   ├── logs
+│   └── sensor_data
+│       ├── high_level_testing
+│       │   ├── valid_trigger_left_2026_01_15.csv
+│       │   └── zero_crossing_left_2026_01_09.csv
+│       └── raw_data
+│           ├── data_input_2025_12_17.csv
+│           ├── data_input_2026_01_09.csv
+│           └── data_raw_2025_12_17.xlsx
 ├── docs
 │   └── paper.pdf
 ├── src

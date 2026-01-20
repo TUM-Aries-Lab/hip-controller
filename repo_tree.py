@@ -27,7 +27,6 @@ MANUAL_IGNORE = {
     ".pytest_cache",
     ".ruff_cache",
     ".DS_Store",
-    "data",
     "simulink",
     ".github",
     "*.mat",
