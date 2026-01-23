@@ -1,4 +1,4 @@
-time,POS(SS),z(T),VEL_SS,Gait Phase_L,angle_L_filtered,vel_L_filtered
+time (s),pos_ss,z_t,vel_ss,gait_phase_left,angle_left (rad),vel_left (rad/s)
 0.0,0.0,0.0,0.0,0.0,0.0,0.0
 0.01,0.0,0.0,0.0,0.0,0.0,0.0
 0.02,0.0,0.0,0.0,0.0,0.0,0.0
