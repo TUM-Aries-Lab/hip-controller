@@ -64,6 +64,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   ├── logs
 │   └── sensor_data
 │       ├── high_level_testing
+│       │   ├── gait_phase_left_2026_01_21.csv
 │       │   ├── valid_trigger_left_2026_01_15.csv
 │       │   └── zero_crossing_left_2026_01_09.csv
 │       └── raw_data
@@ -73,8 +74,6 @@ The following tree shows the important permanent files. Run `make tree` to updat
 ├── docs
 │   └── paper.pdf
 ├── src
-│   ├── data_editor
-│   │   └── file_converter.py
 │   └── hip_controller
 │       ├── control
 │       │   ├── __init__.py
@@ -95,7 +94,6 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   ├── __init__.py
 │   ├── app_test.py
 │   ├── conftest.py
-│   ├── file_converter_test.py
 │   └── utils_test.py
 ├── .dockerignore
 ├── .gitignore
