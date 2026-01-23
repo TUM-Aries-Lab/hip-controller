@@ -9,7 +9,7 @@ np.set_printoptions(precision=3, floatmode="fixed", suppress=True)
 
 
 # --- Directories ---
-ROOT_DIR: Path = Path("src").parent
+ROOT_DIR: Path = Path(__file__).resolve().parents[2]
 DATA_DIR: Path = ROOT_DIR / "data"
 RECORDINGS_DIR: Path = DATA_DIR / "recordings"
 LOG_DIR: Path = DATA_DIR / "logs"
@@ -27,25 +27,7 @@ class HighLevelDataDir:
     DATA_VALID_TRIGGER: Path = (
         TESTING_HIGH_LEVEL_DIR / "valid_trigger_left_2026_01_15.csv"
     )
-
-
-@dataclass
-class ColumnName:
-    """Names of columns."""
-
-    TIMESTAMP: str = "time (s)"
-    ANGLE: str = "angle_left (rad)"
-    VELOCITY: str = "vel_left (rad/s)"
-
-    TRIGG_VEL_MAX: str = "vel_max_trigg_left"
-    TRIGG_ANG_MAX: str = "ang_max_trigg_left"
-    TRIGG_VEL_MIN: str = "vel_min_trigg_left"
-    TRIGG_ANG_MIN: str = "ang_min_trigg_left"
-
-    VALID_TRIGG_VEL_MAX: str = "valid_vel_max_left"
-    VALID_TRIGG_ANG_MAX: str = "valid_ang_max_left"
-    VALID_TRIGG_VEL_MIN: str = "valid_vel_min_left"
-    VALID_TRIGG_ANG_MIN: str = "valid_ang_min_left"
+    DATA_GAIT_PHASE: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_01_21.csv"
 
 
 # Default encoding
@@ -95,4 +77,34 @@ class StateChangeTimeThreshold:
     TMAX: float = 0.6
 
 
+VALUE_ZERO = 0.0
+VALUE_NEAR_ZERO = 1e-6
+
+
+@dataclass(frozen=True)
+class PositionLimitation:
+    """Limitations of position steady states."""
+
+    # both are []
+    UPPER = 10
+    LOWER = -10
+
+
 # csv column names for testing
+@dataclass
+class ColumnName:
+    """Names of columns."""
+
+    TIMESTAMP: str = "time (s)"
+    ANGLE: str = "angle_left (rad)"
+    VELOCITY: str = "vel_left (rad/s)"
+
+    TRIGG_VEL_MAX: str = "vel_max_trigg_left"
+    TRIGG_ANG_MAX: str = "ang_max_trigg_left"
+    TRIGG_VEL_MIN: str = "vel_min_trigg_left"
+    TRIGG_ANG_MIN: str = "ang_min_trigg_left"
+
+    VALID_TRIGG_VEL_MAX: str = "valid_vel_max_left"
+    VALID_TRIGG_ANG_MAX: str = "valid_ang_max_left"
+    VALID_TRIGG_VEL_MIN: str = "valid_vel_min_left"
+    VALID_TRIGG_ANG_MIN: str = "valid_ang_min_left"

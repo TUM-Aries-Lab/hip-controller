@@ -1,9 +1,15 @@
 """High-level control functions."""
 
+import math
 from dataclasses import dataclass
 from enum import Enum
 
-from hip_controller.definitions import StateChangeTimeThreshold
+from hip_controller.definitions import (
+    VALUE_NEAR_ZERO,
+    VALUE_ZERO,
+    PositionLimitation,
+    StateChangeTimeThreshold,
+)
 
 
 class MotionState(Enum):
@@ -190,10 +196,14 @@ class HighLevelController:
         self.curr_angle: float = 0.0
         self.curr_velocity: float = 0.0
 
-        self.angle_max: float
-        self.angle_min: float
-        self.velocity_max: float
-        self.velocity_min: float
+        self.angle_max: float = 0.0
+        self.angle_min: float = 0.0
+        self.velocity_max: float = 0.0
+        self.velocity_min: float = 0.0
+
+        self.pos_ss: float = 0.0
+        self.z_t: float = 0.0
+        self.vel_ss: float = 0.0
 
         self.tick: float | None
 
@@ -225,6 +235,33 @@ class HighLevelController:
         elif state == MotionState.VELOCITY_MIN:
             self.velocity_min = self.curr_velocity
 
+    def _check_timeout(self, timestamp: float) -> bool:
+        """Check if a timeout has occurred and reset state if necessary.
+
+        Returns True if in timeout period (update should be skipped). Resets to INITIAL
+        state if timeout threshold is exceeded.
+
+        :param timestamp: Current timestamp.
+        :return: True if currently in timeout period, False otherwise.
+        """
+        if self.state == MotionState.INITIAL:
+            return False
+
+        if self.tick is None:
+            return False
+
+        dt = timestamp - self.tick
+
+        # before: inclusive, after: exclusive
+        if dt < StateChangeTimeThreshold.TMIN:
+            return True
+
+        elif dt >= StateChangeTimeThreshold.TMAX:
+            self._set_state(MotionState.INITIAL, timestamp=None)
+            return True
+
+        return False
+
     def update(self, curr_angle: float, curr_vel: float, timestamp: float) -> None:
         """Update controller state based on current angle, velocity, and timestamp.
 
@@ -252,29 +289,77 @@ class HighLevelController:
             if self.state != new_state:
                 self._set_state(state=new_state, timestamp=timestamp)
 
-    def _check_timeout(self, timestamp: float) -> bool:
-        """Check if a timeout has occurred and reset state if necessary.
+        self._set_vel_ss()
+        self._set_z_t()
+        self._set_pos_ss()
 
-        Returns True if in timeout period (update should be skipped). Resets to INITIAL
-        state if timeout threshold is exceeded.
+    def _get_vel_gamma_t(self) -> float:
+        """Calculate gamma(t) of velocity.
 
-        :param timestamp: Current timestamp.
-        :return: True if currently in timeout period, False otherwise.
+        :return: Value of gamma(t) of velocity.
         """
-        if self.state == MotionState.INITIAL:
-            return False
+        return -(self.velocity_max + self.velocity_min) / 2
 
-        if self.tick is None:
-            return False
+    def _get_ang_gamma_t(self) -> float:
+        """Calculate gamma(t) of angle.
 
-        dt = timestamp - self.tick
+        :return: Value of gamma(t) of angle.
+        """
+        return -(self.velocity_max + self.velocity_min) / 2
 
-        # before: inclusive, after: exclusive
-        if dt < StateChangeTimeThreshold.TMIN:
-            return True
+    def _get_ang_ss(self) -> float:
+        """Calculate steady state of angle.
 
-        elif dt >= StateChangeTimeThreshold.TMAX:
-            self._set_state(MotionState.INITIAL, timestamp=None)
-            return True
+        :return: Steady state of angle.
+        """
+        return self.curr_angle + self._get_ang_gamma_t()
 
-        return False
+    def _set_vel_ss(self) -> None:
+        """Calculate steady state of velocity.
+
+        :return: Steady state of velocity.
+        """
+        self.vel_ss = self.curr_velocity + self._get_vel_gamma_t()
+
+    def _set_z_t(self) -> None:
+        """Calculate value of position steady state, set z_t, pos_ss.
+
+        :return: None
+        """
+        u_vel = abs(self.velocity_max - self.velocity_min)
+        u_ang = abs(self.angle_max - self.angle_min)
+
+        # Avoid division by zero
+        if u_ang == VALUE_ZERO:
+            u_ang = VALUE_NEAR_ZERO
+
+        z_t = u_vel / u_ang
+
+        if math.isnan(z_t):
+            pass
+
+        else:
+            self.z_t = z_t
+
+    def _set_pos_ss(self) -> None:
+        """Calculate value of position steady state, set pos_ss.
+
+        :return: None
+        """
+        # This has to happen after z_t is set
+        pos_ss = self._get_ang_ss() * self.z_t
+
+        if PositionLimitation.LOWER <= pos_ss <= PositionLimitation.UPPER:
+            self.prev_pos_ss = pos_ss
+
+    def get_gait_phase(self) -> float:
+        """Calculate gait phase.
+
+        :return: gait phase
+        """
+        gait_phase = math.atan2(self.vel_ss, -self.pos_ss)
+
+        if self.z_t != 0:
+            return gait_phase
+        else:
+            return 0
