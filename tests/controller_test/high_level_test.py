@@ -257,7 +257,7 @@ def test_z_t_and_pos_ss() -> None:
         expected_pos_ss = curr[ColumnName.POS_SS]
 
         assert isclose(controller.z_t, expected_z_t, rel_tol=1e-12), f"Row {i}"
-        assert isclose(controller.pos_ss, expected_pos_ss, rel_tol=1e-8), (
+        assert isclose(controller.pos_ss, expected_pos_ss, rel_tol=1e-11), (
             f"Row {i}, expected_z_t{expected_z_t}, current_z_t{controller.z_t}, "
             f"ang_ss{controller._calculate_ang_ss()}, multiplication{controller.z_t * controller._calculate_ang_ss()}; "
             f"pos_ss{controller.pos_ss}"
