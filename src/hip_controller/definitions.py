@@ -17,24 +17,6 @@ SENSOR_DATA_DIR: Path = DATA_DIR / "sensor_data"
 TESTING_HIGH_LEVEL_DIR: Path = SENSOR_DATA_DIR / "high_level_testing"
 
 
-@dataclass
-class HighLevelData:
-    """High level data for testing."""
-
-    DATA_ZERO_CROSSING: Path = (
-        TESTING_HIGH_LEVEL_DIR / "zero_crossing_left_2026_01_09.csv"
-    )
-
-    DATA_VALID_TRIGGER: Path = (
-        TESTING_HIGH_LEVEL_DIR / "valid_trigger_left_2026_01_15.csv"
-    )
-
-    DATA_EXTREMA_VALUES: Path = TESTING_HIGH_LEVEL_DIR / "extrema_2026_01_26.csv"
-
-    DATA_VEL_SS: Path = TESTING_HIGH_LEVEL_DIR / "vel_ss_2026_01_26.csv"
-    DATA_GAIT_PHASE: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_01_21.csv"
-
-
 # Default encoding
 ENCODING: str = "utf-8"
 
@@ -95,6 +77,25 @@ class PositionLimitation:
     LOWER = -10
 
 
+@dataclass
+class HighLevelData:
+    """High level data for testing."""
+
+    DATA_ZERO_CROSSING: Path = (
+        TESTING_HIGH_LEVEL_DIR / "zero_crossing_left_2026_01_09.csv"
+    )
+
+    DATA_VALID_TRIGGER: Path = (
+        TESTING_HIGH_LEVEL_DIR / "valid_trigger_left_2026_01_15.csv"
+    )
+
+    DATA_EXTREMA_VALUES: Path = TESTING_HIGH_LEVEL_DIR / "extrema_2026_01_26.csv"
+
+    DATA_VEL_SS: Path = TESTING_HIGH_LEVEL_DIR / "vel_ss_2026_01_26.csv"
+    DATA_ANG_SS: Path = TESTING_HIGH_LEVEL_DIR / "ang_ss_2026_01_26.csv"
+    DATA_GAIT_PHASE: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_01_21.csv"
+
+
 # csv column names for testing
 @dataclass
 class ColumnName:
@@ -122,6 +123,8 @@ class ColumnName:
 
     VALUE_ANG_MAX: str = "ang_max_left (rad)"
     VALUE_ANG_MIN: str = "ang_min_left (rad)"
+    ANG_GAMMA_T: str = "ang_gamma_t"
+    ANG_SS: str = "ang_ss"
 
     POS_SS: str = "pos_ss"
     Z_T: str = "z_t"

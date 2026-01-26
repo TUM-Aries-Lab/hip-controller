@@ -120,6 +120,20 @@ def extrema_trigger(
     return ExtremaTrigger(vel_max, ang_max, vel_min, ang_min)
 
 
+def calculate_steady(val_max: float, val_min: float, val_curr: float) -> float:
+    """Calculate the steady-state value relative to a bounded range.
+
+    The steady value is computed by subtracting the midpoint of the
+    provided maximum and minimum bounds from the current value.
+
+    :param val_max: Upper bound of the value range.
+    :param val_min: Lower bound of the value range.
+    :param val_curr: Current value.
+    :return: Steady-state value relative to the range midpoint.
+    """
+    return val_curr - ((val_max + val_min) / 2.0)
+
+
 def _handle_initial_state(
     trigger: ExtremaTrigger,
 ) -> MotionState:
@@ -305,9 +319,9 @@ class HighLevelController:
 
         :return: Value of gamma(t) of angle.
         """
-        return -(self.velocity_max + self.velocity_min) / 2
+        return -(self.angle_max + self.angle_min) / 2
 
-    def _get_ang_ss(self) -> float:
+    def _calculate_ang_ss(self) -> float:
         """Calculate steady state of angle.
 
         :return: Steady state of angle.
@@ -347,7 +361,7 @@ class HighLevelController:
         :return: None
         """
         # This has to happen after z_t is set
-        pos_ss = self._get_ang_ss() * self.z_t
+        pos_ss = self._calculate_ang_ss() * self.z_t
 
         if PositionLimitation.LOWER <= pos_ss <= PositionLimitation.UPPER:
             self.prev_pos_ss = pos_ss

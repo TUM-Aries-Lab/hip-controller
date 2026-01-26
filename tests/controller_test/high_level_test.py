@@ -203,3 +203,56 @@ def test_set_vel_ss() -> None:
         assert isclose(sum, expected_sum, rel_tol=1e-13)
         assert isclose(gamma_t, expected_gamma_t, rel_tol=1e-13)
         assert isclose(controller.vel_ss, expected_vel_ss, rel_tol=1e-12)
+
+
+def test_calculate_ang_ss() -> None:
+    """Test the calculation of ang_ss.
+
+    :return: None
+    """
+    df = pd.read_csv(HighLevelData.DATA_ANG_SS)
+    controller = HighLevelController()
+
+    for i in range(0, len(df)):
+        curr = df.iloc[i]
+
+        # Arrange
+        controller.curr_angle = curr[ColumnName.ANGLE]
+        controller.angle_max = curr[ColumnName.VALUE_ANG_MAX]
+        controller.angle_min = curr[ColumnName.VALUE_ANG_MIN]
+
+        # Act
+        gamma_t = controller._calculate_ang_gamma_t()
+        ang_ss = controller._calculate_ang_ss()
+
+        # Assert
+        expected_gamma_t = curr[ColumnName.ANG_GAMMA_T]
+        expected_ang_ss = curr[ColumnName.ANG_SS]
+
+        # Due to floating-point round-off/precision differences between MATLAB and Python numerical backends, exact equality comparisons seem to be not reliable.
+        assert isclose(gamma_t, expected_gamma_t, rel_tol=1e-12)
+        assert isclose(ang_ss, expected_ang_ss, rel_tol=1e-11)
+
+
+def test_z_t() -> None:
+    """Test z(t) where the z(t) value is correctly set through the update method.
+
+    :return: None
+    """
+    df = pd.read_csv(HighLevelData.DATA_GAIT_PHASE)
+    controller = HighLevelController()
+
+    for i in range(0, len(df)):
+        curr = df.iloc[i]
+
+        timestamp = curr[ColumnName.TIMESTAMP]
+        curr_velocity = curr[ColumnName.VELOCITY]
+        curr_angle = curr[ColumnName.ANGLE]
+
+        controller.update(
+            curr_angle=curr_angle, curr_vel=curr_velocity, timestamp=timestamp
+        )
+
+        expected_z_t = curr[ColumnName.Z_T]
+
+        assert isclose(controller.z_t, expected_z_t, rel_tol=1e-12), f"Row {i}"
