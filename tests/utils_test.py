@@ -3,12 +3,10 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import numpy as np
 import pandas as pd
 import pytest
 
 from hip_controller.definitions import DEFAULT_LOG_FILENAME, ColumnName, LogLevel
-from hip_controller.math_utils import symmetrize_matrix
 from hip_controller.utils import convert_xlsx_to_csv, setup_logger
 
 
@@ -33,25 +31,6 @@ def test_log_level() -> None:
     assert type(log_levels) is list
 
 
-def test_symmetrize_matrix() -> None:
-    """Test symmetrize_matrix function.
-
-    :return: None
-    """
-    # asymmetrical square matrix -> symmetrized
-    m = np.array([[1.0, 2.0], [3.0, 4.0]])
-    expected = np.array([[1.0, 2.5], [2.5, 4.0]])
-    np.testing.assert_allclose(symmetrize_matrix(m), expected)
-
-    # already symmetric remains unchanged
-    s = np.array([[1.0, 2.0], [2.0, 1.0]])
-    np.testing.assert_allclose(symmetrize_matrix(s), s)
-
-    # non-square matrix raises ValueError
-    with pytest.raises(ValueError):
-        symmetrize_matrix(np.array([[1, 2, 3], [4, 5, 6]]))
-
-
 def _make_excel(path: Path, sheets: dict[str, pd.DataFrame]) -> None:
     """Write an Excel file with the given sheets.
 
@@ -67,7 +46,7 @@ def _make_excel(path: Path, sheets: dict[str, pd.DataFrame]) -> None:
 def test_convert_xlsx_to_csv_creates_csv(tmp_path: Path) -> None:
     """Test converting an Excel file to CSV.
 
-    :param path: Temporary output Excel file path for testing.
+    :param tmp_path: Temporary output Excel file path for testing.
     :return: None
     """
     df: pd.DataFrame = pd.DataFrame(
@@ -81,3 +60,16 @@ def test_convert_xlsx_to_csv_creates_csv(tmp_path: Path) -> None:
 
     read: pd.DataFrame = pd.read_csv(out)
     pd.testing.assert_frame_equal(read, df)
+
+    def test_convert_xlsx_to_csv_file_not_found(tmp_path: Path) -> None:
+        """Test that ``convert_xlsx_to_csv`` raises ``FileNotFoundError`` when the input Excel file does not exist.
+
+        :param tmp_path: Temporary directory provided by pytest.
+        :return: None
+        :raises FileNotFoundError: If the Excel file does not exist.
+        """
+
+    missing_file: Path = tmp_path / "does_not_exist.xlsx"
+
+    with pytest.raises(FileNotFoundError):
+        convert_xlsx_to_csv(missing_file)
