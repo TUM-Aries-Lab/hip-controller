@@ -73,8 +73,8 @@ class PositionLimitation:
     """Limitations of position steady states."""
 
     # both are []
-    UPPER = 10
-    LOWER = -10
+    UPPER = 10.0
+    LOWER = -10.0
 
 
 @dataclass

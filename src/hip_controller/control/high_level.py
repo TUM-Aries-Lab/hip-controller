@@ -293,7 +293,7 @@ class HighLevelController:
         self.curr_velocity = curr_vel
 
         if self._check_timeout(timestamp=timestamp):
-            return
+            pass
 
         else:
             trigger = extrema_trigger(
@@ -303,42 +303,40 @@ class HighLevelController:
             if self.state != new_state:
                 self._set_state(state=new_state, timestamp=timestamp)
 
-        self._set_vel_ss()
-        self._set_z_t()
-        self._set_pos_ss()
+        self.vel_ss = self._calculate_vel_ss()
 
-    def _calculate_vel_gamma_t(self) -> float:
-        """Calculate gamma(t) of velocity.
+        z_t = self._calculate_z_t()
+        if not math.isnan(z_t):
+            self.z_t = z_t
 
-        :return: Value of gamma(t) of velocity.
+        pos_ss = self._calculate_pos_ss()
+        if PositionLimitation.LOWER <= pos_ss <= PositionLimitation.UPPER:
+            self.pos_ss = pos_ss
+
+    def _calculate_vel_ss(self) -> float:
+        """Calculate steady state of velocity.
+
+        :return: steady state of velocity.
         """
-        return -(self.velocity_max + self.velocity_min) / 2
-
-    def _calculate_ang_gamma_t(self) -> float:
-        """Calculate gamma(t) of angle.
-
-        :return: Value of gamma(t) of angle.
-        """
-        return -(self.angle_max + self.angle_min) / 2
+        return calculate_steady(
+            val_max=self.velocity_max,
+            val_min=self.velocity_min,
+            val_curr=self.curr_velocity,
+        )
 
     def _calculate_ang_ss(self) -> float:
         """Calculate steady state of angle.
 
-        :return: Steady state of angle.
+        :return: steady state of angle.
         """
-        return self.curr_angle + self._calculate_ang_gamma_t()
+        return calculate_steady(
+            val_max=self.angle_max, val_min=self.angle_min, val_curr=self.curr_angle
+        )
 
-    def _set_vel_ss(self) -> None:
-        """Calculate steady state of velocity.
-
-        :return: Steady state of velocity.
-        """
-        self.vel_ss = self.curr_velocity + self._calculate_vel_gamma_t()
-
-    def _set_z_t(self) -> None:
+    def _calculate_z_t(self) -> float:
         """Calculate value of position steady state, set z_t, pos_ss.
 
-        :return: None
+        :return: value of z_t
         """
         u_vel = abs(self.velocity_max - self.velocity_min)
         u_ang = abs(self.angle_max - self.angle_min)
@@ -347,24 +345,15 @@ class HighLevelController:
         if u_ang == VALUE_ZERO:
             u_ang = VALUE_NEAR_ZERO
 
-        z_t = u_vel / u_ang
+        return u_vel / u_ang
 
-        if math.isnan(z_t):
-            pass
-
-        else:
-            self.z_t = z_t
-
-    def _set_pos_ss(self) -> None:
+    def _calculate_pos_ss(self) -> float:
         """Calculate value of position steady state, set pos_ss.
 
-        :return: None
+        :return: value of pos_ss
         """
         # This has to happen after z_t is set
-        pos_ss = self._calculate_ang_ss() * self.z_t
-
-        if PositionLimitation.LOWER <= pos_ss <= PositionLimitation.UPPER:
-            self.prev_pos_ss = pos_ss
+        return self.z_t * self._calculate_ang_ss()
 
     def get_gait_phase(self) -> float:
         """Calculate gait phase.

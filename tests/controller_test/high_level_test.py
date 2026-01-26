@@ -173,7 +173,7 @@ def test_set_state() -> None:
         assert controller.angle_min == ang_min
 
 
-def test_set_vel_ss() -> None:
+def test_calculate_vel_ss() -> None:
     """Test the calculation of vel_ss.
 
     :return: None
@@ -191,8 +191,8 @@ def test_set_vel_ss() -> None:
 
         # Act
         sum = controller.velocity_max + controller.velocity_min
-        gamma_t = controller._calculate_vel_gamma_t()
-        controller._set_vel_ss()
+        gamma_t = -(controller.velocity_max + controller.velocity_min) / 2.0
+        vel_ss = controller._calculate_vel_ss()
 
         # Assert
         expected_sum = curr[ColumnName.VEL_SUM_MINMAX]
@@ -202,7 +202,7 @@ def test_set_vel_ss() -> None:
         # Due to floating-point round-off/precision differences between MATLAB and Python numerical backends, exact equality comparisons seem to be not reliable.
         assert isclose(sum, expected_sum, rel_tol=1e-13)
         assert isclose(gamma_t, expected_gamma_t, rel_tol=1e-13)
-        assert isclose(controller.vel_ss, expected_vel_ss, rel_tol=1e-12)
+        assert isclose(vel_ss, expected_vel_ss, rel_tol=1e-12)
 
 
 def test_calculate_ang_ss() -> None:
@@ -222,7 +222,7 @@ def test_calculate_ang_ss() -> None:
         controller.angle_min = curr[ColumnName.VALUE_ANG_MIN]
 
         # Act
-        gamma_t = controller._calculate_ang_gamma_t()
+        gamma_t = -(controller.angle_max + controller.angle_min) / 2.0
         ang_ss = controller._calculate_ang_ss()
 
         # Assert
@@ -234,8 +234,8 @@ def test_calculate_ang_ss() -> None:
         assert isclose(ang_ss, expected_ang_ss, rel_tol=1e-11)
 
 
-def test_z_t() -> None:
-    """Test z(t) where the z(t) value is correctly set through the update method.
+def test_z_t_and_pos_ss() -> None:
+    """Test z(t) and pos_ss if these values are correctly set through the update method.
 
     :return: None
     """
@@ -254,5 +254,11 @@ def test_z_t() -> None:
         )
 
         expected_z_t = curr[ColumnName.Z_T]
+        expected_pos_ss = curr[ColumnName.POS_SS]
 
         assert isclose(controller.z_t, expected_z_t, rel_tol=1e-12), f"Row {i}"
+        assert isclose(controller.pos_ss, expected_pos_ss, rel_tol=1e-8), (
+            f"Row {i}, expected_z_t{expected_z_t}, current_z_t{controller.z_t}, "
+            f"ang_ss{controller._calculate_ang_ss()}, multiplication{controller.z_t * controller._calculate_ang_ss()}; "
+            f"pos_ss{controller.pos_ss}"
+        )
