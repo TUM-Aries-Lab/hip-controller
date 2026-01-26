@@ -2,6 +2,8 @@
 
 import argparse  # pragma: no cover
 
+from loguru import logger
+
 from hip_controller.app import WalkOnController  # pragma: no cover
 from hip_controller.definitions import DEFAULT_LOG_LEVEL, LogLevel  # pragma: no cover
 from hip_controller.utils import get_sensor_data, setup_logger  # pragma: no cover
@@ -19,9 +21,12 @@ def main(
     setup_logger(log_level=log_level, stderr_level=stderr_level)
 
     controller = WalkOnController(freq=1.0)
-    while True:
-        theta, theta_dot = get_sensor_data()
-        controller.step(theta=theta, theta_dot=theta_dot)
+    try:
+        while True:
+            theta, theta_dot = get_sensor_data()
+            controller.step(theta=theta, theta_dot=theta_dot)
+    except KeyboardInterrupt:
+        logger.success("User interrupted.")
 
 
 if __name__ == "__main__":  # pragma: no cover
