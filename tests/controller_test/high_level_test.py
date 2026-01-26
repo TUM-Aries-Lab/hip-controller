@@ -1,4 +1,20 @@
-"""Tests for high-level control functions. Unit tests in arrange-act-assert format."""
+"""Tests for high-level control functions. Unit tests in arrange-act-assert format.
+
+=================
+Note on numerical precision:
+
+Reference outputs used in these tests were generated in MATLAB.
+Due to implementation-dependent floating-point arithmetic and
+numerical backend differences between MATLAB and Python, exact
+equality comparisons are not reliable.
+
+Therefore, floating-point values are compared using ``math.isclose``
+with a relative tolerance. The tolerance is chosen as the smallest
+value for which the test passes, ensuring strict yet numerically
+robust validation.
+"""
+
+from math import isclose
 
 import pandas as pd
 
@@ -12,7 +28,7 @@ from hip_controller.control.high_level import (
     velocity_max_trigger,
     velocity_min_trigger,
 )
-from hip_controller.definitions import ColumnName, HighLevelDataDir
+from hip_controller.definitions import ColumnName, HighLevelData
 
 
 def test_hit_zero_crossing_from_upper() -> None:
@@ -48,7 +64,7 @@ def test_extrema_trigger() -> None:
 
     :return: None
     """
-    df = pd.read_csv(HighLevelDataDir.DATA_ZERO_CROSSING)
+    df = pd.read_csv(HighLevelData.DATA_ZERO_CROSSING)
 
     for i in range(1, len(df)):
         prev = df.iloc[i - 1]
@@ -90,7 +106,7 @@ def test_valid_trigger() -> None:
 
     :return: None
     """
-    df = pd.read_csv(HighLevelDataDir.DATA_VALID_TRIGGER)
+    df = pd.read_csv(HighLevelData.DATA_VALID_TRIGGER)
     controller = HighLevelController()
 
     for i in range(0, len(df)):
@@ -125,3 +141,65 @@ def test_valid_trigger() -> None:
             assert controller.state == MotionState.ANGLE_MIN, (
                 f"Row {i}, vel_max {vel_max}, angle_max {ang_max}, vel_min {vel_min}, ang_min {ang_min}"
             )
+
+
+def test_set_state() -> None:
+    """Test angle extrema detection based on velocity zero-crossings.
+
+    :return: None
+    """
+    df = pd.read_csv(HighLevelData.DATA_EXTREMA_VALUES)
+    controller = HighLevelController()
+
+    for i in range(0, len(df)):
+        curr = df.iloc[i]
+
+        timestamp = curr[ColumnName.TIMESTAMP]
+        curr_velocity = curr[ColumnName.VELOCITY]
+        curr_angle = curr[ColumnName.ANGLE]
+
+        controller.update(
+            curr_angle=curr_angle, curr_vel=curr_velocity, timestamp=timestamp
+        )
+
+        vel_max = curr[ColumnName.VALUE_VEL_MAX]
+        ang_max = curr[ColumnName.VALUE_ANG_MAX]
+        vel_min = curr[ColumnName.VALUE_VEL_MIN]
+        ang_min = curr[ColumnName.VALUE_ANG_MIN]
+
+        assert controller.velocity_max == vel_max
+        assert controller.angle_max == ang_max
+        assert controller.velocity_min == vel_min
+        assert controller.angle_min == ang_min
+
+
+def test_set_vel_ss() -> None:
+    """Test the calculation of vel_ss.
+
+    :return: None
+    """
+    df = pd.read_csv(HighLevelData.DATA_VEL_SS)
+    controller = HighLevelController()
+
+    for i in range(0, len(df)):
+        curr = df.iloc[i]
+
+        # Arrange
+        controller.curr_velocity = curr[ColumnName.VELOCITY]
+        controller.velocity_max = curr[ColumnName.VALUE_VEL_MAX]
+        controller.velocity_min = curr[ColumnName.VALUE_VEL_MIN]
+
+        # Act
+        sum = controller.velocity_max + controller.velocity_min
+        gamma_t = controller._calculate_vel_gamma_t()
+        controller._set_vel_ss()
+
+        # Assert
+        expected_sum = curr[ColumnName.VEL_SUM_MINMAX]
+        expected_gamma_t = curr[ColumnName.VEL_GAMMA_T]
+        expected_vel_ss = curr[ColumnName.VEL_SS]
+
+        # Due to floating-point round-off/precision differences between MATLAB and Python numerical backends, exact equality comparisons seem to be not reliable.
+        assert isclose(sum, expected_sum, rel_tol=1e-13)
+        assert isclose(gamma_t, expected_gamma_t, rel_tol=1e-13)
+        assert isclose(controller.vel_ss, expected_vel_ss, rel_tol=1e-12)

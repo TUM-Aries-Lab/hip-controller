@@ -18,15 +18,20 @@ TESTING_HIGH_LEVEL_DIR: Path = SENSOR_DATA_DIR / "high_level_testing"
 
 
 @dataclass
-class HighLevelDataDir:
+class HighLevelData:
     """High level data for testing."""
 
     DATA_ZERO_CROSSING: Path = (
         TESTING_HIGH_LEVEL_DIR / "zero_crossing_left_2026_01_09.csv"
     )
+
     DATA_VALID_TRIGGER: Path = (
         TESTING_HIGH_LEVEL_DIR / "valid_trigger_left_2026_01_15.csv"
     )
+
+    DATA_EXTREMA_VALUES: Path = TESTING_HIGH_LEVEL_DIR / "extrema_2026_01_26.csv"
+
+    DATA_VEL_SS: Path = TESTING_HIGH_LEVEL_DIR / "vel_ss_2026_01_26.csv"
     DATA_GAIT_PHASE: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_01_21.csv"
 
 
@@ -108,3 +113,17 @@ class ColumnName:
     VALID_TRIGG_ANG_MAX: str = "valid_ang_max_left"
     VALID_TRIGG_VEL_MIN: str = "valid_vel_min_left"
     VALID_TRIGG_ANG_MIN: str = "valid_ang_min_left"
+
+    VALUE_VEL_MAX: str = "vel_max_left (rad/s)"
+    VALUE_VEL_MIN: str = "vel_min_left (rad/s)"
+    VEL_GAMMA_T: str = "vel_gamma_t"
+    VEL_SUM_MINMAX: str = "sum_vel_minmax"
+    VEL_SS: str = "vel_ss"
+
+    VALUE_ANG_MAX: str = "ang_max_left (rad)"
+    VALUE_ANG_MIN: str = "ang_min_left (rad)"
+
+    POS_SS: str = "pos_ss"
+    Z_T: str = "z_t"
+
+    GAIT_PHASE: str = "gait_phase_left"

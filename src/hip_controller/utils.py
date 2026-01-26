@@ -91,6 +91,9 @@ def convert_xlsx_to_csv(path: Path) -> Path:
     """
     xlsx_path = SENSOR_DATA_DIR / path
 
+    if not xlsx_path.exists():
+        raise FileNotFoundError(f"File not found: {xlsx_path}")
+
     output_path = xlsx_path.with_suffix(".csv")
 
     logger.info(f"Reading Excel file: {xlsx_path}")

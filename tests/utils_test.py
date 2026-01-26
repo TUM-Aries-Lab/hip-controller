@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hip_controller.definitions import DEFAULT_LOG_FILENAME, LogLevel
+from hip_controller.definitions import DEFAULT_LOG_FILENAME, ColumnName, LogLevel
 from hip_controller.math_utils import symmetrize_matrix
 from hip_controller.utils import convert_xlsx_to_csv, setup_logger
 
@@ -71,7 +71,7 @@ def test_convert_xlsx_to_csv_creates_csv(tmp_path: Path) -> None:
     :return: None
     """
     df: pd.DataFrame = pd.DataFrame(
-        {"angle": [0.1, -0.2], "velocity": [1.0, -0.5]},
+        {ColumnName.ANGLE: [0.1, -0.2], ColumnName.VELOCITY: [1.0, -0.5]},
     )
     xlsx: Path = tmp_path / "test.xlsx"
     _make_excel(xlsx, {"Sheet1": df})

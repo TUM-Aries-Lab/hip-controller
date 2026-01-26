@@ -201,9 +201,9 @@ class HighLevelController:
         self.velocity_max: float = 0.0
         self.velocity_min: float = 0.0
 
-        self.pos_ss: float = 0.0
-        self.z_t: float = 0.0
         self.vel_ss: float = 0.0
+        self.z_t: float = 0.0
+        self.pos_ss: float = 0.0
 
         self.tick: float | None
 
@@ -293,14 +293,14 @@ class HighLevelController:
         self._set_z_t()
         self._set_pos_ss()
 
-    def _get_vel_gamma_t(self) -> float:
+    def _calculate_vel_gamma_t(self) -> float:
         """Calculate gamma(t) of velocity.
 
         :return: Value of gamma(t) of velocity.
         """
         return -(self.velocity_max + self.velocity_min) / 2
 
-    def _get_ang_gamma_t(self) -> float:
+    def _calculate_ang_gamma_t(self) -> float:
         """Calculate gamma(t) of angle.
 
         :return: Value of gamma(t) of angle.
@@ -312,14 +312,14 @@ class HighLevelController:
 
         :return: Steady state of angle.
         """
-        return self.curr_angle + self._get_ang_gamma_t()
+        return self.curr_angle + self._calculate_ang_gamma_t()
 
     def _set_vel_ss(self) -> None:
         """Calculate steady state of velocity.
 
         :return: Steady state of velocity.
         """
-        self.vel_ss = self.curr_velocity + self._get_vel_gamma_t()
+        self.vel_ss = self.curr_velocity + self._calculate_vel_gamma_t()
 
     def _set_z_t(self) -> None:
         """Calculate value of position steady state, set z_t, pos_ss.
