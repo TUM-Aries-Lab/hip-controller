@@ -6,7 +6,6 @@ from enum import Enum
 
 from hip_controller.definitions import (
     VALUE_NEAR_ZERO,
-    VALUE_ZERO,
     PositionLimitation,
     StateChangeTimeThreshold,
 )
@@ -342,7 +341,7 @@ class HighLevelController:
         u_ang = abs(self.angle_max - self.angle_min)
 
         # Avoid division by zero
-        if u_ang == VALUE_ZERO:
+        if u_ang == 0.0:
             u_ang = VALUE_NEAR_ZERO
 
         return u_vel / u_ang

@@ -63,10 +63,6 @@ The following tree shows the important permanent files. Run `make tree` to updat
 ├── data
 │   ├── logs
 │   └── sensor_data
-│       ├── high_level_testing
-│       │   ├── gait_phase_left_2026_01_21.csv
-│       │   ├── valid_trigger_left_2026_01_15.csv
-│       │   └── zero_crossing_left_2026_01_09.csv
 │       └── raw_data
 │           ├── data_input_2025_12_17.csv
 │           ├── data_input_2026_01_09.csv
@@ -89,11 +85,21 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       └── utils.py
 ├── tests
 │   ├── controller_test
-│   │   ├── high_level_test.py
+│   │   ├── high_level_controller
+│   │   │   ├── high_level_testing_data
+│   │   │   │   ├── ang_ss_2026_01_26.csv
+│   │   │   │   ├── extrema_2026_01_26.csv
+│   │   │   │   ├── gait_phase_left_2026_01_21.csv
+│   │   │   │   ├── test_2026_01_26.xlsx
+│   │   │   │   ├── valid_trigger_left_2026_01_15.csv
+│   │   │   │   ├── vel_ss_2026_01_26.csv
+│   │   │   │   └── zero_crossing_left_2026_01_09.csv
+│   │   │   └── high_level_test.py
 │   │   └── kalman_test.py
 │   ├── __init__.py
 │   ├── app_test.py
 │   ├── conftest.py
+│   ├── math_utils_test.py
 │   └── utils_test.py
 ├── .dockerignore
 ├── .gitignore

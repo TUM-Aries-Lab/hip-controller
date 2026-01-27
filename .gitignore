@@ -172,7 +172,13 @@ cython_debug/
 /logs/log_*
 
 # matlab
-src/matlab-files
+.mat
+.mldatx
+.slxc
+.slx.original
+src/matlab-files/slprj
+
+
 
 # vscode
 .vscode
