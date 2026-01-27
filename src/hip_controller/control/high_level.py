@@ -355,14 +355,12 @@ class HighLevelController:
         # This has to happen after z_t is set
         return self.z_t * self._calculate_ang_ss()
 
-    def get_gait_phase(self) -> float:
+    def calculate_gait_phase(self) -> float:
         """Calculate gait phase.
 
         :return: gait phase
         """
-        gait_phase = math.atan2(self.vel_ss, -self.pos_ss)
-
-        if self.z_t != 0:
-            return gait_phase
+        if self.z_t == 0.0:
+            return 0.0
         else:
-            return 0
+            return math.atan2(self.vel_ss, -self.pos_ss)

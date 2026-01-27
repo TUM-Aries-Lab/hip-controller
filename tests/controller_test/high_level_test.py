@@ -14,6 +14,7 @@ value for which the test passes, ensuring strict yet numerically
 robust validation.
 """
 
+import math
 from math import isclose
 
 import pandas as pd
@@ -245,14 +246,17 @@ def test_z_t_and_pos_ss() -> None:
     for i in range(0, len(df)):
         curr = df.iloc[i]
 
+        # Arrange
         timestamp = curr[ColumnName.TIMESTAMP]
         curr_velocity = curr[ColumnName.VELOCITY]
         curr_angle = curr[ColumnName.ANGLE]
 
+        # Act
         controller.update(
             curr_angle=curr_angle, curr_vel=curr_velocity, timestamp=timestamp
         )
 
+        # Assert
         expected_z_t = curr[ColumnName.Z_T]
         expected_pos_ss = curr[ColumnName.POS_SS]
 
@@ -261,4 +265,32 @@ def test_z_t_and_pos_ss() -> None:
             f"Row {i}, expected_z_t{expected_z_t}, current_z_t{controller.z_t}, "
             f"ang_ss{controller._calculate_ang_ss()}, multiplication{controller.z_t * controller._calculate_ang_ss()}; "
             f"pos_ss{controller.pos_ss}"
+        )
+
+
+def test_gait_phase() -> None:
+    """Test the calculation of gait phase.
+
+    :return: None
+    """
+    df = pd.read_csv(HighLevelData.DATA_GAIT_PHASE)
+    controller = HighLevelController()
+
+    for i in range(0, len(df)):
+        curr = df.iloc[i]
+
+        # Arrange
+        controller.vel_ss = curr[ColumnName.VEL_SS]
+        controller.z_t = curr[ColumnName.Z_T]
+        controller.pos_ss = curr[ColumnName.POS_SS]
+
+        # Act
+        gait_phase = controller.calculate_gait_phase()
+
+        # Assert
+        expected_gait_phase = curr[ColumnName.GAIT_PHASE]
+
+        assert isclose(gait_phase, expected_gait_phase, rel_tol=1e-12), (
+            f"Row {i}, current_z_t{controller.z_t}, "
+            f"calculated_gait_phase{math.atan2(controller.vel_ss, -controller.pos_ss)}, "
         )
