@@ -2,7 +2,7 @@
 
 import argparse  # pragma: no cover
 
-from loguru import logger
+from loguru import logger  # pragma: no cover
 
 from hip_controller.app import WalkOnController  # pragma: no cover
 from hip_controller.definitions import DEFAULT_LOG_LEVEL, LogLevel  # pragma: no cover
