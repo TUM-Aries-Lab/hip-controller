@@ -144,6 +144,7 @@ def _handle_initial_state(
     :param trigger: ExtremaTrigger dataclass containing active triggers.
     :return: New MotionState to transition to, or INITIAL if no valid trigger.
     """
+    # The order is not important
     if trigger.vel_max:
         return MotionState.VELOCITY_MAX
     elif trigger.ang_max:
@@ -218,7 +219,7 @@ class HighLevelController:
         self.z_t: float = 0.0
         self.pos_ss: float = 0.0
 
-        self.tick: float | None
+        self.timestamp_sec: float | None
 
     def _set_state(self, state: MotionState, timestamp: float | None) -> None:
         """Set the current state and record extrema values when applicable.
@@ -231,7 +232,7 @@ class HighLevelController:
         :return: None
         """
         self.state = state
-        self.tick = timestamp
+        self.timestamp_sec = timestamp
 
         if state == MotionState.INITIAL:
             return
@@ -260,10 +261,10 @@ class HighLevelController:
         if self.state == MotionState.INITIAL:
             return False
 
-        if self.tick is None:
+        if self.timestamp_sec is None:
             return False
 
-        dt = timestamp - self.tick
+        dt = timestamp - self.timestamp_sec
 
         # before: inclusive, after: exclusive
         if dt < StateChangeTimeThreshold.TMIN:
