@@ -55,44 +55,64 @@ def hit_zero_crossing_from_lower(curr: float, prev: float) -> bool:
     return prev <= 0 and curr > 0
 
 
-def angle_max_trigger(curr_velocity: float, prev_velocity: float) -> bool:
+def angle_max_trigger(
+    curr_velocity: float, prev_velocity: float, curr_angle: float
+) -> bool:
     """Detect angle maximum based on velocity zero-crossing from positive to negative.
 
     :param curr_velocity: Current velocity value.
     :param prev_velocity: Previous velocity value.
     :return: True if angle maximum is detected, False otherwise.
     """
-    return hit_zero_crossing_from_upper(curr=curr_velocity, prev=prev_velocity)
+    return (
+        hit_zero_crossing_from_upper(curr=curr_velocity, prev=prev_velocity)
+        and curr_angle > 0
+    )
 
 
-def angle_min_trigger(curr_velocity: float, prev_velocity: float) -> bool:
+def angle_min_trigger(
+    curr_velocity: float, prev_velocity: float, curr_angle: float
+) -> bool:
     """Detect angle minimum based on velocity zero-crossing from negative to positive.
 
     :param curr_velocity: Current velocity value.
     :param prev_velocity: Previous velocity value.
     :return: True if angle minimum is detected, False otherwise.
     """
-    return hit_zero_crossing_from_lower(curr=curr_velocity, prev=prev_velocity)
+    return (
+        hit_zero_crossing_from_lower(curr=curr_velocity, prev=prev_velocity)
+        and curr_angle < 0
+    )
 
 
-def velocity_max_trigger(curr_angle: float, prev_angle: float) -> bool:
+def velocity_max_trigger(
+    curr_angle: float, prev_angle: float, curr_velocity: float
+) -> bool:
     """Detect velocity maximum based on angle zero-crossing from negative to positive.
 
     :param curr_angle: Current angle value.
     :param prev_angle: Previous angle value.
     :return: True if velocity maximum is detected, False otherwise.
     """
-    return hit_zero_crossing_from_lower(curr=curr_angle, prev=prev_angle)
+    return (
+        hit_zero_crossing_from_lower(curr=curr_angle, prev=prev_angle)
+        and curr_velocity > 0
+    )
 
 
-def velocity_min_trigger(curr_angle: float, prev_angle: float) -> bool:
+def velocity_min_trigger(
+    curr_angle: float, prev_angle: float, curr_velocity: float
+) -> bool:
     """Detect velocity minimum based on angle zero-crossing from positive to negative.
 
     :param curr_angle: Current angle value.
     :param prev_angle: Previous angle value.
     :return: True if velocity minimum is detected, False otherwise.
     """
-    return hit_zero_crossing_from_upper(curr=curr_angle, prev=prev_angle)
+    return (
+        hit_zero_crossing_from_upper(curr=curr_angle, prev=prev_angle)
+        and curr_velocity < 0
+    )
 
 
 def extrema_trigger(
@@ -112,10 +132,18 @@ def extrema_trigger(
     :param prev_velocity: Previous velocity value.
     :return: ExtremaTrigger dataclass containing four boolean flags (vel_max, ang_max, vel_min, ang_min).
     """
-    vel_max = velocity_max_trigger(curr_angle, prev_angle) and curr_velocity > 0
-    ang_max = angle_max_trigger(curr_velocity, prev_velocity) and curr_angle > 0
-    vel_min = velocity_min_trigger(curr_angle, prev_angle) and curr_velocity < 0
-    ang_min = angle_min_trigger(curr_velocity, prev_velocity) and curr_angle < 0
+    vel_max = velocity_max_trigger(
+        curr_angle=curr_angle, prev_angle=prev_angle, curr_velocity=curr_velocity
+    )
+    ang_max = angle_max_trigger(
+        curr_velocity=curr_velocity, prev_velocity=prev_velocity, curr_angle=curr_angle
+    )
+    vel_min = velocity_min_trigger(
+        curr_angle=curr_angle, prev_angle=prev_angle, curr_velocity=curr_velocity
+    )
+    ang_min = angle_min_trigger(
+        curr_velocity=curr_velocity, prev_velocity=prev_velocity, curr_angle=curr_angle
+    )
     return ExtremaTrigger(vel_max, ang_max, vel_min, ang_min)
 
 
@@ -161,9 +189,7 @@ def detect_state(
     new_state = current_state
     # State machine transitions
     if current_state == MotionState.INITIAL:
-        return _handle_initial_state(
-            trigger=trigger,
-        )
+        return _handle_initial_state(trigger=trigger)
 
     elif current_state == MotionState.ANGLE_MAX and trigger.vel_min:
         new_state = MotionState.VELOCITY_MIN
@@ -178,105 +204,6 @@ def detect_state(
         new_state = MotionState.ANGLE_MIN
 
     return new_state
-
-
-class SteadyStateTracker:
-    """Tracker for steady state."""
-
-    def __init__(self):
-        """Initialize the tracker for steady state.
-
-        Sets up initial state as INITIAL and initializes tracking variables for max and min values of angle and velocity. Provide information through centering and normalization for steady state.
-        """
-        self.angle_max: float = 0.0
-        self.angle_min: float = 0.0
-        self.velocity_max: float = 0.0
-        self.velocity_min: float = 0.0
-
-        self.vel_steady_state: float = 0.0
-        self.z_t: float = 0.0
-        self.pos_steady_state: float = 0.0
-
-    @staticmethod
-    def calculate_steady(val_max: float, val_min: float, val_curr: float) -> float:
-        """Calculate the steady-state value relative to a bounded range.
-
-        The steady value is computed by subtracting the midpoint of the
-        provided maximum and minimum bounds from the current value.
-
-        :param val_max: Upper bound of the value range.
-        :param val_min: Lower bound of the value range.
-        :param val_curr: Current value.
-        :return: Steady-state value relative to the range midpoint.
-        """
-        return val_curr - ((val_max + val_min) / 2.0)
-
-    def _calculate_vel_ss(self, curr_velocity: float) -> float:
-        """Calculate steady state of velocity.
-
-        :return: steady state of velocity.
-        """
-        return self.calculate_steady(
-            val_max=self.velocity_max,
-            val_min=self.velocity_min,
-            val_curr=curr_velocity,
-        )
-
-    def _calculate_ang_ss(self, curr_angle: float) -> float:
-        """Calculate steady state of angle.
-
-        :return: steady state of angle.
-        """
-        return self.calculate_steady(
-            val_max=self.angle_max, val_min=self.angle_min, val_curr=curr_angle
-        )
-
-    def _calculate_z_t(self) -> float:
-        """Calculate value of position steady state, set z_t, pos_ss.
-
-        :return: value of z_t
-        """
-        u_vel = abs(self.velocity_max - self.velocity_min)
-        u_ang = abs(self.angle_max - self.angle_min)
-
-        # Avoid division by zero
-        if u_ang == 0.0:
-            u_ang = VALUE_NEAR_ZERO
-
-        return u_vel / u_ang
-
-    def _calculate_pos_ss(self, curr_angle: float) -> float:
-        """Calculate value of position steady state, set pos_ss.
-
-        :return: value of pos_ss
-        """
-        # This has to happen after z_t is set
-        return self.z_t * self._calculate_ang_ss(curr_angle=curr_angle)
-
-    def calculate_gait_phase(self) -> float:
-        """Calculate gait phase.
-
-        :return: gait phase
-        """
-        if self.z_t == 0.0:
-            return 0.0
-        else:
-            return math.atan2(self.vel_steady_state, -self.pos_steady_state)
-
-    def update_steady_state(self, curr_angle: float, curr_velocity: float) -> None:
-        """Update steady state variables.
-
-        :return: None
-        """
-        self.vel_steady_state = self._calculate_vel_ss(curr_velocity=curr_velocity)
-
-        z_t = self._calculate_z_t()
-        if not math.isnan(z_t):
-            self.z_t = z_t
-
-        pos_ss = self._calculate_pos_ss(curr_angle=curr_angle)
-        if PositionLimitation.LOWER <= pos_ss <= PositionLimitation.UPPER:
-            self.pos_steady_state = pos_ss
 
 
 class HighLevelController:
@@ -384,3 +311,102 @@ class HighLevelController:
         self.steady_state_tracker.update_steady_state(
             curr_angle=curr_angle, curr_velocity=curr_vel
         )
+
+
+class SteadyStateTracker:
+    """Tracker for steady state."""
+
+    def __init__(self):
+        """Initialize the tracker for steady state.
+
+        Sets up initial state as INITIAL and initializes tracking variables for max and min values of angle and velocity. Provide information through centering and normalization for steady state.
+        """
+        self.angle_max: float = 0.0
+        self.angle_min: float = 0.0
+        self.velocity_max: float = 0.0
+        self.velocity_min: float = 0.0
+
+        self.vel_steady_state: float = 0.0
+        self.z_t: float = 0.0
+        self.pos_steady_state: float = 0.0
+
+    @staticmethod
+    def calculate_steady(val_max: float, val_min: float, val_curr: float) -> float:
+        """Calculate the steady-state value relative to a bounded range.
+
+        The steady value is computed by subtracting the midpoint of the
+        provided maximum and minimum bounds from the current value.
+
+        :param val_max: Upper bound of the value range.
+        :param val_min: Lower bound of the value range.
+        :param val_curr: Current value.
+        :return: Steady-state value relative to the range midpoint.
+        """
+        return val_curr - ((val_max + val_min) / 2.0)
+
+    def _calculate_vel_ss(self, curr_velocity: float) -> float:
+        """Calculate steady state of velocity.
+
+        :return: steady state of velocity.
+        """
+        return self.calculate_steady(
+            val_max=self.velocity_max,
+            val_min=self.velocity_min,
+            val_curr=curr_velocity,
+        )
+
+    def _calculate_ang_ss(self, curr_angle: float) -> float:
+        """Calculate steady state of angle.
+
+        :return: steady state of angle.
+        """
+        return self.calculate_steady(
+            val_max=self.angle_max, val_min=self.angle_min, val_curr=curr_angle
+        )
+
+    def _calculate_z_t(self) -> float:
+        """Calculate value of position steady state, set z_t, pos_ss.
+
+        :return: value of z_t
+        """
+        u_vel = abs(self.velocity_max - self.velocity_min)
+        u_ang = abs(self.angle_max - self.angle_min)
+
+        # Avoid division by zero
+        if u_ang == 0.0:
+            u_ang = VALUE_NEAR_ZERO
+
+        return u_vel / u_ang
+
+    def _calculate_pos_ss(self, curr_angle: float) -> float:
+        """Calculate value of position steady state, set pos_ss.
+
+        :return: value of pos_ss
+        """
+        # This has to happen after z_t is set
+        return self.z_t * self._calculate_ang_ss(curr_angle=curr_angle)
+
+    def calculate_gait_phase(self) -> float:
+        """Calculate gait phase.
+
+        :return: gait phase
+        """
+        if self.z_t == 0.0:
+            return 0.0
+        else:
+            return math.atan2(self.vel_steady_state, -self.pos_steady_state)
+
+    def update_steady_state(self, curr_angle: float, curr_velocity: float) -> None:
+        """Update steady state variables.
+
+        :return: None
+        """
+        self.vel_steady_state = self._calculate_vel_ss(curr_velocity=curr_velocity)
+
+        z_t = self._calculate_z_t()
+        if not math.isnan(z_t):
+            self.z_t = z_t
+
+        pos_ss = self._calculate_pos_ss(curr_angle=curr_angle)
+        if PositionLimitation.LOWER <= pos_ss <= PositionLimitation.UPPER:
+            self.pos_steady_state = pos_ss

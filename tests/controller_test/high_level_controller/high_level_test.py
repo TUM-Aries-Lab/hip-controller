@@ -18,46 +18,92 @@ import math
 from math import isclose
 
 import pandas as pd
+import pytest
 
 from hip_controller.control.high_level import (
     HighLevelController,
     MotionState,
-    angle_max_trigger,
-    angle_min_trigger,
     hit_zero_crossing_from_lower,
     hit_zero_crossing_from_upper,
-    velocity_max_trigger,
-    velocity_min_trigger,
 )
 from tests.conftest import CSVColumnName, HighLevelData
 
 
-def test_hit_zero_crossing_from_upper() -> None:
-    """Test zero-crossing detection from upper to lower.
+@pytest.mark.parametrize(
+    "hz_prev, hz_curr, hz_expected",
+    [
+        # valid zero-crossings from upper to lower
+        (0.1, -0.1, True),
+        (0.0, -0.1, True),
+        # not a zero-crossing from upper
+        (0.0, 0.0, False),
+        (-1.0, 0.0, False),
+        (2.0, 1.0, False),
+        (1.0, 0.0, False),
+    ],
+)
+def test_hit_zero_crossing_from_upper(
+    hz_prev: float,
+    hz_curr: float,
+    hz_expected: bool,
+) -> None:
+    """Test ``hit_zero_crossing_from_upper`` using parametrized inputs.
+
+    A zero-crossing from upper to lower occurs when the signal
+    transitions from a positive or zero value to a strictly
+    negative value.
+
+    :param hz_prev: Previous signal value for zero-crossing test.
+    :param hz_curr: Current signal value for zero-crossing test.
+    :param hz_expected: Expected detection result.
 
     :return: None
     """
-    assert hit_zero_crossing_from_upper(prev=0.1, curr=-0.1)
-    assert hit_zero_crossing_from_upper(prev=0.0, curr=-0.1)
+    assert (
+        hit_zero_crossing_from_upper(
+            prev=hz_prev,
+            curr=hz_curr,
+        )
+        is hz_expected
+    )
 
-    assert not hit_zero_crossing_from_upper(prev=0.0, curr=0.0)
-    assert not hit_zero_crossing_from_upper(prev=-1.0, curr=0.0)
-    assert not hit_zero_crossing_from_upper(prev=2.0, curr=1.0)
-    assert not hit_zero_crossing_from_upper(prev=1.0, curr=0.0)
 
+@pytest.mark.parametrize(
+    "hz_prev, hz_curr, hz_expected",
+    [
+        # valid zero-crossings from lower to upper
+        (-0.1, 0.1, True),
+        (0.0, 0.1, True),
+        # not a zero-crossing from lower
+        (0.0, 0.0, False),
+        (1.0, 2.0, False),
+        (-1.0, -1.0, False),
+        (-1.0, 0.0, False),
+    ],
+)
+def test_hit_zero_crossing_from_lower(
+    hz_prev: float,
+    hz_curr: float,
+    hz_expected: bool,
+) -> None:
+    """Test ``hit_zero_crossing_from_lower`` using parametrized inputs.
 
-def test_hit_zero_crossing_from_lower() -> None:
-    """Test zero-crossing detection from lower to upper.
+    A zero-crossing from lower to upper occurs when the signal
+    transitions from a negative or zero value to a strictly
+    positive value.
 
+    :param hz_prev: Previous signal value for zero-crossing test.
+    :param hz_curr: Current signal value for zero-crossing test.
+    :param hz_expected: Expected detection result.
     :return: None
     """
-    assert hit_zero_crossing_from_lower(prev=-0.1, curr=0.1)
-    assert hit_zero_crossing_from_lower(prev=0.0, curr=0.1)
-
-    assert not hit_zero_crossing_from_lower(prev=0.0, curr=0.0)
-    assert not hit_zero_crossing_from_lower(prev=1.0, curr=2.0)
-    assert not hit_zero_crossing_from_lower(prev=-1.0, curr=-1.0)
-    assert not hit_zero_crossing_from_lower(prev=-1.0, curr=0.0)
+    assert (
+        hit_zero_crossing_from_lower(
+            prev=hz_prev,
+            curr=hz_curr,
+        )
+        is hz_expected
+    )
 
 
 def test_extrema_trigger() -> None:
@@ -76,20 +122,10 @@ def test_extrema_trigger() -> None:
         curr_angle = curr[CSVColumnName.ANGLE]
         prev_angle = prev[CSVColumnName.ANGLE]
 
-        angle_max = angle_max_trigger(
-            curr_velocity=curr_velocity, prev_velocity=prev_velocity
-        )
-
-        angle_min = angle_min_trigger(
-            curr_velocity=curr_velocity, prev_velocity=prev_velocity
-        )
-
-        velocity_max = velocity_max_trigger(
-            curr_angle=curr_angle, prev_angle=prev_angle
-        )
-        velocity_min = velocity_min_trigger(
-            curr_angle=curr_angle, prev_angle=prev_angle
-        )
+        angle_max = hit_zero_crossing_from_upper(curr=curr_velocity, prev=prev_velocity)
+        angle_min = hit_zero_crossing_from_lower(curr=curr_velocity, prev=prev_velocity)
+        velocity_max = hit_zero_crossing_from_lower(curr=curr_angle, prev=prev_angle)
+        velocity_min = hit_zero_crossing_from_upper(curr=curr_angle, prev=prev_angle)
 
         expected_vel_max = curr[CSVColumnName.TRIGG_VEL_MAX]
         expected_ang_max = curr[CSVColumnName.TRIGG_ANG_MAX]
