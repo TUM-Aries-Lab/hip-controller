@@ -16,10 +16,8 @@ robust validation.
 
 import math
 from math import isclose
-from pathlib import Path
 
 import pandas as pd
-from loguru import logger
 
 from hip_controller.control.high_level import (
     HighLevelController,
@@ -31,43 +29,7 @@ from hip_controller.control.high_level import (
     velocity_max_trigger,
     velocity_min_trigger,
 )
-from tests.definitions_test import CSVColumnName, HighLevelData
-
-
-def _convert_xlsx_to_csv(path: Path) -> Path:
-    """Convert a single Excel file (``.xls`` or ``.xlsx``) to CSV.
-
-    The Excel file must be located under ``TESTING_HIGH_LEVEL_DIR``.
-    The resulting CSV file is written to the same directory
-    with the same stem.
-
-
-    :param folder: Folder of testing under sensor_data
-    :param file: Filename of the Excel file
-    :returns: Path to the written CSV file.
-
-
-    Interactive window usage
-    ==================
-
-    ::
-    from utils import convert_xlsx_to_csv
-    convert_xlsx_to_csv(path = Path("high_level_testing/gait_phase_left_2026_01_21.xlsx"))
-    """
-    xlsx_path = HighLevelData.TESTING_HIGH_LEVEL_DIR / path
-
-    if not xlsx_path.exists():
-        raise FileNotFoundError(f"File not found: {xlsx_path}")
-
-    output_path = xlsx_path.with_suffix(".csv")
-
-    logger.info(f"Reading Excel file: {xlsx_path}")
-    data: pd.DataFrame = pd.read_excel(io=xlsx_path)
-
-    logger.info(f"Writing CSV file: {output_path}")
-    data.to_csv(path_or_buf=output_path, index=False)
-
-    return output_path
+from tests.conftest import CSVColumnName, HighLevelData
 
 
 def test_hit_zero_crossing_from_upper() -> None:
