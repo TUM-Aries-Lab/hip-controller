@@ -119,20 +119,6 @@ def extrema_trigger(
     return ExtremaTrigger(vel_max, ang_max, vel_min, ang_min)
 
 
-def calculate_steady(val_max: float, val_min: float, val_curr: float) -> float:
-    """Calculate the steady-state value relative to a bounded range.
-
-    The steady value is computed by subtracting the midpoint of the
-    provided maximum and minimum bounds from the current value.
-
-    :param val_max: Upper bound of the value range.
-    :param val_min: Lower bound of the value range.
-    :param val_curr: Current value.
-    :return: Steady-state value relative to the range midpoint.
-    """
-    return val_curr - ((val_max + val_min) / 2.0)
-
-
 def _handle_initial_state(
     trigger: ExtremaTrigger,
 ) -> MotionState:
@@ -194,6 +180,105 @@ def detect_state(
     return new_state
 
 
+class SteadyStateTracker:
+    """Tracker for steady state."""
+
+    def __init__(self):
+        """Initialize the tracker for steady state.
+
+        Sets up initial state as INITIAL and initializes tracking variables for max and min values of angle and velocity. Provide information through centering and normalization for steady state.
+        """
+        self.angle_max: float = 0.0
+        self.angle_min: float = 0.0
+        self.velocity_max: float = 0.0
+        self.velocity_min: float = 0.0
+
+        self.vel_steady_state: float = 0.0
+        self.z_t: float = 0.0
+        self.pos_steady_state: float = 0.0
+
+    @staticmethod
+    def calculate_steady(val_max: float, val_min: float, val_curr: float) -> float:
+        """Calculate the steady-state value relative to a bounded range.
+
+        The steady value is computed by subtracting the midpoint of the
+        provided maximum and minimum bounds from the current value.
+
+        :param val_max: Upper bound of the value range.
+        :param val_min: Lower bound of the value range.
+        :param val_curr: Current value.
+        :return: Steady-state value relative to the range midpoint.
+        """
+        return val_curr - ((val_max + val_min) / 2.0)
+
+    def _calculate_vel_ss(self, curr_velocity: float) -> float:
+        """Calculate steady state of velocity.
+
+        :return: steady state of velocity.
+        """
+        return self.calculate_steady(
+            val_max=self.velocity_max,
+            val_min=self.velocity_min,
+            val_curr=curr_velocity,
+        )
+
+    def _calculate_ang_ss(self, curr_angle: float) -> float:
+        """Calculate steady state of angle.
+
+        :return: steady state of angle.
+        """
+        return self.calculate_steady(
+            val_max=self.angle_max, val_min=self.angle_min, val_curr=curr_angle
+        )
+
+    def _calculate_z_t(self) -> float:
+        """Calculate value of position steady state, set z_t, pos_ss.
+
+        :return: value of z_t
+        """
+        u_vel = abs(self.velocity_max - self.velocity_min)
+        u_ang = abs(self.angle_max - self.angle_min)
+
+        # Avoid division by zero
+        if u_ang == 0.0:
+            u_ang = VALUE_NEAR_ZERO
+
+        return u_vel / u_ang
+
+    def _calculate_pos_ss(self, curr_angle: float) -> float:
+        """Calculate value of position steady state, set pos_ss.
+
+        :return: value of pos_ss
+        """
+        # This has to happen after z_t is set
+        return self.z_t * self._calculate_ang_ss(curr_angle=curr_angle)
+
+    def calculate_gait_phase(self) -> float:
+        """Calculate gait phase.
+
+        :return: gait phase
+        """
+        if self.z_t == 0.0:
+            return 0.0
+        else:
+            return math.atan2(self.vel_steady_state, -self.pos_steady_state)
+
+    def update_steady_state(self, curr_angle: float, curr_velocity: float) -> None:
+        """Update steady state variables.
+
+        :return: None
+        """
+        self.vel_steady_state = self._calculate_vel_ss(curr_velocity=curr_velocity)
+
+        z_t = self._calculate_z_t()
+        if not math.isnan(z_t):
+            self.z_t = z_t
+
+        pos_ss = self._calculate_pos_ss(curr_angle=curr_angle)
+        if PositionLimitation.LOWER <= pos_ss <= PositionLimitation.UPPER:
+            self.pos_steady_state = pos_ss
+
+
 class HighLevelController:
     """High-level controller for managing motion states."""
 
@@ -210,14 +295,7 @@ class HighLevelController:
         self.curr_angle: float = 0.0
         self.curr_velocity: float = 0.0
 
-        self.angle_max: float = 0.0
-        self.angle_min: float = 0.0
-        self.velocity_max: float = 0.0
-        self.velocity_min: float = 0.0
-
-        self.vel_ss: float = 0.0
-        self.z_t: float = 0.0
-        self.pos_ss: float = 0.0
+        self.steady_state_tracker: SteadyStateTracker = SteadyStateTracker()
 
         self.timestamp_sec: float | None
 
@@ -238,16 +316,16 @@ class HighLevelController:
             return
 
         elif state == MotionState.ANGLE_MAX:
-            self.angle_max = self.curr_angle
+            self.steady_state_tracker.angle_max = self.curr_angle
 
         elif state == MotionState.ANGLE_MIN:
-            self.angle_min = self.curr_angle
+            self.steady_state_tracker.angle_min = self.curr_angle
 
         elif state == MotionState.VELOCITY_MAX:
-            self.velocity_max = self.curr_velocity
+            self.steady_state_tracker.velocity_max = self.curr_velocity
 
         elif state == MotionState.VELOCITY_MIN:
-            self.velocity_min = self.curr_velocity
+            self.steady_state_tracker.velocity_min = self.curr_velocity
 
     def _check_timeout(self, timestamp: float) -> bool:
         """Check if a timeout has occurred and reset state if necessary.
@@ -303,64 +381,6 @@ class HighLevelController:
             if self.state != new_state:
                 self._set_state(state=new_state, timestamp=timestamp)
 
-        self.vel_ss = self._calculate_vel_ss()
-
-        z_t = self._calculate_z_t()
-        if not math.isnan(z_t):
-            self.z_t = z_t
-
-        pos_ss = self._calculate_pos_ss()
-        if PositionLimitation.LOWER <= pos_ss <= PositionLimitation.UPPER:
-            self.pos_ss = pos_ss
-
-    def _calculate_vel_ss(self) -> float:
-        """Calculate steady state of velocity.
-
-        :return: steady state of velocity.
-        """
-        return calculate_steady(
-            val_max=self.velocity_max,
-            val_min=self.velocity_min,
-            val_curr=self.curr_velocity,
+        self.steady_state_tracker.update_steady_state(
+            curr_angle=curr_angle, curr_velocity=curr_vel
         )
-
-    def _calculate_ang_ss(self) -> float:
-        """Calculate steady state of angle.
-
-        :return: steady state of angle.
-        """
-        return calculate_steady(
-            val_max=self.angle_max, val_min=self.angle_min, val_curr=self.curr_angle
-        )
-
-    def _calculate_z_t(self) -> float:
-        """Calculate value of position steady state, set z_t, pos_ss.
-
-        :return: value of z_t
-        """
-        u_vel = abs(self.velocity_max - self.velocity_min)
-        u_ang = abs(self.angle_max - self.angle_min)
-
-        # Avoid division by zero
-        if u_ang == 0.0:
-            u_ang = VALUE_NEAR_ZERO
-
-        return u_vel / u_ang
-
-    def _calculate_pos_ss(self) -> float:
-        """Calculate value of position steady state, set pos_ss.
-
-        :return: value of pos_ss
-        """
-        # This has to happen after z_t is set
-        return self.z_t * self._calculate_ang_ss()
-
-    def calculate_gait_phase(self) -> float:
-        """Calculate gait phase.
-
-        :return: gait phase
-        """
-        if self.z_t == 0.0:
-            return 0.0
-        else:
-            return math.atan2(self.vel_ss, -self.pos_ss)

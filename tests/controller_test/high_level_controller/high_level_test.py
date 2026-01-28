@@ -168,10 +168,10 @@ def test_set_state() -> None:
         vel_min = curr[CSVColumnName.VALUE_VEL_MIN]
         ang_min = curr[CSVColumnName.VALUE_ANG_MIN]
 
-        assert controller.velocity_max == vel_max
-        assert controller.angle_max == ang_max
-        assert controller.velocity_min == vel_min
-        assert controller.angle_min == ang_min
+        assert controller.steady_state_tracker.velocity_max == vel_max
+        assert controller.steady_state_tracker.angle_max == ang_max
+        assert controller.steady_state_tracker.velocity_min == vel_min
+        assert controller.steady_state_tracker.angle_min == ang_min
 
 
 def test_calculate_vel_ss() -> None:
@@ -187,13 +187,24 @@ def test_calculate_vel_ss() -> None:
 
         # Arrange
         controller.curr_velocity = curr[CSVColumnName.VELOCITY]
-        controller.velocity_max = curr[CSVColumnName.VALUE_VEL_MAX]
-        controller.velocity_min = curr[CSVColumnName.VALUE_VEL_MIN]
+        controller.steady_state_tracker.velocity_max = curr[CSVColumnName.VALUE_VEL_MAX]
+        controller.steady_state_tracker.velocity_min = curr[CSVColumnName.VALUE_VEL_MIN]
 
         # Act
-        sum = controller.velocity_max + controller.velocity_min
-        gamma_t = -(controller.velocity_max + controller.velocity_min) / 2.0
-        vel_ss = controller._calculate_vel_ss()
+        sum = (
+            controller.steady_state_tracker.velocity_max
+            + controller.steady_state_tracker.velocity_min
+        )
+        gamma_t = (
+            -(
+                controller.steady_state_tracker.velocity_max
+                + controller.steady_state_tracker.velocity_min
+            )
+            / 2.0
+        )
+        vel_ss = controller.steady_state_tracker._calculate_vel_ss(
+            curr_velocity=controller.curr_velocity
+        )
 
         # Assert
         expected_sum = curr[CSVColumnName.VEL_SUM_MINMAX]
@@ -219,12 +230,20 @@ def test_calculate_ang_ss() -> None:
 
         # Arrange
         controller.curr_angle = curr[CSVColumnName.ANGLE]
-        controller.angle_max = curr[CSVColumnName.VALUE_ANG_MAX]
-        controller.angle_min = curr[CSVColumnName.VALUE_ANG_MIN]
+        controller.steady_state_tracker.angle_max = curr[CSVColumnName.VALUE_ANG_MAX]
+        controller.steady_state_tracker.angle_min = curr[CSVColumnName.VALUE_ANG_MIN]
 
         # Act
-        gamma_t = -(controller.angle_max + controller.angle_min) / 2.0
-        ang_ss = controller._calculate_ang_ss()
+        gamma_t = (
+            -(
+                controller.steady_state_tracker.angle_max
+                + controller.steady_state_tracker.angle_min
+            )
+            / 2.0
+        )
+        ang_ss = controller.steady_state_tracker._calculate_ang_ss(
+            curr_angle=controller.curr_angle
+        )
 
         # Assert
         expected_gamma_t = curr[CSVColumnName.ANG_GAMMA_T]
@@ -260,11 +279,17 @@ def test_z_t_and_pos_ss() -> None:
         expected_z_t = curr[CSVColumnName.Z_T]
         expected_pos_ss = curr[CSVColumnName.POSTION_STEADY_STATE]
 
-        assert isclose(controller.z_t, expected_z_t, rel_tol=1e-12), f"Row {i}"
-        assert isclose(controller.pos_ss, expected_pos_ss, rel_tol=1e-11), (
-            f"Row {i}, expected_z_t{expected_z_t}, current_z_t{controller.z_t}, "
-            f"ang_ss{controller._calculate_ang_ss()}, multiplication{controller.z_t * controller._calculate_ang_ss()}; "
-            f"pos_ss{controller.pos_ss}"
+        assert isclose(
+            controller.steady_state_tracker.z_t, expected_z_t, rel_tol=1e-12
+        ), f"Row {i}"
+        assert isclose(
+            controller.steady_state_tracker.pos_steady_state,
+            expected_pos_ss,
+            rel_tol=1e-11,
+        ), (
+            f"Row {i}, expected_z_t{expected_z_t}, current_z_t{controller.steady_state_tracker.z_t}, "
+            f"ang_ss{controller.steady_state_tracker._calculate_ang_ss(controller.curr_angle)}, multiplication{controller.steady_state_tracker.z_t * controller.steady_state_tracker._calculate_ang_ss(curr_angle=controller.curr_angle)}; "
+            f"pos_ss{controller.steady_state_tracker.pos_steady_state}"
         )
 
 
@@ -280,17 +305,21 @@ def test_gait_phase() -> None:
         curr = df.iloc[i]
 
         # Arrange
-        controller.vel_ss = curr[CSVColumnName.VEL_STEADY_STATE]
-        controller.z_t = curr[CSVColumnName.Z_T]
-        controller.pos_ss = curr[CSVColumnName.POSTION_STEADY_STATE]
+        controller.steady_state_tracker.vel_steady_state = curr[
+            CSVColumnName.VEL_STEADY_STATE
+        ]
+        controller.steady_state_tracker.z_t = curr[CSVColumnName.Z_T]
+        controller.steady_state_tracker.pos_steady_state = curr[
+            CSVColumnName.POSTION_STEADY_STATE
+        ]
 
         # Act
-        gait_phase = controller.calculate_gait_phase()
+        gait_phase = controller.steady_state_tracker.calculate_gait_phase()
 
         # Assert
         expected_gait_phase = curr[CSVColumnName.GAIT_PHASE]
 
         assert isclose(gait_phase, expected_gait_phase, rel_tol=1e-12), (
-            f"Row {i}, current_z_t{controller.z_t}, "
-            f"calculated_gait_phase{math.atan2(controller.vel_ss, -controller.pos_ss)}, "
+            f"Row {i}, current_z_t{controller.steady_state_tracker.z_t}, "
+            f"calculated_gait_phase{math.atan2(controller.steady_state_tracker.vel_steady_state, -controller.steady_state_tracker.pos_steady_state)}, "
         )
