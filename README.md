@@ -90,7 +90,6 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │   │   ├── ang_ss_2026_01_26.csv
 │   │   │   │   ├── extrema_2026_01_26.csv
 │   │   │   │   ├── gait_phase_left_2026_01_21.csv
-│   │   │   │   ├── test_2026_01_26.xlsx
 │   │   │   │   ├── valid_trigger_left_2026_01_15.csv
 │   │   │   │   ├── vel_ss_2026_01_26.csv
 │   │   │   │   └── zero_crossing_left_2026_01_09.csv

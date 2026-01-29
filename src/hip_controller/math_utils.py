@@ -42,4 +42,27 @@ def hit_zero_crossing_from_lower(curr: float, prev: float) -> bool:
     :param prev: Previous value.
     :return: True if zero-crossing from lower to upper detected, False otherwise.
     """
-    return prev <= 0 < curr
+    return prev <= 0 and curr > 0
+
+
+def normalize(val_max: float, val_min: float, val_curr: float) -> float:
+    """Normalize value relative to bounded range.
+
+    Computes a normalized steady-state value by removing the midpoint offset of
+    the provided maximum and minimum bounds from the current value. This transforms
+    a signal bounded by [val_min, val_max] to be centered at zero, useful for
+    normalizing joint angle and velocity signals for the gait phase calculation.
+
+
+    :param float val_max:
+        Upper bound (maximum value) of the expected signal range.
+    :param float val_min:
+        Lower bound (minimum value) of the expected signal range.
+    :param float val_curr:
+        Current value of the signal.
+    :return:
+        Steady-state value relative to the range midpoint. Zero when val_curr
+        equals the midpoint of [val_min, val_max].
+    :rtype: float
+    """
+    return val_curr - ((val_max + val_min) / 2.0)

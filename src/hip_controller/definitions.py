@@ -1,6 +1,7 @@
 """Common definitions for this module."""
 
 from dataclasses import asdict, dataclass
+from math import pi
 from pathlib import Path
 
 import numpy as np
@@ -9,7 +10,11 @@ np.set_printoptions(precision=3, floatmode="fixed", suppress=True)
 
 
 # --- Directories ---
+
 ROOT_DIR: Path = Path(__file__).resolve().parents[2]
+# Use the file location to determine the project root reliably.
+# This works regardless of the current working directory,
+# whereas Path("src").parent depends on where the script is executed from.
 DATA_DIR: Path = ROOT_DIR / "data"
 TESTING_DIR: Path = ROOT_DIR / "tests"
 RECORDINGS_DIR: Path = DATA_DIR / "recordings"
@@ -53,6 +58,8 @@ STOP_THRESHOLD = 0.5
 # High-level controller
 
 # centering & normalization
+LAG_CORRECTION = pi / 7
+VALUE_NEAR_ZERO = 1e-6
 
 
 @dataclass(frozen=True)
@@ -61,9 +68,6 @@ class StateChangeTimeThreshold:
 
     TMIN: float = 0.0
     TMAX: float = 0.6
-
-
-VALUE_NEAR_ZERO = 1e-6
 
 
 @dataclass(frozen=True)

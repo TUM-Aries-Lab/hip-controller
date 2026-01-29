@@ -70,24 +70,36 @@ def get_sensor_data() -> tuple[float, float]:
 
 
 def convert_xlsx_to_csv(path: Path) -> Path:
-    """Convert a single Excel file (``.xls`` or ``.xlsx``) to CSV.
+    """Convert an Excel file to CSV format.
 
-    The Excel file must be located under ``TESTING_DIR``.
-    The resulting CSV file is written to the same directory
-    with the same stem.
+    Reads a single Excel file (.xls or .xlsx) from the testing directory and writes
+    its contents to a CSV file with the same filename stem in the same directory.
+    This is useful for converting test data and measurement recordings to a
+    more portable and scriptable format.
 
+    :param Path path:
+        Relative path to the Excel file from the TESTING_DIR root.
+        Example: 'controller_test/high_level_controller/high_level_testing_data/gait_phase_left_2026_01_21.xlsx'
+    :raises FileNotFoundError:
+        If the specified Excel file does not exist in the TESTING_DIR.
+    :return:
+        Path to the newly created CSV file with the same name as the input file
+        but with .csv extension.
+    :rtype: Path
 
-    :param folder: Folder of testing under sensor_data
-    :param file: Filename of the Excel file
-    :returns: Path to the written CSV file.
+    .. note::
+        The Excel file must be located under the TESTING_DIR. The resulting CSV
+        file is written to the same directory with the same stem.
 
-
-    Interactive window usage
-    ==================
+    .. rubric:: Example
 
     ::
-    from utils import convert_xlsx_to_csv
-    convert_xlsx_to_csv(path = Path("controller_test/high_level_controller/high_level_testing_data/gait_phase_left_2026_01_21.xlsx"))
+
+        from hip_controller.utils import convert_xlsx_to_csv
+        from pathlib import Path
+
+        csv_path = convert_xlsx_to_csv(
+            path=Path('controller_test/high_level_controller/high_level_testing_data/gait_phase_left_2026_01_21.xlsx'))
     """
     xlsx_path = TESTING_DIR / path
 

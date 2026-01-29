@@ -36,6 +36,9 @@ class HighLevelData:
     DATA_VEL_SS: Path = TESTING_HIGH_LEVEL_DIR / "vel_ss_2026_01_26.csv"
     DATA_ANG_SS: Path = TESTING_HIGH_LEVEL_DIR / "ang_ss_2026_01_26.csv"
     DATA_GAIT_PHASE: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_01_21.csv"
+    DATA_SINUSOIDAL_BEHAVIOR: Path = (
+        TESTING_HIGH_LEVEL_DIR / "sinusoidal_behavior_left_2026_01_29.csv"
+    )
 
 
 @dataclass
@@ -68,6 +71,7 @@ class CSVColumnName:
     ANG_STEADY_STATE: str = "ang_ss"
 
     POSTION_STEADY_STATE: str = "pos_ss"
-    Z_T: str = "z_t"
+    RESCALE_FACTOR: str = "z_t"
 
     GAIT_PHASE: str = "gait_phase_left"
+    SINUSOIDAL_BEHAVIOR: str = "sinusoidal_behavior"

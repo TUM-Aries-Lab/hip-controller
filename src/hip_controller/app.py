@@ -27,7 +27,7 @@ class WalkOnController:
         logger.debug("Stepping controller ahead.")
 
         # High-level
-        self.high_level_controller.update(
+        self.high_level_controller.compute(
             curr_angle=theta, curr_vel=theta_dot, timestamp=timestamp
         )
 
