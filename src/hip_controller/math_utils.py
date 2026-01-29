@@ -9,6 +9,8 @@ def symmetrize_matrix(matrix: NDArray) -> NDArray:
     """Symmetrize a matrix.
 
     :param matrix: A square matrix represented as a numpy array.
+    :return: A symmetrized matrix.
+    :raises ValueError: If the input matrix is not square.
     """
     if np.shape(matrix)[0] != np.shape(matrix)[1]:
         dim = matrix.shape
@@ -28,7 +30,7 @@ def hit_zero_crossing_from_upper(curr: float, prev: float) -> bool:
     :param prev: Previous value.
     :return: True if zero-crossing from upper to lower detected, False otherwise.
     """
-    return prev >= 0 and curr < 0
+    return prev >= 0 > curr
 
 
 def hit_zero_crossing_from_lower(curr: float, prev: float) -> bool:
@@ -40,4 +42,4 @@ def hit_zero_crossing_from_lower(curr: float, prev: float) -> bool:
     :param prev: Previous value.
     :return: True if zero-crossing from lower to upper detected, False otherwise.
     """
-    return prev <= 0 and curr > 0
+    return prev <= 0 < curr

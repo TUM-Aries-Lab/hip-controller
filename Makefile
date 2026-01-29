@@ -13,6 +13,9 @@ lint:
 	uv run ruff format src/ tests/
 	uv run ruff check src/ tests/ --fix
 
+doc-lint:
+	darglint src/
+
 typecheck:
 	uv run pyright src/ tests/
 

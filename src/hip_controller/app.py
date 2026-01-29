@@ -14,9 +14,10 @@ class WalkOnController:
 
         :return: None
         """
+        logger.info("Initializing controller.")
         self.high_level_controller = HighLevelController()
 
-    def step(self, theta: float, theta_dot: float, timestamp: float):
+    def step(self, theta: float, theta_dot: float, timestamp: float) -> None:
         """Step the controller ahead.
 
         :param theta: hip angle in radians.
