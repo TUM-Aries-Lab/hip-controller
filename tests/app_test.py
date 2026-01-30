@@ -8,7 +8,7 @@ def test_controller():
     # Arrange
 
     # Act
-    controller = WalkOnController(freq=1.0)
-    controller.step(theta=0.0, theta_dot=0.0)
+    controller = WalkOnController()
+    controller.step(theta=0.0, theta_dot=0.0, timestamp=0.0)
 
     # Assert

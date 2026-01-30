@@ -1,24 +1,23 @@
 """Sample doc string."""
 
-import time
-
 from loguru import logger
 
+from hip_controller.control.high_level import HighLevelController
 from hip_controller.control.low_level import get_gait_speed, stop_condition
 
 
 class WalkOnController:
     """Walk ON Controller for the lower limb exosuit."""
 
-    def __init__(self, freq: float):
+    def __init__(self):
         """Initialize the controller.
 
-        :param freq: Frequency of the controller.
         :return: None
         """
-        self.freq = freq
+        logger.info("Initializing controller.")
+        self.high_level_controller = HighLevelController()
 
-    def step(self, theta: float, theta_dot: float):
+    def step(self, theta: float, theta_dot: float, timestamp: float) -> None:
         """Step the controller ahead.
 
         :param theta: hip angle in radians.
@@ -28,6 +27,9 @@ class WalkOnController:
         logger.debug("Stepping controller ahead.")
 
         # High-level
+        self.high_level_controller.compute(
+            curr_angle=theta, curr_vel=theta_dot, timestamp=timestamp
+        )
 
         # Mid-level
 
@@ -39,5 +41,3 @@ class WalkOnController:
                 return
         except Exception as err:
             logger.error(f"{err} - Something went wrong.")
-
-        time.sleep(1 / self.freq)
