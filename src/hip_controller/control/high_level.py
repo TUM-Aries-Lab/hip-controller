@@ -26,11 +26,11 @@ class MotionState(Enum):
     → ANGLE_MIN → (back to INITIAL anytime).
     """
 
-    INITIAL = -1
-    VELOCITY_MAX = 0
-    ANGLE_MAX = 1
-    VELOCITY_MIN = 2
-    ANGLE_MIN = 3
+    INITIAL = 0
+    VELOCITY_MAX = 1
+    ANGLE_MAX = 2
+    VELOCITY_MIN = 3
+    ANGLE_MIN = 4
 
 
 @dataclass
