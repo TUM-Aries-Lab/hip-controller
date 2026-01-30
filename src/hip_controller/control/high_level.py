@@ -42,8 +42,8 @@ class SensorSignal:
     system to maintain consistent representation of joint state.
     """
 
-    angle: float = 0.0
-    velocity: float = 0.0
+    angle_rad: float = 0.0
+    velocity_rad_per_sec: float = 0.0
 
 
 class HighLevelController:
@@ -64,8 +64,12 @@ class HighLevelController:
 
         :return: None
         """
-        self.prev_signal: SensorSignal = SensorSignal(angle=0.0, velocity=0.0)
-        self.curr_signal: SensorSignal = SensorSignal(angle=0.0, velocity=0.0)
+        self.prev_signal: SensorSignal = SensorSignal(
+            angle_rad=0.0, velocity_rad_per_sec=0.0
+        )
+        self.curr_signal: SensorSignal = SensorSignal(
+            angle_rad=0.0, velocity_rad_per_sec=0.0
+        )
 
         self.state_machine: MotionStateMachine = MotionStateMachine()
         self.steady_state_tracker: SteadyStateTracker = SteadyStateTracker()
@@ -80,22 +84,18 @@ class HighLevelController:
         and computes the steady-state gait phase parameters. This should be called
         once per control cycle with the latest sensor data.
 
-        :param float curr_angle:
-            Current hip joint angle in radians.
-        :param float curr_vel:
-            Current hip joint angular velocity in radians per second.
-        :param float timestamp:
-            Current timestamp in seconds.
-        :return:
-            None.
-        :rtype: None
+        :param float curr_angle: Current hip joint angle in radians.
+        :param float curr_vel: Current hip joint angular velocity in radians per second.
+        :param float timestamp:  Current timestamp in seconds.
 
         :return:
             Sinosoidal-like behaviour of the hip joint in the sagittal plane.
         :rtype: float
         """
         self.prev_signal = self.curr_signal
-        self.curr_signal = SensorSignal(angle=curr_angle, velocity=curr_vel)
+        self.curr_signal = SensorSignal(
+            angle_rad=curr_angle, velocity_rad_per_sec=curr_vel
+        )
 
         state = self.state_machine.update_motion_state(
             prev=self.prev_signal, curr=self.curr_signal, timestamp=timestamp
@@ -106,12 +106,12 @@ class HighLevelController:
             )
         self.steady_state_tracker.update_steady_state(curr_signal=self.curr_signal)
 
-        return self.center_and_transform_gaitphase(
+        return self.center_and_transform_gait_phase(
             self.steady_state_tracker.calculate_gait_phase()
         )
 
     @staticmethod
-    def center_and_transform_gaitphase(gait_phase: float) -> float:
+    def center_and_transform_gait_phase(gait_phase: float) -> float:
         """Center and transform the gait phase into a sinusoidal control signal.
 
         Applies a phase offset and sinusoidal transformation to the
@@ -221,20 +221,24 @@ class ExtremaTrigger:
         :rtype: None
         """
         self.vel_max = self._velocity_max_trigger(
-            curr_angle=curr.angle, prev_angle=prev.angle, curr_velocity=curr.velocity
+            curr_angle=curr.angle_rad,
+            prev_angle=prev.angle_rad,
+            curr_velocity=curr.velocity_rad_per_sec,
         )
         self.ang_max = self._angle_max_trigger(
-            curr_velocity=curr.velocity,
-            prev_velocity=prev.velocity,
-            curr_angle=curr.angle,
+            curr_velocity=curr.velocity_rad_per_sec,
+            prev_velocity=prev.velocity_rad_per_sec,
+            curr_angle=curr.angle_rad,
         )
         self.vel_min = self._velocity_min_trigger(
-            curr_angle=curr.angle, prev_angle=prev.angle, curr_velocity=curr.velocity
+            curr_angle=curr.angle_rad,
+            prev_angle=prev.angle_rad,
+            curr_velocity=curr.velocity_rad_per_sec,
         )
         self.ang_min = self._angle_min_trigger(
-            curr_velocity=curr.velocity,
-            prev_velocity=prev.velocity,
-            curr_angle=curr.angle,
+            curr_velocity=curr.velocity_rad_per_sec,
+            prev_velocity=prev.velocity_rad_per_sec,
+            curr_angle=curr.angle_rad,
         )
 
 
@@ -536,14 +540,14 @@ class SteadyStateTracker:
         :rtype: None
         """
         self.vel_steady_state = self._calculate_vel_ss(
-            curr_velocity=curr_signal.velocity
+            curr_velocity=curr_signal.velocity_rad_per_sec
         )
 
         rescale_factor = self._calculate_rescale_factor()
         if not math.isnan(rescale_factor):
             self.rescale_factor = rescale_factor
 
-        pos_ss = self._calculate_pos_ss(curr_angle=curr_signal.angle)
+        pos_ss = self._calculate_pos_ss(curr_angle=curr_signal.angle_rad)
         if PositionLimitation.LOWER <= pos_ss <= PositionLimitation.UPPER:
             self.pos_steady_state = pos_ss
 
@@ -565,13 +569,13 @@ class SteadyStateTracker:
         :rtype: None
         """
         if state == MotionState.ANGLE_MAX:
-            self.angle_max = curr_signal.angle
+            self.angle_max = curr_signal.angle_rad
 
         elif state == MotionState.ANGLE_MIN:
-            self.angle_min = curr_signal.angle
+            self.angle_min = curr_signal.angle_rad
 
         elif state == MotionState.VELOCITY_MAX:
-            self.velocity_max = curr_signal.velocity
+            self.velocity_max = curr_signal.velocity_rad_per_sec
 
         elif state == MotionState.VELOCITY_MIN:
-            self.velocity_min = curr_signal.velocity
+            self.velocity_min = curr_signal.velocity_rad_per_sec

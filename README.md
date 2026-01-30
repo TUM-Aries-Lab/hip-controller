@@ -90,6 +90,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │   │   ├── ang_ss_2026_01_26.csv
 │   │   │   │   ├── extrema_2026_01_26.csv
 │   │   │   │   ├── gait_phase_left_2026_01_21.csv
+│   │   │   │   ├── sinusoidal_behavior_left_2026_01_29.csv
 │   │   │   │   ├── valid_trigger_left_2026_01_15.csv
 │   │   │   │   ├── vel_ss_2026_01_26.csv
 │   │   │   │   └── zero_crossing_left_2026_01_09.csv
@@ -100,6 +101,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   ├── conftest.py
 │   ├── math_utils_test.py
 │   └── utils_test.py
+├── .darglint
 ├── .dockerignore
 ├── .gitignore
 ├── .pre-commit-config.yaml

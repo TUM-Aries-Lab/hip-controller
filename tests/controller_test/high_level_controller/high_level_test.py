@@ -79,10 +79,12 @@ def test_valid_trigger() -> None:
 
         timestamp = curr[CSVColumnName.TIMESTAMP]
         prev_signal = SensorSignal(
-            angle=prev[CSVColumnName.ANGLE], velocity=prev[CSVColumnName.VELOCITY]
+            angle_rad=prev[CSVColumnName.ANGLE],
+            velocity_rad_per_sec=prev[CSVColumnName.VELOCITY],
         )
         curr_signal = SensorSignal(
-            angle=curr[CSVColumnName.ANGLE], velocity=curr[CSVColumnName.VELOCITY]
+            angle_rad=curr[CSVColumnName.ANGLE],
+            velocity_rad_per_sec=curr[CSVColumnName.VELOCITY],
         )
 
         state_machine.update_motion_state(
@@ -154,7 +156,7 @@ def test_calculate_vel_ss() -> None:
         curr = df.iloc[i]
 
         # Arrange
-        controller.curr_signal.velocity = curr[CSVColumnName.VELOCITY]
+        controller.curr_signal.velocity_rad_per_sec = curr[CSVColumnName.VELOCITY]
         controller.steady_state_tracker.velocity_max = curr[CSVColumnName.VALUE_VEL_MAX]
         controller.steady_state_tracker.velocity_min = curr[CSVColumnName.VALUE_VEL_MIN]
 
@@ -171,7 +173,7 @@ def test_calculate_vel_ss() -> None:
             / 2.0
         )
         vel_ss = controller.steady_state_tracker._calculate_vel_ss(
-            curr_velocity=controller.curr_signal.velocity
+            curr_velocity=controller.curr_signal.velocity_rad_per_sec
         )
 
         # Assert
@@ -197,7 +199,7 @@ def test_calculate_ang_ss() -> None:
         curr = df.iloc[i]
 
         # Arrange
-        controller.curr_signal.angle = curr[CSVColumnName.ANGLE]
+        controller.curr_signal.angle_rad = curr[CSVColumnName.ANGLE]
         controller.steady_state_tracker.angle_max = curr[CSVColumnName.VALUE_ANG_MAX]
         controller.steady_state_tracker.angle_min = curr[CSVColumnName.VALUE_ANG_MIN]
 
@@ -210,7 +212,7 @@ def test_calculate_ang_ss() -> None:
             / 2.0
         )
         ang_ss = controller.steady_state_tracker._calculate_ang_ss(
-            curr_angle=controller.curr_signal.angle
+            curr_angle=controller.curr_signal.angle_rad
         )
 
         # Assert
@@ -256,7 +258,7 @@ def test_z_t_and_pos_ss() -> None:
             rel_tol=1e-11,
         ), (
             f"Row {i}, expected_z_t{expected_z_t}, current_z_t{controller.steady_state_tracker.rescale_factor}, "
-            f"ang_ss{controller.steady_state_tracker._calculate_ang_ss(controller.curr_signal.angle)}, multiplication{controller.steady_state_tracker.rescale_factor * controller.steady_state_tracker._calculate_ang_ss(curr_angle=controller.curr_signal.angle)}; "
+            f"ang_ss{controller.steady_state_tracker._calculate_ang_ss(controller.curr_signal.angle_rad)}, multiplication{controller.steady_state_tracker.rescale_factor * controller.steady_state_tracker._calculate_ang_ss(curr_angle=controller.curr_signal.angle_rad)}; "
             f"pos_ss{controller.steady_state_tracker.pos_steady_state}"
         )
 
@@ -303,7 +305,7 @@ def test_transform_gait_phase() -> None:
         gait_phase = curr[CSVColumnName.GAIT_PHASE]
 
         # Act
-        sinusoidal_behavior = HighLevelController.center_and_transform_gaitphase(
+        sinusoidal_behavior = HighLevelController.center_and_transform_gait_phase(
             gait_phase=gait_phase
         )
 

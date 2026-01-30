@@ -55,7 +55,6 @@ MEASUREMENT_NOISE = 0.75
 # S Gait stopping threshold
 STOP_THRESHOLD = 0.5
 
-# High-level controller
 
 # centering & normalization
 LAG_CORRECTION = pi / 7
