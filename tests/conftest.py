@@ -5,7 +5,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.hip_controller.definitions import TESTING_DIR
+from hip_controller.definitions import TESTING_DIR
 
 # Add the src directory to the path so that the quaternion_ekf package can be imported
 my_path = os.path.dirname(os.path.abspath(__file__))
@@ -42,7 +42,7 @@ class HighLevelData:
 
 
 @dataclass
-class CSVColumnName:
+class CSVColumnNameforTesting:
     """Names of columns for csv files for high-level controller testing."""
 
     TIMESTAMP: str = "time (s)"

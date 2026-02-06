@@ -9,6 +9,6 @@ def test_controller():
 
     # Act
     controller = WalkOnController()
-    controller.step(theta=0.0, theta_dot=0.0, timestamp=0.0)
+    controller.step(angle=0.0, velocity=0.0, timestamp=0.0)
 
     # Assert

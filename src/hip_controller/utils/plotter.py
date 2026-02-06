@@ -1,0 +1,189 @@
+"""Plotter using pyqt6."""
+
+from collections import deque
+
+import numpy as np
+import pyqtgraph as pg
+from PyQt6 import QtWidgets
+
+from hip_controller.definitions import ConfigPlot
+
+
+class PortraitWindow(QtWidgets.QMainWindow):
+    """PyQt6 window that displays two real-time plots.
+
+    1) Left plot:
+       - Time vs sinusoidal behavior
+       - Sliding time window
+
+    2) Right plot:
+       - Phase portrait (angle vs velocity)
+       - Fixed axis limits
+       - Fading trail showing temporal evolution
+
+    Data is advanced by a QTimer to keep the GUI responsive.
+    """
+
+    def __init__(self, left: bool):
+        """Initialize the real-time plotting window.
+
+        :param str csv_path: Path to the CSV file used for simulated real-time playback.
+        :param HighLevelController controller: Controller object that computes sinusoidal behavior and normalized signals.
+        :param float time_window: Duration (seconds) shown in the sliding time plot.
+        :param int max_phase_points: Maximum number of points shown in the phase portrait trail.
+        """
+        # Initialize the QMainWindow base class
+        super().__init__()
+
+        # Set global PyQtGraph appearance (white background, black axes)
+        pg.setConfigOption(opt="background", value="w")
+        pg.setConfigOption(opt="foreground", value="k")
+        pg.setConfigOption(opt="antialias", value=True)
+
+        # Deques for the left (time) plot
+        self.time_buf = deque(maxlen=ConfigPlot.TIME_PLOT_SIZE)
+        self.signal_buf = deque(maxlen=ConfigPlot.TIME_PLOT_SIZE)
+
+        # Deques for the right (phase portrait)
+        self.angle_buf = deque(maxlen=ConfigPlot.PHASE_PLOT_SIZE)
+        self.vel_buf = deque(maxlen=ConfigPlot.PHASE_PLOT_SIZE)
+
+        # Build all UI components
+        self._init_ui(left=left)
+
+    def _init_ui(self, left: bool):
+        """Create and configure all Qt and PyQtGraph widgets.
+
+        This method is called once during initialization and should
+        not contain any real-time logic.
+        """
+        # Create a central widget to hold everything
+        central = QtWidgets.QWidget()
+
+        # these settings take no keyword arguments
+        # Horizontal layout: left plot + right plot
+        layout = QtWidgets.QHBoxLayout(central)
+
+        # Set the central widget of the window
+        self.setCentralWidget(central)
+
+        # ---- Left: time-series graph ----
+        self.time_plot = pg.PlotWidget(title="Sliding Time Window")
+
+        # Label the axes
+        self.time_plot.setLabel("bottom", "Time", units="s")
+        self.time_plot.setLabel("left", "<math>-sin(Φ) </math>")
+
+        # PlotWidget.setXRange(r, padding) is a wrapper that forwards arguments down to ViewBox.setXRange(min, max, padding)
+        # At runtime, ViewBox expects min and max. As a result, min and max are passed positionally here, instead of keywords.
+        # This works for all the function calls setXRange, setYRange
+        self.time_plot.setYRange(ConfigPlot.TIME_PLOT_YMIN, ConfigPlot.TIME_PLOT_YMAX)
+
+        # Create the curve that will be updated in real time
+        self.time_curve = self.time_plot.plot(
+            pen=pg.mkPen(
+                color=ConfigPlot.TIME_PLOT_CURVE_COLOR,
+                width=ConfigPlot.TIME_PLOT_CURVE_WIDTH,
+                name=ConfigPlot.TIME_PLOT_CURVE_NAME,
+            )
+        )
+
+        # ---- Right: phase portrait ----
+        self.phase_plot = pg.PlotWidget(title="Phase Portrait")
+
+        # Create the phase portrait plot widget
+        self.phase_plot.setLabel("bottom", ConfigPlot.PHASE_PLOT_AXIS_ANGLE)
+        self.phase_plot.setLabel("left", ConfigPlot.PHASE_PLOT_AXIS_VELOCITY)
+        self.phase_plot.setAspectLocked(True)
+        self.phase_plot.enableAutoRange(x=False, y=False)
+
+        self.phase_plot.setYRange(
+            ConfigPlot.PHASE_PLOT_YMIN, ConfigPlot.PHASE_PLOT_YMAX
+        )
+
+        # Scatter plot for fading phase trajectory
+        self.phase_scatter = pg.ScatterPlotItem(size=ConfigPlot.PHASE_PLOT_SCATTER_SIZE)
+        self.phase_plot.addItem(self.phase_scatter)
+
+        # Line connecting origin (0,0) to newest phase point
+        self.phase_vector_line = self.phase_plot.plot(
+            [0.0, 0.0],
+            [0.0, 0.0],
+            pen=pg.mkPen(
+                color=ConfigPlot.PHASE_PLOT_LINE_COLOR,
+                width=ConfigPlot.PHASE_PLOT_LINE_WIDTH,
+            ),
+        )
+
+        # Add both plots to the layout
+        layout.addWidget(self.time_plot)
+        layout.addWidget(self.phase_plot)
+
+        # Set window title and initial size
+        self.setWindowTitle(f"Real-Time Phase Portrait ({'Left' if left else 'Right'})")
+        self.resize(
+            ConfigPlot.GRAPH_WIDTH, ConfigPlot.GRAPH_HEIGHT
+        )  #  resize() takes no keyword arguments
+
+        self._sample_counter = 0
+        self._draw_every = ConfigPlot.DRAW_SAMPLE_FREQUENCY
+
+    def update_plots(self, timestamp, sinusoidal, angle, velocity):
+        """Update both plots using new data.
+
+        :param float t: Time relative to the first sample (seconds).
+        sinusoidal : float
+        :param float sinusoidal: Output signal plotted in the time-domain view.
+        angle : float
+        :param float angle: Normalized angle (rad).
+        :param float velocity: Normalized angular velocity (rad/s).
+        """
+        # ---- store incoming data ----
+
+        # Append the newest time and signal value to the buffers
+        self.time_buf.append(timestamp)
+        self.signal_buf.append(sinusoidal)
+
+        # Append the newest phase point
+        self.angle_buf.append(angle)
+        self.vel_buf.append(velocity)
+
+        # ---- draw every certain batch of sample ----
+        self._sample_counter += 1
+        if self._sample_counter < self._draw_every:
+            return
+
+        self._sample_counter = 0
+
+        # ---- sliding time window ----
+
+        # Update the plotted curve with the buffered data
+        self.time_curve.setData(self.time_buf, self.signal_buf)
+
+        # Automatically move the visible x-range to follow time
+        self.time_plot.setXRange(
+            timestamp + ConfigPlot.TIME_PLOT_WINDOW_FOLLOW,
+            timestamp + ConfigPlot.TIME_PLOT_WINDOW_LEAD_SEC,
+        )
+
+        # ---- phase portrait with fading ----
+
+        n = len(self.angle_buf)
+
+        # Generate fading transparency values (old → transparent)
+        alphas = np.linspace(start=0, stop=255, num=n).astype(int)
+
+        # Build scatter points with per-point transparency
+        spots = [
+            dict(
+                pos=(self.angle_buf[i], self.vel_buf[i]),
+                brush=pg.mkBrush(56, 136, 56, alphas[i]),
+            )
+            for i in range(n)
+        ]
+
+        # Update the phase portrait scatter plot
+        self.phase_scatter.setData(spots)
+
+        # Update the line connecting (0,0) to the current phase point
+        self.phase_vector_line.setData([0.0, angle], [0.0, velocity])

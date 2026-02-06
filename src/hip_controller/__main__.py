@@ -1,18 +1,22 @@
-"""Sample doc string."""
+"""Main function of the controller.
 
-import argparse  # pragma: no cover
-import time
+Reads data from a CSV file with CSV player with timestamp and compute the controller steps.
+"""
 
-from loguru import logger  # pragma: no cover
+import argparse
 
-from hip_controller.app import WalkOnController  # pragma: no cover
-from hip_controller.definitions import DEFAULT_LOG_LEVEL, LogLevel  # pragma: no cover
-from hip_controller.utils import get_sensor_data, setup_logger  # pragma: no cover
+from loguru import logger
+from pyqtgraph import QtCore, QtWidgets
+
+from hip_controller.app import ExoController
+from hip_controller.definitions import DEFAULT_LOG_LEVEL, LogLevel, RecordedSensorData
+from hip_controller.utils.csv_player import CSVPlayer
+from hip_controller.utils.utils import setup_logger
 
 
 def main(
     log_level: str = DEFAULT_LOG_LEVEL, stderr_level: str = DEFAULT_LOG_LEVEL
-) -> None:  # pragma: no cover
+) -> None:  # pragma no cover
     """Run the main pipeline.
 
     :param log_level: The log level to use.
@@ -21,18 +25,41 @@ def main(
     """
     setup_logger(log_level=log_level, stderr_level=stderr_level)
 
-    controller = WalkOnController()
-    freq = 1.0
+    app = QtWidgets.QApplication([])
 
-    try:
-        while True:
-            theta, theta_dot = get_sensor_data()
-            controller.step(
-                theta=theta, theta_dot=theta_dot, timestamp=time.monotonic()
-            )
-            time.sleep(1 / freq)
-    except KeyboardInterrupt:
-        logger.success("User interrupted.")
+    csv_player = CSVPlayer(csv_path=RecordedSensorData.FILEPATH)
+    controller = ExoController()
+
+    timer = QtCore.QTimer()
+    prev_timestamp = None
+
+    def update():
+        if not csv_player.has_next():
+            timer.stop()
+            return
+
+        timestamp, ang_left, vel_left, ang_right, vel_right = (
+            csv_player.get_sensor_data_from_csv()
+        )
+
+        logger.info(f"Timestamp {timestamp}")
+
+        if prev_timestamp is not None:
+            dt = timestamp - prev_timestamp
+            timer.setInterval(int(dt * 1000))
+
+        controller.step(
+            timestamp=timestamp,
+            ang_left=ang_left,
+            ang_right=ang_right,
+            vel_left=vel_left,
+            vel_right=vel_right,
+        )
+
+    timer.timeout.connect(slot=update)
+    timer.start(0)
+
+    app.exec()
 
 
 if __name__ == "__main__":  # pragma: no cover

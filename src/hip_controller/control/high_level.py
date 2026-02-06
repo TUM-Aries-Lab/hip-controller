@@ -10,7 +10,7 @@ from hip_controller.definitions import (
     PositionLimitation,
     StateChangeTimeThreshold,
 )
-from hip_controller.math_utils import (
+from hip_controller.utils.math_utils import (
     hit_zero_crossing_from_lower,
     hit_zero_crossing_from_upper,
     normalize,
@@ -125,6 +125,17 @@ class HighLevelController:
         :rtype: float
         """
         return -math.sin(gait_phase + LAG_CORRECTION)
+
+    def get_normalized_signal(self) -> SensorSignal:
+        """Get normalized value of angle and velocity after the compute function was called.
+
+        :return: Normalized velocity and rescaled angle.
+        :rtype: SensorSignal
+        """
+        return SensorSignal(
+            angle_rad=self.steady_state_tracker.pos_steady_state,
+            velocity_rad_per_sec=self.steady_state_tracker.vel_steady_state,
+        )
 
 
 @dataclass

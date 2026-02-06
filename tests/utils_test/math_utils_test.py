@@ -1,31 +1,31 @@
 """Test the Math utils module."""
 
-import numpy as np
-import pytest
+from numpy import array, ndarray, testing
+from pytest import mark, raises
 
-from hip_controller.math_utils import (
+from hip_controller.utils.math_utils import (
     hit_zero_crossing_from_lower,
     hit_zero_crossing_from_upper,
     symmetrize_matrix,
 )
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "matrix, expected",
     [
         # asymmetrical square matrix -> symmetrized
         (
-            np.array([[1.0, 2.0], [3.0, 4.0]]),
-            np.array([[1.0, 2.5], [2.5, 4.0]]),
+            array([[1.0, 2.0], [3.0, 4.0]]),
+            array([[1.0, 2.5], [2.5, 4.0]]),
         ),
         # already symmetric remains unchanged
         (
-            np.array([[1.0, 2.0], [2.0, 1.0]]),
-            np.array([[1.0, 2.0], [2.0, 1.0]]),
+            array([[1.0, 2.0], [2.0, 1.0]]),
+            array([[1.0, 2.0], [2.0, 1.0]]),
         ),
     ],
 )
-def test_symmetrize_matrix_valid(matrix: np.ndarray, expected: np.ndarray) -> None:
+def test_symmetrize_matrix_valid(matrix: ndarray, expected: ndarray) -> None:
     """Est ``symmetrize_matrix`` with valid square matrices.
 
     This test verifies that:
@@ -38,7 +38,7 @@ def test_symmetrize_matrix_valid(matrix: np.ndarray, expected: np.ndarray) -> No
     :type expected: numpy.ndarray
     :return: None
     """
-    np.testing.assert_allclose(symmetrize_matrix(matrix), expected)
+    testing.assert_allclose(symmetrize_matrix(matrix), expected)
 
 
 def test_symmetrize_matrix_non_square_raises() -> None:
@@ -47,11 +47,11 @@ def test_symmetrize_matrix_non_square_raises() -> None:
     :return: None
     :raises ValueError: If the input matrix is not square.
     """
-    with pytest.raises(ValueError):
-        symmetrize_matrix(np.array([[1, 2, 3], [4, 5, 6]]))
+    with raises(ValueError):
+        symmetrize_matrix(array([[1, 2, 3], [4, 5, 6]]))
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "hz_prev, hz_curr, hz_expected",
     [
         # valid zero-crossings from upper to lower
@@ -90,7 +90,7 @@ def test_hit_zero_crossing_from_upper(
     )
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "hz_prev, hz_curr, hz_expected",
     [
         # valid zero-crossings from lower to upper

@@ -1,4 +1,4 @@
-time(s),angle_L_filtered(rad),vel_L_filtered(rad/s),angle_R_filtered(rad),vel_R_filtered(rad/s)
+time (s),angle_left (rad),vel_left (rad/s),angle_right (rad),vel_right (rad/s)
 0.0,0.0,0.0,0.0,0.0
 0.01,0.0,0.0,0.0,0.0
 0.02,0.0,0.0,0.0,0.0

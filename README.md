@@ -63,13 +63,14 @@ The following tree shows the important permanent files. Run `make tree` to updat
 ├── data
 │   ├── logs
 │   └── sensor_data
-│       └── raw_data
-│           ├── data_input_2025_12_17.csv
-│           ├── data_input_2026_01_09.csv
-│           └── data_raw_2025_12_17.xlsx
+│       ├── data_input_2025_12_17.csv
+│       ├── data_input_filtered_2026_01_09.csv
+│       └── data_raw_2025_12_17.xlsx
 ├── docs
 │   └── paper.pdf
 ├── src
+│   ├── data
+│   │   └── logs
 │   └── hip_controller
 │       ├── control
 │       │   ├── __init__.py
@@ -77,12 +78,15 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   ├── kalman.py
 │       │   ├── low_level.py
 │       │   └── state_space.py
+│       ├── utils
+│       │   ├── csv_player.py
+│       │   ├── math_utils.py
+│       │   ├── plotter.py
+│       │   └── utils.py
 │       ├── __init__.py
 │       ├── __main__.py
 │       ├── app.py
-│       ├── definitions.py
-│       ├── math_utils.py
-│       └── utils.py
+│       └── definitions.py
 ├── tests
 │   ├── controller_test
 │   │   ├── high_level_controller
@@ -96,11 +100,14 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │   │   └── zero_crossing_left_2026_01_09.csv
 │   │   │   └── high_level_test.py
 │   │   └── kalman_test.py
+│   ├── utils_test
+│   │   ├── csv_player_test.py
+│   │   ├── math_utils_test.py
+│   │   ├── plotter_test.py
+│   │   └── utils_test.py
 │   ├── __init__.py
 │   ├── app_test.py
-│   ├── conftest.py
-│   ├── math_utils_test.py
-│   └── utils_test.py
+│   └── conftest.py
 ├── .darglint
 ├── .dockerignore
 ├── .gitignore
