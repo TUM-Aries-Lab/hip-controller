@@ -5,7 +5,6 @@ from loguru import logger
 from hip_controller.control.high_level import HighLevelController
 from hip_controller.control.low_level import get_gait_speed, stop_condition
 from hip_controller.definitions import ConfigPlot
-from hip_controller.utils.plotter import PortraitWindow
 
 
 class ExoController:
@@ -66,6 +65,8 @@ class WalkOnController:
 
         self.plot = plot
         if plot:
+            from hip_controller.utils.plotter import PortraitWindow
+
             self.plotter = PortraitWindow(left=left)
             self.plotter.show()
 
