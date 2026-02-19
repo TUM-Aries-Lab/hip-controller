@@ -15,7 +15,7 @@ class ConfigPlot:
 
     # if the graph is displayed or not
     left_limb_plot: bool = True
-    right_limb_plot: bool = True
+    right_limb_plot: bool = False
 
     GRAPH_WIDTH = 1000
     GRAPH_HEIGHT = 500
@@ -122,8 +122,8 @@ class PositionLimitation:
 class RecordedSensorData:
     """Names of columns of recorded sensor data."""
 
-    # You could also try "data_input_filtered_2026_01_09.csv"
-    FILEPATH: Path = DATA_DIR / "sensor_data" / "data_kinematics_2026_02_16.csv"
+    # You could try "data_input_filtered_2026_01_09.csv" or "data_kinematics_2026_02_16.csv"
+    FILEPATH: Path = DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
 
     TIMESTAMP: str = "time (s)"
     ANG_LEFT: str = "angle_left (rad)"
