@@ -3,6 +3,7 @@
 Reads data from a CSV file with CSV player with timestamp and compute the controller steps.
 """
 
+# pragma: no cover
 import argparse
 
 from loguru import logger
@@ -16,7 +17,7 @@ from hip_controller.utils.utils import setup_logger
 
 def main(
     log_level: str = DEFAULT_LOG_LEVEL, stderr_level: str = DEFAULT_LOG_LEVEL
-) -> None:  # pragma no cover
+) -> None:  # pragma: no cover
     """Run the main pipeline.
 
     :param log_level: The log level to use.
@@ -31,7 +32,6 @@ def main(
     controller = ExoController()
 
     timer = QtCore.QTimer()
-    prev_timestamp = None
 
     def update():
         if not csv_player.has_next():
@@ -44,9 +44,8 @@ def main(
 
         logger.info(f"Timestamp {timestamp}")
 
-        if prev_timestamp is not None:
-            dt = timestamp - prev_timestamp
-            timer.setInterval(int(dt * 1000))
+        # setInterval in miliseconds. Update each 10ms
+        timer.setInterval(10)
 
         controller.step(
             timestamp=timestamp,

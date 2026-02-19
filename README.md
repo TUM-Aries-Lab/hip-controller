@@ -100,10 +100,9 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │   │   └── zero_crossing_left_2026_01_09.csv
 │   │   │   └── high_level_test.py
 │   │   └── kalman_test.py
-│   ├── utils_test
+│   ├── utilstest
 │   │   ├── csv_player_test.py
 │   │   ├── math_utils_test.py
-│   │   ├── plotter_test.py
 │   │   └── utils_test.py
 │   ├── __init__.py
 │   ├── app_test.py

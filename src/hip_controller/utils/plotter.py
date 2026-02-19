@@ -1,5 +1,6 @@
 """Plotter using pyqt6."""
 
+# pragma: no cover
 from collections import deque
 
 import numpy as np
@@ -9,7 +10,7 @@ from PyQt6 import QtWidgets
 from hip_controller.definitions import ConfigPlot
 
 
-class PortraitWindow(QtWidgets.QMainWindow):
+class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
     """PyQt6 window that displays two real-time plots.
 
     1) Left plot:

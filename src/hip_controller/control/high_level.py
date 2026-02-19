@@ -126,7 +126,8 @@ class HighLevelController:
         """
         return -math.sin(gait_phase + LAG_CORRECTION)
 
-    def get_normalized_signal(self) -> SensorSignal:
+    @property
+    def normalized_signal(self) -> SensorSignal:
         """Get normalized value of angle and velocity after the compute function was called.
 
         :return: Normalized velocity and rescaled angle.

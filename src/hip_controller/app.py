@@ -58,6 +58,7 @@ class WalkOnController:
 
         :return: None
         """
+        self.left = left
         if left:
             logger.info("Initializing the left lower limb controller.")
         else:
@@ -88,7 +89,7 @@ class WalkOnController:
         )
 
         if self.plot:
-            normalized = self.high_level_controller.get_normalized_signal()
+            normalized = self.high_level_controller.normalized_signal
             self.plotter.update_plots(
                 timestamp=timestamp,
                 sinusoidal=minus_sin_phi,
@@ -102,7 +103,10 @@ class WalkOnController:
         try:
             gait_speed = get_gait_speed(theta=angle, theta_dot=velocity)
             if stop_condition(gait_speed=gait_speed):
-                logger.info("Stop condition reached.")
+                if self.left:
+                    logger.info("Stop condition reached for left leg.")
+                else:
+                    logger.info("Stop condition reached for right leg.")
                 return
         except Exception as err:
             logger.error(f"{err} - Something went wrong.")
