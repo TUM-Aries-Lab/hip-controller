@@ -65,6 +65,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   └── sensor_data
 │       ├── data_input_2025_12_17.csv
 │       ├── data_input_filtered_2026_01_09.csv
+│       ├── data_kinematics_2026_02_16.csv
 │       └── data_raw_2025_12_17.xlsx
 ├── docs
 │   └── paper.pdf

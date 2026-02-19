@@ -26,6 +26,8 @@ class CSVPlayer:
         self.df = read_csv(csv_path)
         self.i = 0
 
+        self.has_timestamp: bool = RecordedSensorData.TIMESTAMP in self.df.columns
+
     def has_next(self) -> bool:
         """Check whether more data is available.
 
@@ -42,8 +44,11 @@ class CSVPlayer:
         """
         row = self.df.iloc[self.i]
         self.i += 1
-
-        timestamp = float(row[RecordedSensorData.TIMESTAMP])
+        if self.has_timestamp:
+            timestamp = float(row[RecordedSensorData.TIMESTAMP])
+        else:
+            timestamp = self.i / RecordedSensorData.FREQUENCY_HZ
+        # sensor values
         ang_left = float(row[RecordedSensorData.ANG_LEFT])
         vel_left = float(row[RecordedSensorData.VEL_LEFT])
         ang_right = float(row[RecordedSensorData.ANG_RIGHT])

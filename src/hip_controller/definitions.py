@@ -122,9 +122,13 @@ class PositionLimitation:
 class RecordedSensorData:
     """Names of columns of recorded sensor data."""
 
-    FILEPATH: Path = DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
+    # You could also try "data_input_filtered_2026_01_09.csv"
+    FILEPATH: Path = DATA_DIR / "sensor_data" / "data_kinematics_2026_02_16.csv"
+
     TIMESTAMP: str = "time (s)"
     ANG_LEFT: str = "angle_left (rad)"
     VEL_LEFT: str = "vel_left (rad/s)"
     ANG_RIGHT: str = "angle_right (rad)"
     VEL_RIGHT: str = "vel_right (rad/s)"
+
+    FREQUENCY_HZ: int = 100
