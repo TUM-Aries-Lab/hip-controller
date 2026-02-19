@@ -8,7 +8,7 @@ def test_controller():
     # Arrange
 
     # Act
-    controller = WalkOnController()
+    controller = WalkOnController(plot=False)
     controller.step(angle=0.0, velocity=0.0, timestamp=0.0)
 
     # Assert
