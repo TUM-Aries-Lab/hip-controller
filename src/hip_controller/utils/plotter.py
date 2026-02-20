@@ -96,11 +96,7 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self.phase_plot.setLabel("bottom", ConfigPlot.PHASE_PLOT_AXIS_ANGLE)
         self.phase_plot.setLabel("left", ConfigPlot.PHASE_PLOT_AXIS_VELOCITY)
         self.phase_plot.setAspectLocked(True)
-        self.phase_plot.enableAutoRange(x=False, y=False)
-
-        self.phase_plot.setYRange(
-            ConfigPlot.PHASE_PLOT_YMIN, ConfigPlot.PHASE_PLOT_YMAX
-        )
+        self.phase_plot.enableAutoRange(x=True, y=True)
 
         # Scatter plot for fading phase trajectory
         self.phase_scatter = pg.ScatterPlotItem(size=ConfigPlot.PHASE_PLOT_SCATTER_SIZE)
@@ -132,12 +128,10 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
     def update_plots(self, timestamp, sinusoidal, angle, velocity):
         """Update both plots using new data.
 
-        :param float t: Time relative to the first sample (seconds).
-        sinusoidal : float
+        :param float timestamp: Time stamp.
         :param float sinusoidal: Output signal plotted in the time-domain view.
-        angle : float
-        :param float angle: Normalized angle (rad).
-        :param float velocity: Normalized angular velocity (rad/s).
+        :param float angle: Normalized angle in rad.
+        :param float velocity: Normalized angular velocity in rad/s.
         """
         # ---- store incoming data ----
 
@@ -178,7 +172,12 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         spots = [
             dict(
                 pos=(self.angle_buf[i], self.vel_buf[i]),
-                brush=pg.mkBrush(56, 136, 56, alphas[i]),
+                brush=pg.mkBrush(
+                    ConfigPlot.PHASE_PLOT_SCATTER_COLOR_R,
+                    ConfigPlot.PHASE_PLOT_SCATTER_COLOR_G,
+                    ConfigPlot.PHASE_PLOT_SCATTER_COLOR_B,
+                    alphas[i],
+                ),
             )
             for i in range(n)
         ]

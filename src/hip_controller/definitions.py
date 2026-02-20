@@ -23,16 +23,18 @@ class ConfigPlot:
     DRAW_SAMPLE_FREQUENCY = 10
 
     # left time-series graph config
-    TIME_PLOT_SIZE: int = 400
+    TIME_PLOT_SIZE: int = 200
     TIME_PLOT_WINDOW_SIZE_SEC = (
-        4  # This should align with the plot number size with frequency of the samples
+        2  # This should align with the plot number size with frequency of the samples
     )
-    TIME_PLOT_YMIN = -3.5
-    TIME_PLOT_YMAX = 3.5
+
+    # sin-wave is always between 1 and -1
+    TIME_PLOT_YMIN = -1.1
+    TIME_PLOT_YMAX = 1.1
 
     TIME_PLOT_CURVE_COLOR = (244, 96, 144)
     TIME_PLOT_CURVE_WIDTH = 2
-    TIME_PLOT_CURVE_NAME = "<math>-sin(Φ) </math>"
+    TIME_PLOT_CURVE_NAME = "<math>-sin(Φ) with lag correction </math>"
     TIME_PLOT_WINDOW_LEAD_SEC = 0.5
     TIME_PLOT_WINDOW_FOLLOW = TIME_PLOT_WINDOW_LEAD_SEC - TIME_PLOT_WINDOW_SIZE_SEC
 
@@ -44,7 +46,11 @@ class ConfigPlot:
     PHASE_PLOT_AXIS_ANGLE = "Angle (rad)"
     PHASE_PLOT_AXIS_VELOCITY = "Velocity (rad/s)"
     PHASE_PLOT_SCATTER_SIZE = 5
-    PHASE_PLOT_SCATTER_COLOR = (56, 136, 56)
+
+    # Since the spots are fading transparently, RGB values are be given separately
+    PHASE_PLOT_SCATTER_COLOR_R = 56
+    PHASE_PLOT_SCATTER_COLOR_G = 136
+    PHASE_PLOT_SCATTER_COLOR_B = 56
     PHASE_PLOT_LINE_WIDTH = 2
     PHASE_PLOT_LINE_COLOR = "g"
 
