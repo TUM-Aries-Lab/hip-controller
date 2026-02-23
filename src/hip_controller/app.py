@@ -4,7 +4,8 @@ from loguru import logger
 
 from hip_controller.control.high_level import HighLevelController
 from hip_controller.control.low_level import get_gait_speed, stop_condition
-from hip_controller.definitions import ConfigPlot
+from hip_controller.control.mid_level import center_and_transform_gait_phase
+from hip_controller.definitions import ConfigPlot, SensorData
 
 
 class ExoController:
@@ -23,14 +24,7 @@ class ExoController:
             left=False, plot=ConfigPlot.right_limb_plot
         )
 
-    def step(
-        self,
-        timestamp: float,
-        ang_left: float,
-        vel_left: float,
-        ang_right: float,
-        vel_right: float,
-    ):
+    def step(self, sensordata: SensorData):
         """Step the controller ahead.
 
         :param ang_left: hip angle of the left lower limb in radians.
@@ -41,11 +35,17 @@ class ExoController:
         :return: None
 
         """
+        # TODO: a better structure for sensordata combining the dataclass sensorSignal
+
         self.left_controller.step(
-            timestamp=timestamp, angle=ang_left, velocity=vel_left
+            timestamp=sensordata.timestamp,
+            angle=sensordata.ang_left,
+            velocity=sensordata.vel_left,
         )
         self.right_controller.step(
-            timestamp=timestamp, angle=ang_right, velocity=vel_right
+            timestamp=sensordata.timestamp,
+            angle=sensordata.ang_right,
+            velocity=sensordata.vel_right,
         )
 
 
@@ -85,10 +85,12 @@ class WalkOnController:
         logger.debug("Stepping controller ahead.")
 
         # High-level
-        minus_sin_phi = self.high_level_controller.compute(
+        gait_phase = self.high_level_controller.compute(
             curr_angle=angle, curr_vel=velocity, timestamp=timestamp
         )
 
+        # Mid-level
+        minus_sin_phi = center_and_transform_gait_phase(gait_phase=gait_phase)
         if self.plot:
             normalized = self.high_level_controller.normalized_signal
             self.plotter.update_plots(
@@ -97,8 +99,6 @@ class WalkOnController:
                 angle=normalized.angle_rad,
                 velocity=normalized.velocity_rad_per_sec,
             )
-
-        # Mid-level
 
         # Low-level
         try:

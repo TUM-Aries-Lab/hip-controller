@@ -36,13 +36,26 @@ class HighLevelData:
     DATA_VEL_SS: Path = TESTING_HIGH_LEVEL_DIR / "vel_ss_2026_01_26.csv"
     DATA_ANG_SS: Path = TESTING_HIGH_LEVEL_DIR / "ang_ss_2026_01_26.csv"
     DATA_GAIT_PHASE: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_01_21.csv"
+
+
+@dataclass
+class MidLevelData:
+    """High level data for testing."""
+
+    TESTING_MID_LEVEL_DIR: Path = (
+        TESTING_DIR
+        / "controller_test"
+        / "mid_level_controller"
+        / "mid_level_testing_data"
+    )
+
     DATA_SINUSOIDAL_BEHAVIOR: Path = (
-        TESTING_HIGH_LEVEL_DIR / "sinusoidal_behavior_left_2026_01_29.csv"
+        TESTING_MID_LEVEL_DIR / "sinusoidal_behavior_left_2026_01_29.csv"
     )
 
 
 @dataclass
-class CSVColumnNameforTesting:
+class KinematicsDataColumnName:
     """Names of columns for csv files for high-level controller testing."""
 
     TIMESTAMP: str = "time (s)"

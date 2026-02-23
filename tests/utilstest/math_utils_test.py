@@ -4,8 +4,8 @@ from numpy import array, ndarray, testing
 from pytest import mark, raises
 
 from hip_controller.utils.math_utils import (
-    hit_zero_crossing_from_lower,
-    hit_zero_crossing_from_upper,
+    hit_crossing_from_lower,
+    hit_crossing_from_upper,
     symmetrize_matrix,
 )
 
@@ -82,7 +82,7 @@ def test_hit_zero_crossing_from_upper(
     :return: None
     """
     assert (
-        hit_zero_crossing_from_upper(
+        hit_crossing_from_upper(
             prev=hz_prev,
             curr=hz_curr,
         )
@@ -120,7 +120,7 @@ def test_hit_zero_crossing_from_lower(
     :return: None
     """
     assert (
-        hit_zero_crossing_from_lower(
+        hit_crossing_from_lower(
             prev=hz_prev,
             curr=hz_curr,
         )

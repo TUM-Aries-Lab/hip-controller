@@ -52,7 +52,7 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         # Build all UI components
         self._init_ui(left=left)
 
-    def _init_ui(self, left: bool):
+    def _init_ui(self, left: bool) -> None:
         """Create and configure all Qt and PyQtGraph widgets.
 
         This method is called once during initialization and should
@@ -128,7 +128,9 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self._sample_counter = 0
         self._draw_every = ConfigPlot.DRAW_SAMPLE_FREQUENCY
 
-    def update_plots(self, timestamp, sinusoidal, angle, velocity):
+    def update_plots(
+        self, timestamp: float, sinusoidal: float, angle: float, velocity: float
+    ) -> None:
         """Update both plots using new data.
 
         :param float timestamp: Time stamp.

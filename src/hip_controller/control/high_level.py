@@ -5,14 +5,14 @@ from dataclasses import dataclass
 from enum import Enum
 
 from hip_controller.definitions import (
-    LAG_CORRECTION,
     VALUE_NEAR_ZERO,
     PositionLimitation,
+    SensorSignal,
     StateChangeTimeThreshold,
 )
 from hip_controller.utils.math_utils import (
-    hit_zero_crossing_from_lower,
-    hit_zero_crossing_from_upper,
+    hit_crossing_from_lower,
+    hit_crossing_from_upper,
     normalize,
 )
 
@@ -31,19 +31,6 @@ class MotionState(Enum):
     ANGLE_MAX = 2
     VELOCITY_MIN = 3
     ANGLE_MIN = 4
-
-
-@dataclass
-class SensorSignal:
-    """Container for angle and velocity measurements from the sensor.
-
-    Represents a single snapshot of kinematic data (angle and velocity) read from
-    the hip joint sensor at a specific point in time. Used throughout the control
-    system to maintain consistent representation of joint state.
-    """
-
-    angle_rad: float = 0.0
-    velocity_rad_per_sec: float = 0.0
 
 
 class HighLevelController:
@@ -106,25 +93,7 @@ class HighLevelController:
             )
         self.steady_state_tracker.update_steady_state(curr_signal=self.curr_signal)
 
-        return self.center_and_transform_gait_phase(
-            self.steady_state_tracker.calculate_gait_phase()
-        )
-
-    @staticmethod
-    def center_and_transform_gait_phase(gait_phase: float) -> float:
-        """Center and transform the gait phase into a sinusoidal control signal.
-
-        Applies a phase offset and sinusoidal transformation to the
-        computed gait phase, producing a normalized control signal
-        suitable for downstream controllers.
-
-
-        :param float gait_phase: Gait phase angle in radians.
-
-        :return: Transformed sinusoidal signal derived from the gait phase.
-        :rtype: float
-        """
-        return -math.sin(gait_phase + LAG_CORRECTION)
+        return self.steady_state_tracker.calculate_gait_phase()
 
     @property
     def normalized_signal(self) -> SensorSignal:
@@ -170,7 +139,7 @@ class ExtremaTrigger:
         :return: True if angle maximum is detected, False otherwise.
         """
         return (
-            hit_zero_crossing_from_upper(curr=curr_velocity, prev=prev_velocity)
+            hit_crossing_from_upper(curr=curr_velocity, prev=prev_velocity)
             and curr_angle > 0
         )
 
@@ -184,7 +153,7 @@ class ExtremaTrigger:
         :return: True if angle minimum is detected, False otherwise.
         """
         return (
-            hit_zero_crossing_from_lower(curr=curr_velocity, prev=prev_velocity)
+            hit_crossing_from_lower(curr=curr_velocity, prev=prev_velocity)
             and curr_angle < 0
         )
 
@@ -198,7 +167,7 @@ class ExtremaTrigger:
         :return: True if velocity maximum is detected, False otherwise.
         """
         return (
-            hit_zero_crossing_from_lower(curr=curr_angle, prev=prev_angle)
+            hit_crossing_from_lower(curr=curr_angle, prev=prev_angle)
             and curr_velocity > 0
         )
 
@@ -212,7 +181,7 @@ class ExtremaTrigger:
         :return: True if velocity minimum is detected, False otherwise.
         """
         return (
-            hit_zero_crossing_from_upper(curr=curr_angle, prev=prev_angle)
+            hit_crossing_from_upper(curr=curr_angle, prev=prev_angle)
             and curr_velocity < 0
         )
 
@@ -591,3 +560,14 @@ class SteadyStateTracker:
 
         elif state == MotionState.VELOCITY_MIN:
             self.velocity_min = curr_signal.velocity_rad_per_sec
+
+
+class StrideEventDetector:
+    """Detector fot a new stride event before the very first step.
+
+    To smoothen the controller at the very beginning, the calculated gait phase is only returned after the first stride detection has occured. Before that, the gait phase is set to 0.
+    """
+
+    def __init__(self):
+        """Initialize the StrideEventDetector."""
+        # TODO stride event detector for recalculation of the centered values within last 31ms

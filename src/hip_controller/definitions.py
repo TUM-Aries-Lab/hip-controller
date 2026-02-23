@@ -123,6 +123,38 @@ class PositionLimitation:
     LOWER = -10.0
 
 
+# TODO: combining these together? or not
+@dataclass
+class SensorSignal:
+    """Container for angle and velocity measurements from the sensor.
+
+    Represents a single snapshot of kinematic data (angle and velocity) read from
+    the hip joint sensor at a specific point in time. Used throughout the control
+    system to maintain consistent representation of joint state.
+    """
+
+    angle_rad: float = 0.0
+    velocity_rad_per_sec: float = 0.0
+
+
+@dataclass
+class SensorData:
+    """Container for timestamp and measurements from the sensor of both lower limbs.
+
+    :timestamp: current timestamp.
+    :ang_left: hip angle of the left lower limb in radians.
+    :vel_left: hip angle velocity of the left lower limb in radians per second.
+    :ang_right: hip angle of the right lower limb in radians.
+    :vel_right: hip angle velocity of the right lower limb in radians per second.
+    """
+
+    timestamp: float
+    ang_left: float
+    vel_left: float
+    ang_right: float
+    vel_right: float
+
+
 @dataclass
 class RecordedSensorData:
     """Names of columns of recorded sensor data."""
@@ -136,4 +168,4 @@ class RecordedSensorData:
     ANG_RIGHT: str = "angle_right (rad)"
     VEL_RIGHT: str = "vel_right (rad/s)"
 
-    FREQUENCY_HZ: int = 100
+    FAKE_FREQUENCY_HZ: int = 100

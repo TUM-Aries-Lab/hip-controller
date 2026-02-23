@@ -21,28 +21,30 @@ def symmetrize_matrix(matrix: NDArray) -> NDArray:
     return (matrix + matrix.T) / 2
 
 
-def hit_zero_crossing_from_upper(curr: float, prev: float) -> bool:
-    """Detect zero-crossing from upper to lower.
+def hit_crossing_from_upper(curr: float, prev: float, offset: float = 0) -> bool:
+    """Detect certain crossing from upper to lower.
 
     Checks if a value transitions from non-negative to negative.
 
     :param curr: Current value.
     :param prev: Previous value.
-    :return: True if zero-crossing from upper to lower detected, False otherwise.
+    :param offset: Position of the crossing. Default by zero-crossing.
+    :return: True if crossing from upper to lower detected, False otherwise.
     """
-    return prev >= 0 > curr
+    return prev >= offset > curr
 
 
-def hit_zero_crossing_from_lower(curr: float, prev: float) -> bool:
-    """Detect zero-crossing from lower to upper.
+def hit_crossing_from_lower(curr: float, prev: float, offset: float = 0) -> bool:
+    """Detect certain crossing from lower to upper.
 
     Checks if a value transitions from non-positive to positive.
 
     :param curr: Current value.
     :param prev: Previous value.
-    :return: True if zero-crossing from lower to upper detected, False otherwise.
+    :param offset: Position of the crossing. Default by zero-crossing.
+    :return: True if crossing from lower to upper detected, False otherwise.
     """
-    return prev <= 0 and curr > 0
+    return prev <= offset and curr > offset
 
 
 def normalize(val_max: float, val_min: float, val_curr: float) -> float:

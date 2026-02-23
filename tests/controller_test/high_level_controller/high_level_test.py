@@ -26,10 +26,10 @@ from hip_controller.control.high_level import (
     SteadyStateTracker,
 )
 from hip_controller.utils.math_utils import (
-    hit_zero_crossing_from_lower,
-    hit_zero_crossing_from_upper,
+    hit_crossing_from_lower,
+    hit_crossing_from_upper,
 )
-from tests.conftest import CSVColumnNameforTesting, HighLevelData
+from tests.conftest import HighLevelData, KinematicsDataColumnName
 
 
 def test_extrema_trigger() -> None:
@@ -43,20 +43,20 @@ def test_extrema_trigger() -> None:
         prev = df.iloc[i - 1]
         curr = df.iloc[i]
 
-        curr_velocity = curr[CSVColumnNameforTesting.VELOCITY]
-        prev_velocity = prev[CSVColumnNameforTesting.VELOCITY]
-        curr_angle = curr[CSVColumnNameforTesting.ANGLE]
-        prev_angle = prev[CSVColumnNameforTesting.ANGLE]
+        curr_velocity = curr[KinematicsDataColumnName.VELOCITY]
+        prev_velocity = prev[KinematicsDataColumnName.VELOCITY]
+        curr_angle = curr[KinematicsDataColumnName.ANGLE]
+        prev_angle = prev[KinematicsDataColumnName.ANGLE]
 
-        angle_max = hit_zero_crossing_from_upper(curr=curr_velocity, prev=prev_velocity)
-        angle_min = hit_zero_crossing_from_lower(curr=curr_velocity, prev=prev_velocity)
-        velocity_max = hit_zero_crossing_from_lower(curr=curr_angle, prev=prev_angle)
-        velocity_min = hit_zero_crossing_from_upper(curr=curr_angle, prev=prev_angle)
+        angle_max = hit_crossing_from_upper(curr=curr_velocity, prev=prev_velocity)
+        angle_min = hit_crossing_from_lower(curr=curr_velocity, prev=prev_velocity)
+        velocity_max = hit_crossing_from_lower(curr=curr_angle, prev=prev_angle)
+        velocity_min = hit_crossing_from_upper(curr=curr_angle, prev=prev_angle)
 
-        expected_vel_max = curr[CSVColumnNameforTesting.TRIGG_VEL_MAX]
-        expected_ang_max = curr[CSVColumnNameforTesting.TRIGG_ANG_MAX]
-        expected_vel_min = curr[CSVColumnNameforTesting.TRIGG_VEL_MIN]
-        expected_ang_min = curr[CSVColumnNameforTesting.TRIGG_ANG_MIN]
+        expected_vel_max = curr[KinematicsDataColumnName.TRIGG_VEL_MAX]
+        expected_ang_max = curr[KinematicsDataColumnName.TRIGG_ANG_MAX]
+        expected_vel_min = curr[KinematicsDataColumnName.TRIGG_VEL_MIN]
+        expected_ang_min = curr[KinematicsDataColumnName.TRIGG_ANG_MIN]
 
         assert velocity_max == expected_vel_max, f"Row {i}"
         assert angle_max == expected_ang_max, f"Row {i}"
@@ -76,24 +76,24 @@ def test_valid_trigger() -> None:
         prev = df.iloc[i - 1]
         curr = df.iloc[i]
 
-        timestamp = curr[CSVColumnNameforTesting.TIMESTAMP]
+        timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
         prev_signal = SensorSignal(
-            angle_rad=prev[CSVColumnNameforTesting.ANGLE],
-            velocity_rad_per_sec=prev[CSVColumnNameforTesting.VELOCITY],
+            angle_rad=prev[KinematicsDataColumnName.ANGLE],
+            velocity_rad_per_sec=prev[KinematicsDataColumnName.VELOCITY],
         )
         curr_signal = SensorSignal(
-            angle_rad=curr[CSVColumnNameforTesting.ANGLE],
-            velocity_rad_per_sec=curr[CSVColumnNameforTesting.VELOCITY],
+            angle_rad=curr[KinematicsDataColumnName.ANGLE],
+            velocity_rad_per_sec=curr[KinematicsDataColumnName.VELOCITY],
         )
 
         state_machine.update_motion_state(
             curr=curr_signal, prev=prev_signal, timestamp=timestamp
         )
 
-        vel_max = curr[CSVColumnNameforTesting.VALID_TRIGG_VEL_MAX]
-        ang_max = curr[CSVColumnNameforTesting.VALID_TRIGG_ANG_MAX]
-        vel_min = curr[CSVColumnNameforTesting.VALID_TRIGG_VEL_MIN]
-        ang_min = curr[CSVColumnNameforTesting.VALID_TRIGG_ANG_MIN]
+        vel_max = curr[KinematicsDataColumnName.VALID_TRIGG_VEL_MAX]
+        ang_max = curr[KinematicsDataColumnName.VALID_TRIGG_ANG_MAX]
+        vel_min = curr[KinematicsDataColumnName.VALID_TRIGG_VEL_MIN]
+        ang_min = curr[KinematicsDataColumnName.VALID_TRIGG_ANG_MIN]
 
         if vel_max:
             assert state_machine.state == MotionState.VELOCITY_MAX, (
@@ -124,18 +124,18 @@ def test_set_state() -> None:
     for i in range(0, len(df)):
         curr = df.iloc[i]
 
-        timestamp = curr[CSVColumnNameforTesting.TIMESTAMP]
-        curr_velocity = curr[CSVColumnNameforTesting.VELOCITY]
-        curr_angle = curr[CSVColumnNameforTesting.ANGLE]
+        timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
+        curr_velocity = curr[KinematicsDataColumnName.VELOCITY]
+        curr_angle = curr[KinematicsDataColumnName.ANGLE]
 
         controller.compute(
             curr_angle=curr_angle, curr_vel=curr_velocity, timestamp=timestamp
         )
 
-        vel_max = curr[CSVColumnNameforTesting.VALUE_VEL_MAX]
-        ang_max = curr[CSVColumnNameforTesting.VALUE_ANG_MAX]
-        vel_min = curr[CSVColumnNameforTesting.VALUE_VEL_MIN]
-        ang_min = curr[CSVColumnNameforTesting.VALUE_ANG_MIN]
+        vel_max = curr[KinematicsDataColumnName.VALUE_VEL_MAX]
+        ang_max = curr[KinematicsDataColumnName.VALUE_ANG_MAX]
+        vel_min = curr[KinematicsDataColumnName.VALUE_VEL_MIN]
+        ang_min = curr[KinematicsDataColumnName.VALUE_ANG_MIN]
 
         assert controller.steady_state_tracker.velocity_max == vel_max
         assert controller.steady_state_tracker.angle_max == ang_max
@@ -156,13 +156,13 @@ def test_calculate_vel_ss() -> None:
 
         # Arrange
         controller.curr_signal.velocity_rad_per_sec = curr[
-            CSVColumnNameforTesting.VELOCITY
+            KinematicsDataColumnName.VELOCITY
         ]
         controller.steady_state_tracker.velocity_max = curr[
-            CSVColumnNameforTesting.VALUE_VEL_MAX
+            KinematicsDataColumnName.VALUE_VEL_MAX
         ]
         controller.steady_state_tracker.velocity_min = curr[
-            CSVColumnNameforTesting.VALUE_VEL_MIN
+            KinematicsDataColumnName.VALUE_VEL_MIN
         ]
 
         # Act
@@ -182,9 +182,9 @@ def test_calculate_vel_ss() -> None:
         )
 
         # Assert
-        expected_sum = curr[CSVColumnNameforTesting.VEL_SUM_MINMAX]
-        expected_gamma_t = curr[CSVColumnNameforTesting.VEL_GAMMA_T]
-        expected_vel_ss = curr[CSVColumnNameforTesting.VEL_STEADY_STATE]
+        expected_sum = curr[KinematicsDataColumnName.VEL_SUM_MINMAX]
+        expected_gamma_t = curr[KinematicsDataColumnName.VEL_GAMMA_T]
+        expected_vel_ss = curr[KinematicsDataColumnName.VEL_STEADY_STATE]
 
         # Due to floating-point round-off/precision differences between MATLAB and Python numerical backends, exact equality comparisons seem to be not reliable.
         assert isclose(sum, expected_sum, rel_tol=1e-13)
@@ -204,12 +204,12 @@ def test_calculate_ang_ss() -> None:
         curr = df.iloc[i]
 
         # Arrange
-        controller.curr_signal.angle_rad = curr[CSVColumnNameforTesting.ANGLE]
+        controller.curr_signal.angle_rad = curr[KinematicsDataColumnName.ANGLE]
         controller.steady_state_tracker.angle_max = curr[
-            CSVColumnNameforTesting.VALUE_ANG_MAX
+            KinematicsDataColumnName.VALUE_ANG_MAX
         ]
         controller.steady_state_tracker.angle_min = curr[
-            CSVColumnNameforTesting.VALUE_ANG_MIN
+            KinematicsDataColumnName.VALUE_ANG_MIN
         ]
 
         # Act
@@ -225,8 +225,8 @@ def test_calculate_ang_ss() -> None:
         )
 
         # Assert
-        expected_gamma_t = curr[CSVColumnNameforTesting.ANG_GAMMA_T]
-        expected_ang_ss = curr[CSVColumnNameforTesting.ANG_STEADY_STATE]
+        expected_gamma_t = curr[KinematicsDataColumnName.ANG_GAMMA_T]
+        expected_ang_ss = curr[KinematicsDataColumnName.ANG_STEADY_STATE]
 
         # Due to floating-point round-off/precision differences between MATLAB and Python numerical backends, exact equality comparisons seem to be not reliable.
         assert isclose(gamma_t, expected_gamma_t, rel_tol=1e-12)
@@ -245,9 +245,9 @@ def test_z_t_and_pos_ss() -> None:
         curr = df.iloc[i]
 
         # Arrange
-        timestamp = curr[CSVColumnNameforTesting.TIMESTAMP]
-        curr_velocity = curr[CSVColumnNameforTesting.VELOCITY]
-        curr_angle = curr[CSVColumnNameforTesting.ANGLE]
+        timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
+        curr_velocity = curr[KinematicsDataColumnName.VELOCITY]
+        curr_angle = curr[KinematicsDataColumnName.ANGLE]
 
         # Act
         controller.compute(
@@ -255,8 +255,8 @@ def test_z_t_and_pos_ss() -> None:
         )
 
         # Assert
-        expected_z_t = curr[CSVColumnNameforTesting.RESCALE_FACTOR]
-        expected_pos_ss = curr[CSVColumnNameforTesting.POSTION_STEADY_STATE]
+        expected_z_t = curr[KinematicsDataColumnName.RESCALE_FACTOR]
+        expected_pos_ss = curr[KinematicsDataColumnName.POSTION_STEADY_STATE]
 
         assert isclose(
             controller.steady_state_tracker.rescale_factor, expected_z_t, rel_tol=1e-12
@@ -285,48 +285,22 @@ def test_gait_phase_calculation() -> None:
 
         # Arrange
         steady_state_tracker.vel_steady_state = curr[
-            CSVColumnNameforTesting.VEL_STEADY_STATE
+            KinematicsDataColumnName.VEL_STEADY_STATE
         ]
         steady_state_tracker.rescale_factor = curr[
-            CSVColumnNameforTesting.RESCALE_FACTOR
+            KinematicsDataColumnName.RESCALE_FACTOR
         ]
         steady_state_tracker.pos_steady_state = curr[
-            CSVColumnNameforTesting.POSTION_STEADY_STATE
+            KinematicsDataColumnName.POSTION_STEADY_STATE
         ]
 
         # Act
         gait_phase = steady_state_tracker.calculate_gait_phase()
 
         # Assert
-        expected_gait_phase = curr[CSVColumnNameforTesting.GAIT_PHASE]
+        expected_gait_phase = curr[KinematicsDataColumnName.GAIT_PHASE]
 
         assert isclose(gait_phase, expected_gait_phase, rel_tol=1e-12), (
             f"Row {i}, current_z_t{steady_state_tracker.rescale_factor}, "
             f"calculated_gait_phase{atan2(steady_state_tracker.vel_steady_state, -steady_state_tracker.pos_steady_state)}, "
         )
-
-
-def test_transform_gait_phase() -> None:
-    """Test the calculation of sinusoidal behavior.
-
-    :return: None
-    """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_SINUSOIDAL_BEHAVIOR)
-
-    for i in range(0, len(df)):
-        curr = df.iloc[i]
-
-        # Arrange
-        gait_phase = curr[CSVColumnNameforTesting.GAIT_PHASE]
-
-        # Act
-        sinusoidal_behavior = HighLevelController.center_and_transform_gait_phase(
-            gait_phase=gait_phase
-        )
-
-        # Assert
-        expected_sinusoidal_behavior = curr[CSVColumnNameforTesting.SINUSOIDAL_BEHAVIOR]
-
-        assert isclose(
-            sinusoidal_behavior, expected_sinusoidal_behavior, rel_tol=1e-12
-        ), f"Row {i}"

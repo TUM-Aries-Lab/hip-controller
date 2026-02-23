@@ -34,29 +34,19 @@ def main(
     timer = QtCore.QTimer()
 
     def update():
-        if not csv_player.has_next():
+        if not csv_player.has_next_line():
             timer.stop()
             return
 
-        timestamp, ang_left, vel_left, ang_right, vel_right = (
-            csv_player.get_sensor_data_from_csv()
-        )
-
-        logger.debug(f"Timestamp {timestamp}")
+        sensordata = csv_player.get_sensor_data_from_csv()
 
         # setInterval in miliseconds. Update each 10ms
         timer.setInterval(10)
 
-        controller.step(
-            timestamp=timestamp,
-            ang_left=ang_left,
-            ang_right=ang_right,
-            vel_left=vel_left,
-            vel_right=vel_right,
-        )
+        controller.step(sensordata=sensordata)
 
     def sigint_handler(signal, frame):
-        logger.info("Keyboard interrupted with ^C.")
+        logger.success("Keyboard interrupted with ^C.")
         timer.stop()
         app.quit()
 
