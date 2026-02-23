@@ -23,7 +23,7 @@ class ConfigPlot:
     DRAW_SAMPLE_FREQUENCY = 10
 
     # left time-series graph config
-    TIME_PLOT_SIZE: int = 200
+    TIME_PLOT_SIZE: int = 150
     TIME_PLOT_WINDOW_SIZE_SEC = (
         2  # This should align with the plot number size with frequency of the samples
     )
@@ -39,9 +39,8 @@ class ConfigPlot:
     TIME_PLOT_WINDOW_FOLLOW = TIME_PLOT_WINDOW_LEAD_SEC - TIME_PLOT_WINDOW_SIZE_SEC
 
     # right phase portrait config
-    PHASE_PLOT_SIZE: int = 100
-    PHASE_PLOT_YMIN = -3.2
-    PHASE_PLOT_YMAX = 3.2
+    PHASE_PLOT_SIZE: int = 150
+    PHASE_PLOT_WINDOW_MARGIN = 1.1
 
     PHASE_PLOT_AXIS_ANGLE = "Angle (rad)"
     PHASE_PLOT_AXIS_VELOCITY = "Velocity (rad/s)"

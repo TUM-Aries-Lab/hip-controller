@@ -14,7 +14,7 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
     """PyQt6 window that displays two real-time plots.
 
     1) Left plot:
-       - Time vs sinusoidal behavior
+       - Time vs sinusoidal behavior of gait phase
        - Sliding time window
 
     2) Right plot:
@@ -96,7 +96,10 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self.phase_plot.setLabel("bottom", ConfigPlot.PHASE_PLOT_AXIS_ANGLE)
         self.phase_plot.setLabel("left", ConfigPlot.PHASE_PLOT_AXIS_VELOCITY)
         self.phase_plot.setAspectLocked(True)
-        self.phase_plot.enableAutoRange(x=True, y=True)
+
+        # Setup for the manual window range
+        self.phase_plot.enableAutoRange(x=False, y=False)
+        self._phase_max_radius = 0.0
 
         # Scatter plot for fading phase trajectory
         self.phase_scatter = pg.ScatterPlotItem(size=ConfigPlot.PHASE_PLOT_SCATTER_SIZE)
@@ -181,6 +184,21 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
             )
             for i in range(n)
         ]
+
+        # Reset range of the window
+
+        # Compute max absolute radius of current point
+        r_current = max(abs(angle), abs(velocity))
+
+        # Update stored global max only if bigger
+        if r_current > self._phase_max_radius:
+            self._phase_max_radius = r_current
+
+            R = ConfigPlot.PHASE_PLOT_WINDOW_MARGIN * self._phase_max_radius
+
+            # Always symmetric around zero
+            self.phase_plot.setXRange(-R, R)
+            self.phase_plot.setYRange(-R, R)
 
         # Update the phase portrait scatter plot
         self.phase_scatter.setData(spots)
