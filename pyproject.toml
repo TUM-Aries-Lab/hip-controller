@@ -4,7 +4,8 @@ version = "0.0.4"
 description = "Lower limb exosuit hip controller."
 readme = "README.md"
 authors = [
-  { name = "Tsmorz", email = "tony.smoragiewicz@tum.de" },
+    { name = "Tsmorz", email = "tony.smoragiewicz@tum.de" },
+    { name = "Zhongge Lin", email = "" }
 ]
 requires-python = ">=3.11,<3.14"
 

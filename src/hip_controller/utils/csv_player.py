@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from loguru import logger
 from pandas import read_csv
 
 from hip_controller.definitions import RecordedSensorData, SensorData
@@ -18,11 +19,12 @@ class CSVPlayer:
     - easy replacement with a real sensor stream later
     """
 
-    def __init__(self, csv_path: Path = RecordedSensorData.FILEPATH) -> None:
+    def __init__(self, csv_path: Path) -> None:
         """Load the CSV file into memory.
 
         :param str csv_path: Path to the CSV file containing time, angle, and velocity columns. Default takes the file path from RecordedSensorData setup in definitions.
         """
+        logger.info(f"Loading CSV file '{csv_path}'.")
         self.dataframe = read_csv(csv_path)
         self.counter = 0
 
@@ -50,16 +52,11 @@ class CSVPlayer:
             timestamp = float(row[RecordedSensorData.TIMESTAMP])
         else:
             timestamp = self.counter / RecordedSensorData.FAKE_FREQUENCY_HZ
-        # sensor values
-        ang_left = float(row[RecordedSensorData.ANG_LEFT])
-        vel_left = float(row[RecordedSensorData.VEL_LEFT])
-        ang_right = float(row[RecordedSensorData.ANG_RIGHT])
-        vel_right = float(row[RecordedSensorData.VEL_RIGHT])
 
         return SensorData(
             timestamp=timestamp,
-            ang_left=ang_left,
-            ang_right=ang_right,
-            vel_left=vel_left,
-            vel_right=vel_right,
+            ang_left=float(row[RecordedSensorData.ANG_LEFT]),
+            ang_right=float(row[RecordedSensorData.ANG_RIGHT]),
+            vel_left=float(row[RecordedSensorData.VEL_LEFT]),
+            vel_right=float(row[RecordedSensorData.VEL_RIGHT]),
         )
