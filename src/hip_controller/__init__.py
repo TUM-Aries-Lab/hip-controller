@@ -1,3 +1,12 @@
-"""Sample doc string."""
+"""Import version number automatically."""
 
-__version__ = "0.0.4"
+import tomllib
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
+
+try:
+    __version__ = version("hip-controller")
+except PackageNotFoundError:
+    pyproject = Path(__file__).resolve().parent.parent.parent / "pyproject.toml"
+    with open(pyproject, "rb") as f:
+        __version__ = dict(tomllib.load(f))["project"]["version"]
