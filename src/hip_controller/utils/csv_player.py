@@ -18,13 +18,13 @@ class CSVPlayer:
     - easy replacement with a real sensor stream later
     """
 
-    def __init__(self, csv_path: Path) -> None:
+    def __init__(self, csv_path: Path = RecordedSensorData.FILEPATH) -> None:
         """Load the CSV file into memory.
 
-        :param str csv_path: Path to the CSV file containing time, angle, and velocity columns.
+        :param str csv_path: Path to the CSV file containing time, angle, and velocity columns. Default takes the file path from RecordedSensorData setup in definitions.
         """
         self.dataframe = read_csv(csv_path)
-        self.i = 0
+        self.counter = 0
 
         self.has_timestamp: bool = (
             RecordedSensorData.TIMESTAMP in self.dataframe.columns
@@ -36,20 +36,20 @@ class CSVPlayer:
         :return: True if there are remaining rows to read.
         :rtype: bool
         """
-        return self.i < len(self.dataframe)
+        return self.counter < len(self.dataframe)
 
     def get_sensor_data_from_csv(self) -> SensorData:
         """Get the recorded data from csv line by line.
 
-        :return: timestamp, angle_left, velocity_left, angle_right, velocity_right
-        :rtype: float, float, float, float, float
+        :return: timestamp, angle_left, velocity_left, angle_right, velocity_right packed together as a dataclass
+        :rtype: Sensordata
         """
-        row = self.dataframe.iloc[self.i]
-        self.i += 1
+        row = self.dataframe.iloc[self.counter]
+        self.counter += 1
         if self.has_timestamp:
             timestamp = float(row[RecordedSensorData.TIMESTAMP])
         else:
-            timestamp = self.i / RecordedSensorData.FAKE_FREQUENCY_HZ
+            timestamp = self.counter / RecordedSensorData.FAKE_FREQUENCY_HZ
         # sensor values
         ang_left = float(row[RecordedSensorData.ANG_LEFT])
         vel_left = float(row[RecordedSensorData.VEL_LEFT])

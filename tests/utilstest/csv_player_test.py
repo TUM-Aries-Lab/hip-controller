@@ -59,6 +59,6 @@ def test_csv_player_index_increments(tmp_path):
 
     player = CSVPlayer(csv_path)
 
-    assert player.i == 0
+    assert player.counter == 0
     player.get_sensor_data_from_csv()
-    assert player.i == 1
+    assert player.counter == 1

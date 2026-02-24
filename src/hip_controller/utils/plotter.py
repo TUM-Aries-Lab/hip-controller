@@ -25,13 +25,11 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
     Data is advanced by a QTimer to keep the GUI responsive.
     """
 
-    def __init__(self, left: bool):
+    def __init__(self, left: bool) -> None:
         """Initialize the real-time plotting window.
 
-        :param str csv_path: Path to the CSV file used for simulated real-time playback.
-        :param HighLevelController controller: Controller object that computes sinusoidal behavior and normalized signals.
-        :param float time_window: Duration (seconds) shown in the sliding time plot.
-        :param int max_phase_points: Maximum number of points shown in the phase portrait trail.
+        :param bool left: Whether this plot is for the left or right limb, used for titles and labels.
+        :return: None
         """
         # Initialize the QMainWindow base class
         super().__init__()
@@ -57,6 +55,9 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
 
         This method is called once during initialization and should
         not contain any real-time logic.
+
+        :param bool left: Whether this plot is for the left or right limb, used for titles and labels.
+        :return: None
         """
         # Create a central widget to hold everything
         central = QtWidgets.QWidget()
@@ -68,8 +69,8 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         # Set the central widget of the window
         self.setCentralWidget(central)
 
-        # ---- Left: time-series graph ----
-        self.time_plot = pg.PlotWidget(title="Sliding Time Window")
+        # ---- Left: time-series graph of sinusoidal behavior of the gait phase ----
+        self.time_plot = pg.PlotWidget(title="Sin-wave of the gait phase vs Time")
 
         # Label the axes
         self.time_plot.setLabel("bottom", "Time", units="s")
@@ -90,7 +91,7 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         )
 
         # ---- Right: phase portrait ----
-        self.phase_plot = pg.PlotWidget(title="Phase Portrait")
+        self.phase_plot = pg.PlotWidget(title="Phase Portrait of angle vs velocity")
 
         # Create the phase portrait plot widget
         self.phase_plot.setLabel("bottom", ConfigPlot.PHASE_PLOT_AXIS_ANGLE)

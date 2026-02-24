@@ -47,6 +47,20 @@ class ExoController:
             angle=sensordata.ang_right,
             velocity=sensordata.vel_right,
         )
+        try:
+            left_gait_speed = get_gait_speed(
+                theta=sensordata.ang_left, theta_dot=sensordata.vel_left
+            )
+            right_gait_speed = get_gait_speed(
+                theta=sensordata.ang_right, theta_dot=sensordata.vel_right
+            )
+            if stop_condition(gait_speed=left_gait_speed) or stop_condition(
+                gait_speed=right_gait_speed
+            ):
+                logger.info("Stop condition reached.")
+            return
+        except Exception as err:
+            logger.error(f"{err} - Something went wrong.")
 
 
 class WalkOnController:
@@ -101,13 +115,3 @@ class WalkOnController:
             )
 
         # Low-level
-        try:
-            gait_speed = get_gait_speed(theta=angle, theta_dot=velocity)
-            if stop_condition(gait_speed=gait_speed):
-                if self.left:
-                    logger.info("Stop condition reached for left leg.")
-                else:
-                    logger.info("Stop condition reached for right leg.")
-                return
-        except Exception as err:
-            logger.error(f"{err} - Something went wrong.")

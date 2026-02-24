@@ -6,6 +6,7 @@ Reads data from a CSV file with CSV player with timestamp and compute the contro
 # pragma: no cover
 import argparse
 import signal
+from pathlib import Path
 
 from loguru import logger
 from pyqtgraph import QtCore, QtWidgets
@@ -17,23 +18,27 @@ from hip_controller.utils.utils import setup_logger
 
 
 def main(
-    log_level: str = DEFAULT_LOG_LEVEL, stderr_level: str = DEFAULT_LOG_LEVEL
+    log_level: str = DEFAULT_LOG_LEVEL,
+    stderr_level: str = DEFAULT_LOG_LEVEL,
+    csv_path: Path = RecordedSensorData.FILEPATH,
 ) -> None:  # pragma: no cover
     """Run the main pipeline.
 
     :param log_level: The log level to use.
     :param stderr_level: The std err level to use.
+    :param str csv_path: Path to the CSV file used for simulated real-time playback. The user could pass in the path of a file as well.
     :return: None
     """
     setup_logger(log_level=log_level, stderr_level=stderr_level)
 
     app = QtWidgets.QApplication([])
 
-    csv_player = CSVPlayer(csv_path=RecordedSensorData.FILEPATH)
+    csv_player = CSVPlayer(csv_path)
     controller = ExoController()
     timer = QtCore.QTimer()
 
-    def update():
+    def update() -> None:
+        """Update the controller with the next line of CSV data."""
         if not csv_player.has_next_line():
             timer.stop()
             return
@@ -45,7 +50,8 @@ def main(
 
         controller.step(sensordata=sensordata)
 
-    def sigint_handler(signal, frame):
+    def sigint_handler(signal, frame) -> None:
+        """Handle SIGINT (Ctrl+C) gracefully."""
         logger.success("Keyboard interrupted with ^C.")
         timer.stop()
         app.quit()
@@ -76,6 +82,20 @@ if __name__ == "__main__":  # pragma: no cover
         required=False,
         type=str,
     )
+
+    parser.add_argument(
+        "--file-path",
+        "-p",
+        default=RecordedSensorData.FILEPATH,
+        choices=list(LogLevel()),
+        help="Path to the CSV file used for simulated real-time playback. The file has to contain columns name 'angle_left (rad)', 'vel_left (rad/s)', 'angle_right (rad)', 'vel_right (rad/s)', additinally 'time (s)'.",
+        required=False,
+        type=Path,
+    )
     args = parser.parse_args()
 
-    main(log_level=args.log_level, stderr_level=args.stderr_level)
+    main(
+        log_level=args.log_level,
+        stderr_level=args.stderr_level,
+        csv_path=args.file_path,
+    )
