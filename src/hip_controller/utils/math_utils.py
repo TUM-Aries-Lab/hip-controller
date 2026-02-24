@@ -47,7 +47,7 @@ def hit_crossing_from_lower(curr: float, prev: float, offset: float = 0) -> bool
     return prev <= offset and curr > offset
 
 
-def normalize(val_max: float, val_min: float, val_curr: float) -> float:
+def normalize(center_val: float, val_curr: float) -> float:
     """Normalize value relative to bounded range.
 
     Computes a normalized steady-state value by removing the midpoint offset of
@@ -56,15 +56,26 @@ def normalize(val_max: float, val_min: float, val_curr: float) -> float:
     normalizing joint angle and velocity signals for the gait phase calculation.
 
 
+
+    :param float val_curr:
+        Current value of the signal.
+    :return:
+        Steady-state value relative to the range center value.
+    :rtype: float
+    """
+    return val_curr - center_val
+
+
+def center(val_max: float, val_min: float) -> float:
+    """Calculate a centered value of max and min values.
+
     :param float val_max:
         Upper bound (maximum value) of the expected signal range.
     :param float val_min:
         Lower bound (minimum value) of the expected signal range.
-    :param float val_curr:
-        Current value of the signal.
-    :return:
-        Steady-state value relative to the range midpoint. Zero when val_curr
+
+    :return: midpoint. Zero when val_curr
         equals the midpoint of [val_min, val_max].
-    :rtype: float
+        :rtype: float
     """
-    return val_curr - ((val_max + val_min) / 2.0)
+    return (val_max + val_min) / 2.0

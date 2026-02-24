@@ -5,7 +5,7 @@ from pathlib import Path
 from loguru import logger
 from pandas import read_csv
 
-from hip_controller.definitions import RecordedSensorData, SensorData
+from hip_controller.definitions import RecordedSensorData, SensorData, SensorSignal
 
 
 class CSVPlayer:
@@ -55,8 +55,12 @@ class CSVPlayer:
 
         return SensorData(
             timestamp=timestamp,
-            ang_left=float(row[RecordedSensorData.ANG_LEFT]),
-            ang_right=float(row[RecordedSensorData.ANG_RIGHT]),
-            vel_left=float(row[RecordedSensorData.VEL_LEFT]),
-            vel_right=float(row[RecordedSensorData.VEL_RIGHT]),
+            left=SensorSignal(
+                angle_rad=float(row[RecordedSensorData.ANG_LEFT]),
+                velocity_rad_per_sec=float(row[RecordedSensorData.VEL_LEFT]),
+            ),
+            right=SensorSignal(
+                angle_rad=float(row[RecordedSensorData.ANG_RIGHT]),
+                velocity_rad_per_sec=float(row[RecordedSensorData.VEL_RIGHT]),
+            ),
         )

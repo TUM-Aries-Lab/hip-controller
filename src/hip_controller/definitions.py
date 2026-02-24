@@ -93,17 +93,23 @@ DEFAULT_LOG_LEVEL = LogLevel.info
 DEFAULT_LOG_FILENAME = "log_file"
 
 
+# centering & normalization
+VALUE_NEAR_ZERO = 1e-6
+
+# ---mid level---
+LAG_CORRECTION = pi / 7
+
+# Amplitude modulation
+AMPLITUDE_GAIN = -6.5
+SIGMOID_POWER = 50
+SCALE_LEVEL_GROUND = 1
+
 # Kalman filter definitions
 PROCESS_NOISE = 2e-2
 MEASUREMENT_NOISE = 0.75
 
 # S Gait stopping threshold
 STOP_THRESHOLD = 0.5
-
-
-# centering & normalization
-LAG_CORRECTION = pi / 7
-VALUE_NEAR_ZERO = 1e-6
 
 
 @dataclass(frozen=True)
@@ -123,14 +129,16 @@ class PositionLimitation:
     LOWER = -10.0
 
 
-# TODO: combining these together? or not
 @dataclass
 class SensorSignal:
-    """Container for angle and velocity measurements from the sensor.
+    """Container for timestamp, angle and velocity measurements from the sensor.
 
     Represents a single snapshot of kinematic data (angle and velocity) read from
     the hip joint sensor at a specific point in time. Used throughout the control
     system to maintain consistent representation of joint state.
+
+    :angle_rad: hip angle of the lower limb in radians.
+    :velocity_rad_per_sec: hip angle velocity of the lower limb in radians per second.
     """
 
     angle_rad: float = 0.0
@@ -139,20 +147,16 @@ class SensorSignal:
 
 @dataclass
 class SensorData:
-    """Container for timestamp and measurements from the sensor of both lower limbs.
+    """Container for the measurements from the sensor of both lower limbs.
 
     :timestamp: current timestamp.
-    :ang_left: hip angle of the left lower limb in radians.
-    :vel_left: hip angle velocity of the left lower limb in radians per second.
-    :ang_right: hip angle of the right lower limb in radians.
-    :vel_right: hip angle velocity of the right lower limb in radians per second.
+    :left: Signal state of the left lower limb.
+    :right: Signal state of the right lower limb.
     """
 
     timestamp: float
-    ang_left: float
-    vel_left: float
-    ang_right: float
-    vel_right: float
+    left: SensorSignal
+    right: SensorSignal
 
 
 @dataclass

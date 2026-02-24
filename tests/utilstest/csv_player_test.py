@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from hip_controller.definitions import RecordedSensorData, SensorData
+from hip_controller.definitions import RecordedSensorData, SensorData, SensorSignal
 from hip_controller.utils.csv_player import CSVPlayer
 
 
@@ -48,8 +48,12 @@ def test_csv_player_reads_rows_in_order(tmp_path):
     t0 = player.get_sensor_data_from_csv()
     t1 = player.get_sensor_data_from_csv()
 
-    assert t0 == SensorData(0.0, 1.0, 0.1, 4.0, 0.4)
-    assert t1 == SensorData(0.1, 2.0, 0.2, 5.0, 0.5)
+    assert t0 == SensorData(
+        timestamp=0.0, left=SensorSignal(1.0, 0.1), right=SensorSignal(4.0, 0.4)
+    )
+    assert t1 == SensorData(
+        timestamp=0.1, left=SensorSignal(2.0, 0.2), right=SensorSignal(5.0, 0.5)
+    )
 
 
 def test_csv_player_index_increments(tmp_path):

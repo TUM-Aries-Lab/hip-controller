@@ -7,7 +7,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt6 import QtWidgets
 
-from hip_controller.definitions import ConfigPlot
+from hip_controller.definitions import ConfigPlot, SensorSignal
 
 
 class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
@@ -130,7 +130,7 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self._draw_every = ConfigPlot.DRAW_SAMPLE_FREQUENCY
 
     def update_plots(
-        self, timestamp: float, sinusoidal: float, angle: float, velocity: float
+        self, timestamp: float, sinusoidal: float, steady: SensorSignal
     ) -> None:
         """Update both plots using new data.
 
@@ -146,8 +146,8 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self.signal_buf.append(sinusoidal)
 
         # Append the newest phase point
-        self.angle_buf.append(angle)
-        self.vel_buf.append(velocity)
+        self.angle_buf.append(steady.angle_rad)
+        self.vel_buf.append(steady.velocity_rad_per_sec)
 
         # ---- draw every certain batch of sample ----
         self._sample_counter += 1
@@ -191,7 +191,7 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         # Reset range of the window
 
         # Compute max absolute radius of current point
-        r_current = max(abs(angle), abs(velocity))
+        r_current = max(abs(steady.angle_rad), abs(steady.velocity_rad_per_sec))
 
         # Update stored global max only if bigger
         if r_current > self._phase_max_radius:
@@ -207,4 +207,6 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self.phase_scatter.setData(spots)
 
         # Update the line connecting (0,0) to the current phase point
-        self.phase_vector_line.setData([0.0, angle], [0.0, velocity])
+        self.phase_vector_line.setData(
+            [0.0, steady.angle_rad], [0.0, steady.velocity_rad_per_sec]
+        )

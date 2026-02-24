@@ -20,7 +20,7 @@ class HighLevelData:
     TESTING_HIGH_LEVEL_DIR: Path = (
         TESTING_DIR
         / "controller_test"
-        / "high_level_controller"
+        / "high_level_testing"
         / "high_level_testing_data"
     )
     DATA_ZERO_CROSSING: Path = (
@@ -43,10 +43,7 @@ class MidLevelData:
     """High level data for testing."""
 
     TESTING_MID_LEVEL_DIR: Path = (
-        TESTING_DIR
-        / "controller_test"
-        / "mid_level_controller"
-        / "mid_level_testing_data"
+        TESTING_DIR / "controller_test" / "mid_level_testing" / "mid_level_testing_data"
     )
 
     DATA_SINUSOIDAL_BEHAVIOR: Path = (

@@ -129,7 +129,10 @@ def test_set_state() -> None:
         curr_angle = curr[KinematicsDataColumnName.ANGLE]
 
         controller.compute(
-            curr_angle=curr_angle, curr_vel=curr_velocity, timestamp=timestamp
+            curr_signal=SensorSignal(
+                angle_rad=curr_angle, velocity_rad_per_sec=curr_velocity
+            ),
+            timestamp=timestamp,
         )
 
         vel_max = curr[KinematicsDataColumnName.VALUE_VEL_MAX]
@@ -177,7 +180,7 @@ def test_calculate_vel_ss() -> None:
             )
             / 2.0
         )
-        vel_ss = controller.steady_state_tracker._calculate_vel_ss(
+        vel_ss = controller.steady_state_tracker._calculate_velocity_steady_state(
             curr_velocity=controller.curr_signal.velocity_rad_per_sec
         )
 
@@ -220,7 +223,7 @@ def test_calculate_ang_ss() -> None:
             )
             / 2.0
         )
-        ang_ss = controller.steady_state_tracker._calculate_ang_ss(
+        ang_ss = controller.steady_state_tracker._calculate_centered_angle(
             curr_angle=controller.curr_signal.angle_rad
         )
 
@@ -251,7 +254,10 @@ def test_z_t_and_pos_ss() -> None:
 
         # Act
         controller.compute(
-            curr_angle=curr_angle, curr_vel=curr_velocity, timestamp=timestamp
+            curr_signal=SensorSignal(
+                angle_rad=curr_angle, velocity_rad_per_sec=curr_velocity
+            ),
+            timestamp=timestamp,
         )
 
         # Assert
@@ -267,7 +273,7 @@ def test_z_t_and_pos_ss() -> None:
             rel_tol=1e-11,
         ), (
             f"Row {i}, expected_z_t{expected_z_t}, current_z_t{controller.steady_state_tracker.rescale_factor}, "
-            f"ang_ss{controller.steady_state_tracker._calculate_ang_ss(controller.curr_signal.angle_rad)}, multiplication{controller.steady_state_tracker.rescale_factor * controller.steady_state_tracker._calculate_ang_ss(curr_angle=controller.curr_signal.angle_rad)}; "
+            f"ang_ss{controller.steady_state_tracker._calculate_centered_angle(controller.curr_signal.angle_rad)}, multiplication{controller.steady_state_tracker.rescale_factor * controller.steady_state_tracker._calculate_centered_angle(curr_angle=controller.curr_signal.angle_rad)}; "
             f"pos_ss{controller.steady_state_tracker.pos_steady_state}"
         )
 

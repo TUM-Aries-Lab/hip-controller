@@ -3,18 +3,21 @@
 Reads data from a CSV file with CSV player with timestamp and compute the controller steps.
 """
 
-# pragma: no cover
-import argparse
-import signal
-from pathlib import Path
+import argparse  # pragma: no cover
+import signal  # pragma: no cover
+from pathlib import Path  # pragma: no cover
 
-from loguru import logger
-from pyqtgraph import QtCore, QtWidgets
+from loguru import logger  # pragma: no cover
+from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
-from hip_controller.app import ExoController
-from hip_controller.definitions import DEFAULT_LOG_LEVEL, LogLevel, RecordedSensorData
-from hip_controller.utils.csv_player import CSVPlayer
-from hip_controller.utils.utils import setup_logger
+from hip_controller.app import ExoController  # pragma: no cover
+from hip_controller.definitions import (
+    DEFAULT_LOG_LEVEL,
+    LogLevel,
+    RecordedSensorData,
+)  # pragma: no cover
+from hip_controller.utils.csv_player import CSVPlayer  # pragma: no cover
+from hip_controller.utils.utils import setup_logger  # pragma: no cover
 
 
 def main(
@@ -48,7 +51,7 @@ def main(
         # setInterval in miliseconds. Update each 10ms
         timer.setInterval(10)
 
-        controller.step(sensordata=sensordata)
+        controller.step(sensor_data=sensordata)
 
     def sigint_handler(signal, frame) -> None:
         """Handle SIGINT (Ctrl+C) gracefully."""

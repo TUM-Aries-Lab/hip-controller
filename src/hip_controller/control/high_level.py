@@ -1,36 +1,14 @@
 """High-level control functions."""
 
-import math
-from dataclasses import dataclass
-from enum import Enum
+from math import atan2, isnan
 
+from hip_controller.control.motion_state_machine import MotionState, MotionStateMachine
 from hip_controller.definitions import (
     VALUE_NEAR_ZERO,
     PositionLimitation,
     SensorSignal,
-    StateChangeTimeThreshold,
 )
-from hip_controller.utils.math_utils import (
-    hit_crossing_from_lower,
-    hit_crossing_from_upper,
-    normalize,
-)
-
-
-class MotionState(Enum):
-    """Enumeration of motion states in the gait cycle.
-
-    Represents the four fundamental states of periodic motion as detected through
-    extrema analysis of joint angle and angular velocity. The state machine cycles
-    through these states in order: VELOCITY_MAX → ANGLE_MAX → VELOCITY_MIN
-    → ANGLE_MIN → (back to INITIAL anytime).
-    """
-
-    INITIAL = 0
-    VELOCITY_MAX = 1
-    ANGLE_MAX = 2
-    VELOCITY_MIN = 3
-    ANGLE_MIN = 4
+from hip_controller.utils.math_utils import center, normalize
 
 
 class HighLevelController:
@@ -61,9 +39,7 @@ class HighLevelController:
         self.state_machine: MotionStateMachine = MotionStateMachine()
         self.steady_state_tracker: SteadyStateTracker = SteadyStateTracker()
 
-        self.sinusoidal_behavior: float = 0.0
-
-    def compute(self, curr_angle: float, curr_vel: float, timestamp: float) -> float:
+    def compute(self, curr_signal: SensorSignal, timestamp: float) -> float:
         """Update controller state with latest sensor measurements - sensor signals, motion state, extrema values, and compute the sinosoidal-like behaviour of the hip joint in the sagittal plane with the normalized and centered gait phase value.
 
         Processes current angle and velocity measurements, shifts previous signal
@@ -80,9 +56,7 @@ class HighLevelController:
         :rtype: float
         """
         self.prev_signal = self.curr_signal
-        self.curr_signal = SensorSignal(
-            angle_rad=curr_angle, velocity_rad_per_sec=curr_vel
-        )
+        self.curr_signal = curr_signal
 
         state = self.state_machine.update_motion_state(
             prev=self.prev_signal, curr=self.curr_signal, timestamp=timestamp
@@ -95,8 +69,7 @@ class HighLevelController:
 
         return self.steady_state_tracker.calculate_gait_phase()
 
-    @property
-    def normalized_signal(self) -> SensorSignal:
+    def get_signal_steady_state(self) -> SensorSignal:
         """Get normalized value of angle and velocity after the compute function was called.
 
         :return: Normalized velocity and rescaled angle.
@@ -108,279 +81,15 @@ class HighLevelController:
         )
 
 
-@dataclass
-class ExtremaTrigger:
-    """Boolean flags for motion extrema detection.
+class StrideEventDetector:  # pragma no cover
+    """Detector for a new stride event before the very first step.
 
-    Angular velocity is the first derivative of joint angle. Therefore, local maxima and minima of the angle occur at time instants where the angular velocity crosses zero with a change in sign. Angle maxima correspond to velocity zero-crossings from positive to negative, while angle minima correspond to zero-crossings from negative to positive.
-    Each boolean flag indicates whether a specific extrema condition was met:
-
-    Attributes
-    ----------
-    :vel_max: Velocity reaches maximum (zero-crossing from negative to positive in angle)
-    :ang_max: Angle reaches maximum (zero-crossing from positive to negative in velocity)
-    :vel_min: Velocity reaches minimum (zero-crossing from positive to negative in angle)
-    :ang_min: Angle reaches minimum (zero-crossing from negative to positive in velocity)
-
+    To smoothen the controller at the very beginning, the calculated gait phase is only returned after the first stride detection has occured. Before that, the gait phase is set to 0.
     """
 
-    vel_max: bool
-    ang_max: bool
-    vel_min: bool
-    ang_min: bool
-
-    def _angle_max_trigger(
-        self, curr_velocity: float, prev_velocity: float, curr_angle: float
-    ) -> bool:
-        """Detect angle maximum based on velocity zero-crossing from positive to negative.
-
-        :param curr_velocity: Current velocity value.
-        :param prev_velocity: Previous velocity value.
-        :return: True if angle maximum is detected, False otherwise.
-        """
-        return (
-            hit_crossing_from_upper(curr=curr_velocity, prev=prev_velocity)
-            and curr_angle > 0
-        )
-
-    def _angle_min_trigger(
-        self, curr_velocity: float, prev_velocity: float, curr_angle: float
-    ) -> bool:
-        """Detect angle minimum based on velocity zero-crossing from negative to positive.
-
-        :param curr_velocity: Current velocity value.
-        :param prev_velocity: Previous velocity value.
-        :return: True if angle minimum is detected, False otherwise.
-        """
-        return (
-            hit_crossing_from_lower(curr=curr_velocity, prev=prev_velocity)
-            and curr_angle < 0
-        )
-
-    def _velocity_max_trigger(
-        self, curr_angle: float, prev_angle: float, curr_velocity: float
-    ) -> bool:
-        """Detect velocity maximum based on angle zero-crossing from negative to positive.
-
-        :param curr_angle: Current angle value.
-        :param prev_angle: Previous angle value.
-        :return: True if velocity maximum is detected, False otherwise.
-        """
-        return (
-            hit_crossing_from_lower(curr=curr_angle, prev=prev_angle)
-            and curr_velocity > 0
-        )
-
-    def _velocity_min_trigger(
-        self, curr_angle: float, prev_angle: float, curr_velocity: float
-    ) -> bool:
-        """Detect velocity minimum based on angle zero-crossing from positive to negative.
-
-        :param curr_angle: Current angle value.
-        :param prev_angle: Previous angle value.
-        :return: True if velocity minimum is detected, False otherwise.
-        """
-        return (
-            hit_crossing_from_upper(curr=curr_angle, prev=prev_angle)
-            and curr_velocity < 0
-        )
-
-    def set_triggers(self, curr: SensorSignal, prev: SensorSignal) -> None:
-        """Evaluate and set all extrema triggers based on sensor signal transitions.
-
-        Validates all four extrema triggers (velocity max/min, angle max/min) by
-        evaluating zero-crossings and sign conditions on the current and previous
-        sensor measurements. Updates the instance variables for each trigger flag.
-
-        :param SensorSignal curr:
-            Current sensor signal containing angle and velocity measurements.
-        :param SensorSignal prev:
-            Previous sensor signal containing angle and velocity measurements.
-        :return:
-            None. Updates instance variables: self.vel_max, self.ang_max, self.vel_min,
-            self.ang_min to reflect the detected extrema.
-        :rtype: None
-        """
-        self.vel_max = self._velocity_max_trigger(
-            curr_angle=curr.angle_rad,
-            prev_angle=prev.angle_rad,
-            curr_velocity=curr.velocity_rad_per_sec,
-        )
-        self.ang_max = self._angle_max_trigger(
-            curr_velocity=curr.velocity_rad_per_sec,
-            prev_velocity=prev.velocity_rad_per_sec,
-            curr_angle=curr.angle_rad,
-        )
-        self.vel_min = self._velocity_min_trigger(
-            curr_angle=curr.angle_rad,
-            prev_angle=prev.angle_rad,
-            curr_velocity=curr.velocity_rad_per_sec,
-        )
-        self.ang_min = self._angle_min_trigger(
-            curr_velocity=curr.velocity_rad_per_sec,
-            prev_velocity=prev.velocity_rad_per_sec,
-            curr_angle=curr.angle_rad,
-        )
-
-
-class MotionStateMachine:
-    """Finite state machine for motion state transitions.
-
-    Manages the state machine that cycles through motion states (VELOCITY_MAX
-    → ANGLE_MAX → VELOCITY_MIN → ANGLE_MIN → back to VELOCITY_MAX) based on detected
-    extrema triggers. Includes timeout detection and priority-based state resolution
-    when multiple triggers occur simultaneously. The machine enforces minimum and maximum
-    state dwell times to ensure physical validity of state transitions.
-    """
-
-    def __init__(self) -> None:
-        """Initialize the motion state machine.
-
-        Sets up the initial state as INITIAL, clears the timestamp, and initializes
-        all extrema trigger flags to False. The machine is ready to receive sensor
-        data and detect state transitions.
-
-        Attributes
-        ----------
-        state : MotionState
-            Current motion state.
-
-        timestamp_sec : float or None
-            Timestamp (in seconds) when the current non-initial state was entered.
-
-            * ``float`` — A valid timestamp is stored when the state is not ``MotionState.INITIAL``.
-            * ``None`` — No timestamp is tracked when the state is ``MotionState.INITIAL``.
-
-        triggers : ExtremaTrigger
-            Stores the results of extrema trigger detection for a single control cycle.
-
-        :return: None
-
-        """
-        self.state: MotionState = MotionState.INITIAL
-        self.timestamp_sec: float | None = None
-        self.triggers: ExtremaTrigger = ExtremaTrigger(False, False, False, False)
-
-    def _handle_initial_state(self) -> MotionState | None:
-        """Determine next state from INITIAL based on active triggers.
-
-        When in the INITIAL state, any active extrema trigger can initiate a transition.
-        The order of evaluation is not enforced in INITIAL; the first active trigger
-        encountered determines the next state. Typically, the first motion detection
-        (vel_max, ang_max, vel_min, or ang_min) will drive the first transition.
-
-        :return:
-            Next MotionState to transition to (VELOCITY_MAX, ANGLE_MAX, VELOCITY_MIN,
-            or ANGLE_MIN), or None if no valid trigger is active.
-        :rtype: MotionState | None
-        """
-        # The order is not important
-        if self.triggers.vel_max:
-            return MotionState.VELOCITY_MAX
-        elif self.triggers.ang_max:
-            return MotionState.ANGLE_MAX
-        elif self.triggers.vel_min:
-            return MotionState.VELOCITY_MIN
-        elif self.triggers.ang_min:
-            return MotionState.ANGLE_MIN
-        return None
-
-    def _detect_state(self) -> MotionState | None:
-        """Determine next state transition based on current state and active triggers.
-
-        Implements the cyclic state machine logic where valid transitions depend on
-        the current state and the active triggers. The machine enforces the following
-        cycle:VELOCITY_MAX → ANGLE_MAX → VELOCITY_MIN → ANGLE_MIN → (back
-        to VELOCITY_MAX). If multiple triggers occur simultaneously, priority order
-        applies always on the next state in cycle.
-
-        :return:
-            Next MotionState to transition to based on current state and triggers,
-            or None if no valid transition is possible.
-        :rtype: MotionState | None
-        """
-        new_state = None
-        # State machine transitions
-        if self.state == MotionState.INITIAL:
-            return self._handle_initial_state()
-
-        elif self.state == MotionState.ANGLE_MAX and self.triggers.vel_min:
-            new_state = MotionState.VELOCITY_MIN
-
-        elif self.state == MotionState.ANGLE_MIN and self.triggers.vel_max:
-            new_state = MotionState.VELOCITY_MAX
-
-        elif self.state == MotionState.VELOCITY_MAX and self.triggers.ang_max:
-            new_state = MotionState.ANGLE_MAX
-
-        elif self.state == MotionState.VELOCITY_MIN and self.triggers.ang_min:
-            new_state = MotionState.ANGLE_MIN
-
-        return new_state
-
-    def _is_timeout(self, timestamp: float) -> bool:
-        """Detect timeout condition and reset state if necessary.
-
-        Checks if the system is in a timeout period (where updates are skipped) based
-        on the state change threshold timings. Returns True if in timeout, False if an
-        update should proceed. If the maximum allowed state dwell time (TMAX) is exceeded,
-        the state machine is reset to INITIAL.
-
-        :param float timestamp:
-            Current timestamp in seconds.
-        :return:
-            True if currently in timeout period and update should be skipped, False if
-            state transition check should proceed. Reset state to INITIAL and timestamp_sec to None
-            if TMAX is exceeded.
-        :rtype: bool
-        """
-        if self.state == MotionState.INITIAL:
-            return False
-
-        if self.timestamp_sec is None:
-            return False
-
-        dt = timestamp - self.timestamp_sec
-
-        # before: inclusive, after: exclusive
-        if dt < StateChangeTimeThreshold.TMIN:
-            return True
-
-        elif dt >= StateChangeTimeThreshold.TMAX:
-            self.state = MotionState.INITIAL
-            self.timestamp_sec = None
-            return True
-
-        return False
-
-    def update_motion_state(
-        self, prev: SensorSignal, curr: SensorSignal, timestamp: float
-    ) -> MotionState | None:
-        """Update the motion state machine based on sensor signals and timing.
-
-        Evaluates timeout conditions, processes sensor signal transitions through
-        extrema trigger detection, and attempts a state transition. Records the
-        timestamp of any new state transition for timeout tracking.
-
-        :param SensorSignal prev:
-            Previous sensor signal containing prior angle and velocity measurements.
-        :param SensorSignal curr:
-            Current sensor signal containing current angle and velocity measurements.
-        :param float timestamp:
-            Current timestamp in seconds.
-        :return:
-            The new MotionState if a transition occurred, or None if no transition
-            happened (either in timeout period or no valid trigger was active).
-        :rtype: MotionState | None
-        """
-        if not self._is_timeout(timestamp=timestamp):
-            self.triggers.set_triggers(curr=curr, prev=prev)
-            new_state = self._detect_state()
-            if new_state is not None:
-                self.state = new_state
-                self.timestamp_sec = timestamp
-                return new_state
-        return None
+    # TODO stride event detector for recalculation of the centered values within last 31ms
+    def __init__(self):
+        """Initialize the StrideEventDetector."""
 
 
 class SteadyStateTracker:
@@ -411,7 +120,7 @@ class SteadyStateTracker:
         self.rescale_factor: float = 0.0
         self.pos_steady_state: float = 0.0
 
-    def _calculate_vel_ss(self, curr_velocity: float) -> float:
+    def _calculate_velocity_steady_state(self, curr_velocity: float) -> float:
         """Calculate normalized steady-state velocity.
 
         Computes the steady-state velocity by centering the current velocity around
@@ -425,12 +134,11 @@ class SteadyStateTracker:
         :rtype: float
         """
         return normalize(
-            val_max=self.velocity_max,
-            val_min=self.velocity_min,
+            center_val=center(val_max=self.velocity_max, val_min=self.velocity_min),
             val_curr=curr_velocity,
         )
 
-    def _calculate_ang_ss(self, curr_angle: float) -> float:
+    def _calculate_centered_angle(self, curr_angle: float) -> float:
         """Calculate normalized steady-state angle.
 
         Computes the steady-state angle by centering the current angle around the
@@ -444,11 +152,12 @@ class SteadyStateTracker:
         :rtype: float
         """
         return normalize(
-            val_max=self.angle_max, val_min=self.angle_min, val_curr=curr_angle
+            center_val=center(val_max=self.angle_max, val_min=self.angle_min),
+            val_curr=curr_angle,
         )
 
     def _calculate_rescale_factor(self) -> float:
-        """Calculate the velocity-to-angle scaling factor.
+        """Calculate gamma - the velocity-to-angle scaling factor.
 
         Computes the ratio of velocity range to angle range for normalizing the
         position steady-state value. This factor scales angle measurements to match
@@ -469,7 +178,7 @@ class SteadyStateTracker:
 
         return u_vel / u_ang
 
-    def _calculate_pos_ss(self, curr_angle: float) -> float:
+    def _calculate_angle_steady_state(self, curr_angle: float) -> float:
         """Calculate normalized position (angle) steady-state scaled by velocity range.
 
         Computes the position steady-state by scaling the normalized angle by the
@@ -484,7 +193,9 @@ class SteadyStateTracker:
         :rtype: float
         """
         # This has to happen after z_t is set
-        return self.rescale_factor * self._calculate_ang_ss(curr_angle=curr_angle)
+        return self.rescale_factor * self._calculate_centered_angle(
+            curr_angle=curr_angle
+        )
 
     def calculate_gait_phase(self) -> float:
         """Calculate the current gait phase as an angle in the phase plane.
@@ -502,7 +213,7 @@ class SteadyStateTracker:
         if self.rescale_factor == 0.0:
             return 0.0
         else:
-            return math.atan2(self.vel_steady_state, -self.pos_steady_state)
+            return atan2(self.vel_steady_state, -self.pos_steady_state)
 
     def update_steady_state(self, curr_signal: SensorSignal) -> None:
         """Update steady-state parameters based on current sensor signal.
@@ -520,17 +231,17 @@ class SteadyStateTracker:
             and pos_steady_state (only if values pass validation).
         :rtype: None
         """
-        self.vel_steady_state = self._calculate_vel_ss(
+        self.vel_steady_state = self._calculate_velocity_steady_state(
             curr_velocity=curr_signal.velocity_rad_per_sec
         )
 
         rescale_factor = self._calculate_rescale_factor()
-        if not math.isnan(rescale_factor):
+        if not isnan(rescale_factor):
             self.rescale_factor = rescale_factor
 
-        pos_ss = self._calculate_pos_ss(curr_angle=curr_signal.angle_rad)
-        if PositionLimitation.LOWER <= pos_ss <= PositionLimitation.UPPER:
-            self.pos_steady_state = pos_ss
+        ang_ss = self._calculate_angle_steady_state(curr_angle=curr_signal.angle_rad)
+        if PositionLimitation.LOWER <= ang_ss <= PositionLimitation.UPPER:
+            self.pos_steady_state = ang_ss
 
     def update_extrema(self, state: MotionState, curr_signal: SensorSignal) -> None:
         """Update extrema values when new motion state is detected.
@@ -560,14 +271,3 @@ class SteadyStateTracker:
 
         elif state == MotionState.VELOCITY_MIN:
             self.velocity_min = curr_signal.velocity_rad_per_sec
-
-
-class StrideEventDetector:
-    """Detector fot a new stride event before the very first step.
-
-    To smoothen the controller at the very beginning, the calculated gait phase is only returned after the first stride detection has occured. Before that, the gait phase is set to 0.
-    """
-
-    def __init__(self):
-        """Initialize the StrideEventDetector."""
-        # TODO stride event detector for recalculation of the centered values within last 31ms

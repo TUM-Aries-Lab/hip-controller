@@ -5,7 +5,7 @@ from loguru import logger
 from hip_controller.control.high_level import HighLevelController
 from hip_controller.control.low_level import get_gait_speed, stop_condition
 from hip_controller.control.mid_level import center_and_transform_gait_phase
-from hip_controller.definitions import ConfigPlot, SensorData
+from hip_controller.definitions import ConfigPlot, SensorData, SensorSignal
 
 
 class ExoController:
@@ -24,7 +24,7 @@ class ExoController:
             left=False, plot=ConfigPlot.right_limb_plot
         )
 
-    def step(self, sensordata: SensorData):
+    def step(self, sensor_data: SensorData):
         """Step the controller ahead.
 
         :param ang_left: hip angle of the left lower limb in radians.
@@ -38,22 +38,14 @@ class ExoController:
         # TODO: a better structure for sensordata combining the dataclass sensorSignal
 
         self.left_controller.step(
-            timestamp=sensordata.timestamp,
-            angle=sensordata.ang_left,
-            velocity=sensordata.vel_left,
+            timestamp=sensor_data.timestamp, curr_signal=sensor_data.left
         )
         self.right_controller.step(
-            timestamp=sensordata.timestamp,
-            angle=sensordata.ang_right,
-            velocity=sensordata.vel_right,
+            timestamp=sensor_data.timestamp, curr_signal=sensor_data.right
         )
         try:
-            left_gait_speed = get_gait_speed(
-                theta=sensordata.ang_left, theta_dot=sensordata.vel_left
-            )
-            right_gait_speed = get_gait_speed(
-                theta=sensordata.ang_right, theta_dot=sensordata.vel_right
-            )
+            left_gait_speed = get_gait_speed(signal=sensor_data.left)
+            right_gait_speed = get_gait_speed(signal=sensor_data.right)
             if stop_condition(gait_speed=left_gait_speed) or stop_condition(
                 gait_speed=right_gait_speed
             ):
@@ -88,7 +80,7 @@ class WalkOnController:
 
         self.high_level_controller = HighLevelController()
 
-    def step(self, angle: float, velocity: float, timestamp: float) -> None:
+    def step(self, curr_signal: SensorSignal, timestamp: float) -> None:
         """Step the controller ahead.
 
         :param angle: hip angle in radians.
@@ -100,18 +92,17 @@ class WalkOnController:
 
         # High-level
         gait_phase = self.high_level_controller.compute(
-            curr_angle=angle, curr_vel=velocity, timestamp=timestamp
+            curr_signal=curr_signal, timestamp=timestamp
         )
 
         # Mid-level
         minus_sin_phi = center_and_transform_gait_phase(gait_phase=gait_phase)
-        if self.plot:
-            normalized = self.high_level_controller.normalized_signal
-            self.plotter.update_plots(
-                timestamp=timestamp,
-                sinusoidal=minus_sin_phi,
-                angle=normalized.angle_rad,
-                velocity=normalized.velocity_rad_per_sec,
-            )
 
         # Low-level
+
+        # Plotting
+        if self.plot:
+            steady = self.high_level_controller.get_signal_steady_state()
+            self.plotter.update_plots(
+                timestamp=timestamp, sinusoidal=minus_sin_phi, steady=steady
+            )
