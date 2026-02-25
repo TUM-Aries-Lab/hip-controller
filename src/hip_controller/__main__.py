@@ -16,7 +16,7 @@ from hip_controller.definitions import (
     DEFAULT_LOG_LEVEL,
     LogLevel,
 )  # pragma: no cover
-from hip_controller.utils.csv_player import CSVPlayer  # pragma: no coverD
+from hip_controller.utils.csv_player import CSVPlayer  # pragma: no cover
 from hip_controller.utils.utils import setup_logger  # pragma: no cover
 
 
