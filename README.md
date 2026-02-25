@@ -79,6 +79,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   ├── kalman.py
 │       │   ├── low_level.py
 │       │   ├── mid_level.py
+│       │   ├── motion_state_machine.py
 │       │   └── state_space.py
 │       ├── utils
 │       │   ├── csv_player.py
@@ -91,7 +92,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       └── definitions.py
 ├── tests
 │   ├── controller_test
-│   │   ├── high_level_controller
+│   │   ├── high_level_testing
 │   │   │   ├── high_level_testing_data
 │   │   │   │   ├── ang_ss_2026_01_26.csv
 │   │   │   │   ├── extrema_2026_01_26.csv
@@ -100,11 +101,11 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │   │   ├── vel_ss_2026_01_26.csv
 │   │   │   │   └── zero_crossing_left_2026_01_09.csv
 │   │   │   └── high_level_test.py
-│   │   ├── mid_level_controller
-│   │   │   ├── mid_level_testing_data
-│   │   │   │   └── sinusoidal_behavior_left_2026_01_29.csv
-│   │   │   └── mid_level_test.py
-│   │   └── kalman_test.py
+│   │   └── mid_level_testing
+│   │       ├── mid_level_testing_data
+│   │       │   └── sinusoidal_behavior_left_2026_01_29.csv
+│   │       ├── kalman_test.py
+│   │       └── mid_level_test.py
 │   ├── utilstest
 │   │   ├── csv_player_test.py
 │   │   ├── math_utils_test.py

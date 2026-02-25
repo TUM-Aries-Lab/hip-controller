@@ -79,17 +79,6 @@ class HighLevelController:
         )
 
 
-class StrideEventDetector:  # pragma no cover
-    """Detector for a new stride event before the very first step.
-
-    To smoothen the controller at the very beginning, the calculated gait phase is only returned after the first stride detection has occured. Before that, the gait phase is set to 0.
-    """
-
-    # TODO stride event detector for recalculation of the centered values within last 31ms
-    def __init__(self):
-        """Initialize the StrideEventDetector."""
-
-
 class SteadyStateTracker:
     """Tracker and calculator for steady-state gait phase parameters.
 
