@@ -23,9 +23,7 @@ from hip_controller.utils.utils import setup_logger  # pragma: no cover
 def main(
     log_level: str = DEFAULT_LOG_LEVEL,
     stderr_level: str = DEFAULT_LOG_LEVEL,
-    csv_path: Path = Path(
-        DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
-    ),
+    csv_path: Path = DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv",
 ) -> None:  # pragma: no cover
     """Run the main pipeline.
 
