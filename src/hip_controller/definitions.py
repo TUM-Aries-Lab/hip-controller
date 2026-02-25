@@ -146,7 +146,7 @@ class SensorSignal:
 
 
 @dataclass
-class SensorData:
+class ExosuitData:
     """Container for the measurements from the sensor of both lower limbs.
 
     :timestamp: current timestamp.
@@ -163,13 +163,10 @@ class SensorData:
 class RecordedSensorData:
     """Names of columns of recorded sensor data."""
 
-    # You could try "data_input_filtered_2026_01_09.csv" or "data_kinematics_2026_02_16.csv"
-    FILEPATH: Path = DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
+    timestamp: str = "time (s)"
+    ang_left: str = "angle_left (rad)"
+    vel_left: str = "vel_left (rad/s)"
+    ang_right: str = "angle_right (rad)"
+    vel_right: str = "vel_right (rad/s)"
 
-    TIMESTAMP: str = "time (s)"
-    ANG_LEFT: str = "angle_left (rad)"
-    VEL_LEFT: str = "vel_left (rad/s)"
-    ANG_RIGHT: str = "angle_right (rad)"
-    VEL_RIGHT: str = "vel_right (rad/s)"
-
-    FAKE_FREQUENCY_HZ: int = 100
+    fake_frequency_hz: int = 100

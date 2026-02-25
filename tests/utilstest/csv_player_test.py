@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from hip_controller.definitions import RecordedSensorData, SensorData, SensorSignal
+from hip_controller.definitions import ExosuitData, RecordedSensorData, SensorSignal
 from hip_controller.utils.csv_player import CSVPlayer
 
 
@@ -12,11 +12,11 @@ def create_test_csv(path: Path):
     """Create a data frame to test the CSV player."""
     df = pd.DataFrame(
         {
-            RecordedSensorData.TIMESTAMP: [0.0, 0.1, 0.2],
-            RecordedSensorData.ANG_LEFT: [1.0, 2.0, 3.0],
-            RecordedSensorData.VEL_LEFT: [0.1, 0.2, 0.3],
-            RecordedSensorData.ANG_RIGHT: [4.0, 5.0, 6.0],
-            RecordedSensorData.VEL_RIGHT: [0.4, 0.5, 0.6],
+            RecordedSensorData.timestamp: [0.0, 0.1, 0.2],
+            RecordedSensorData.ang_left: [1.0, 2.0, 3.0],
+            RecordedSensorData.vel_left: [0.1, 0.2, 0.3],
+            RecordedSensorData.ang_right: [4.0, 5.0, 6.0],
+            RecordedSensorData.vel_right: [0.4, 0.5, 0.6],
         }
     )
     df.to_csv(path, index=False)
@@ -48,10 +48,10 @@ def test_csv_player_reads_rows_in_order(tmp_path):
     t0 = player.get_sensor_data_from_csv()
     t1 = player.get_sensor_data_from_csv()
 
-    assert t0 == SensorData(
+    assert t0 == ExosuitData(
         timestamp=0.0, left=SensorSignal(1.0, 0.1), right=SensorSignal(4.0, 0.4)
     )
-    assert t1 == SensorData(
+    assert t1 == ExosuitData(
         timestamp=0.1, left=SensorSignal(2.0, 0.2), right=SensorSignal(5.0, 0.5)
     )
 

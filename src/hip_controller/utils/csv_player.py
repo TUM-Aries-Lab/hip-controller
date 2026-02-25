@@ -5,7 +5,7 @@ from pathlib import Path
 from loguru import logger
 from pandas import read_csv
 
-from hip_controller.definitions import RecordedSensorData, SensorData, SensorSignal
+from hip_controller.definitions import ExosuitData, RecordedSensorData, SensorSignal
 
 
 class CSVPlayer:
@@ -29,7 +29,7 @@ class CSVPlayer:
         self.counter = 0
 
         self.has_timestamp: bool = (
-            RecordedSensorData.TIMESTAMP in self.dataframe.columns
+            RecordedSensorData.timestamp in self.dataframe.columns
         )
 
     def has_next_line(self) -> bool:
@@ -40,7 +40,7 @@ class CSVPlayer:
         """
         return self.counter < len(self.dataframe)
 
-    def get_sensor_data_from_csv(self) -> SensorData:
+    def get_sensor_data_from_csv(self) -> ExosuitData:
         """Get the recorded data from csv line by line.
 
         :return: timestamp, angle_left, velocity_left, angle_right, velocity_right packed together as a dataclass
@@ -49,18 +49,18 @@ class CSVPlayer:
         row = self.dataframe.iloc[self.counter]
         self.counter += 1
         if self.has_timestamp:
-            timestamp = float(row[RecordedSensorData.TIMESTAMP])
+            timestamp = float(row[RecordedSensorData.timestamp])
         else:
-            timestamp = self.counter / RecordedSensorData.FAKE_FREQUENCY_HZ
+            timestamp = self.counter / RecordedSensorData.fake_frequency_hz
 
-        return SensorData(
+        return ExosuitData(
             timestamp=timestamp,
             left=SensorSignal(
-                angle_rad=float(row[RecordedSensorData.ANG_LEFT]),
-                velocity_rad_per_sec=float(row[RecordedSensorData.VEL_LEFT]),
+                angle_rad=float(row[RecordedSensorData.ang_left]),
+                velocity_rad_per_sec=float(row[RecordedSensorData.vel_left]),
             ),
             right=SensorSignal(
-                angle_rad=float(row[RecordedSensorData.ANG_RIGHT]),
-                velocity_rad_per_sec=float(row[RecordedSensorData.VEL_RIGHT]),
+                angle_rad=float(row[RecordedSensorData.ang_right]),
+                velocity_rad_per_sec=float(row[RecordedSensorData.vel_right]),
             ),
         )

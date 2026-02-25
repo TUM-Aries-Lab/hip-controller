@@ -12,18 +12,20 @@ from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
 from hip_controller.app import ExoController  # pragma: no cover
 from hip_controller.definitions import (
+    DATA_DIR,
     DEFAULT_LOG_LEVEL,
     LogLevel,
-    RecordedSensorData,
 )  # pragma: no cover
-from hip_controller.utils.csv_player import CSVPlayer  # pragma: no cover
+from hip_controller.utils.csv_player import CSVPlayer  # pragma: no coverD
 from hip_controller.utils.utils import setup_logger  # pragma: no cover
 
 
 def main(
     log_level: str = DEFAULT_LOG_LEVEL,
     stderr_level: str = DEFAULT_LOG_LEVEL,
-    csv_path: Path = RecordedSensorData.FILEPATH,
+    csv_path: Path = Path(
+        DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
+    ),
 ) -> None:  # pragma: no cover
     """Run the main pipeline.
 
@@ -89,7 +91,7 @@ if __name__ == "__main__":  # pragma: no cover
     parser.add_argument(
         "--file-path",
         "-p",
-        default=RecordedSensorData.FILEPATH,
+        default=Path(DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"),
         choices=list(LogLevel()),
         help="Path to the CSV file used for simulated real-time playback. The file has to contain columns name 'angle_left (rad)', 'vel_left (rad/s)', 'angle_right (rad)', 'vel_right (rad/s)', additinally 'time (s)'.",
         required=False,

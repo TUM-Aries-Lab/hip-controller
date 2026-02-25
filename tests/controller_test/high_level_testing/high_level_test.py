@@ -128,7 +128,7 @@ def test_set_state() -> None:
         curr_velocity = curr[KinematicsDataColumnName.VELOCITY]
         curr_angle = curr[KinematicsDataColumnName.ANGLE]
 
-        controller.compute(
+        controller.update_and_compute(
             curr_signal=SensorSignal(
                 angle_rad=curr_angle, velocity_rad_per_sec=curr_velocity
             ),
@@ -253,7 +253,7 @@ def test_z_t_and_pos_ss() -> None:
         curr_angle = curr[KinematicsDataColumnName.ANGLE]
 
         # Act
-        controller.compute(
+        controller.update_and_compute(
             curr_signal=SensorSignal(
                 angle_rad=curr_angle, velocity_rad_per_sec=curr_velocity
             ),

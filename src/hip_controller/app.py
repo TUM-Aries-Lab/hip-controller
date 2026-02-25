@@ -5,7 +5,7 @@ from loguru import logger
 from hip_controller.control.high_level import HighLevelController
 from hip_controller.control.low_level import get_gait_speed, stop_condition
 from hip_controller.control.mid_level import center_and_transform_gait_phase
-from hip_controller.definitions import ConfigPlot, SensorData, SensorSignal
+from hip_controller.definitions import ConfigPlot, ExosuitData, SensorSignal
 
 
 class ExoController:
@@ -24,7 +24,7 @@ class ExoController:
             left=False, plot=ConfigPlot.right_limb_plot
         )
 
-    def step(self, sensor_data: SensorData):
+    def step(self, sensor_data: ExosuitData):
         """Step the controller ahead.
 
         :param ang_left: hip angle of the left lower limb in radians.
@@ -91,7 +91,7 @@ class WalkOnController:
         logger.debug("Stepping controller ahead.")
 
         # High-level
-        gait_phase = self.high_level_controller.compute(
+        gait_phase = self.high_level_controller.update_and_compute(
             curr_signal=curr_signal, timestamp=timestamp
         )
 

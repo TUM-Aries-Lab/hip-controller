@@ -39,25 +39,21 @@ class HighLevelController:
         self.state_machine: MotionStateMachine = MotionStateMachine()
         self.steady_state_tracker: SteadyStateTracker = SteadyStateTracker()
 
-    def compute(self, curr_signal: SensorSignal, timestamp: float) -> float:
-        """Update controller state with latest sensor measurements - sensor signals, motion state, extrema values, and compute the sinosoidal-like behaviour of the hip joint in the sagittal plane with the normalized and centered gait phase value.
+    def update_and_compute(self, curr_signal: SensorSignal, timestamp: float) -> float:
+        """Update controller state with latest sensor data.
 
-        Processes current angle and velocity measurements, shifts previous signal
-        to storage, updates the motion state machine to detect extrema transitions,
-        and computes the steady-state gait phase parameters. This should be called
-        once per control cycle with the latest sensor data.
-
-        :param float curr_angle: Current hip joint angle in radians.
-        :param float curr_vel: Current hip joint angular velocity in radians per second.
+        :param SensorSignal curr_signal: Current hip joint angle in radians and current hip joint angular velocity in radians per second.
         :param float timestamp:  Current timestamp in seconds.
 
         :return:
-            Sinosoidal-like behaviour of the hip joint in the sagittal plane.
+            Gait phase of the hip joint in the sagittal plane.
         :rtype: float
         """
+        # Processes current angle and velocity measurements, shifts previous signal to storage
         self.prev_signal = self.curr_signal
         self.curr_signal = curr_signal
 
+        # Updates the motion state machine to detect extrema transitions
         state = self.state_machine.update_motion_state(
             prev=self.prev_signal, curr=self.curr_signal, timestamp=timestamp
         )
@@ -65,6 +61,8 @@ class HighLevelController:
             self.steady_state_tracker.update_extrema(
                 state=state, curr_signal=self.curr_signal
             )
+
+        # Computes the steady-state gait phase parameters
         self.steady_state_tracker.update_steady_state(curr_signal=self.curr_signal)
 
         return self.steady_state_tracker.calculate_gait_phase()
