@@ -14,12 +14,11 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
     """PyQt6 window that displays two real-time plots.
 
     1) Left plot:
-       - Time vs sinusoidal behavior of gait phase
+       - Time vs gait phase
        - Sliding time window
 
     2) Right plot:
        - Phase portrait (angle vs velocity)
-       - Fixed axis limits
        - Fading trail showing temporal evolution
 
     Data is advanced by a QTimer to keep the GUI responsive.

@@ -79,12 +79,15 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   ├── kalman.py
 │       │   ├── low_level.py
 │       │   ├── mid_level.py
+│       │   ├── motion_mapping.py
 │       │   ├── motion_state_machine.py
 │       │   └── state_space.py
 │       ├── utils
 │       │   ├── csv_player.py
 │       │   ├── math_utils.py
-│       │   ├── plotter.py
+│       │   ├── plotter_phase_portrait.py
+│       │   ├── simulator.py
+│       │   ├── time_plot.py
 │       │   └── utils.py
 │       ├── __init__.py
 │       ├── __main__.py
@@ -103,9 +106,11 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │   └── high_level_test.py
 │   │   └── mid_level_testing
 │   │       ├── mid_level_testing_data
+│   │       │   ├── look_up_table_2026_02_25.csv
 │   │       │   └── sinusoidal_behavior_left_2026_01_29.csv
 │   │       ├── kalman_test.py
-│   │       └── mid_level_test.py
+│   │       ├── mid_level_test.py
+│   │       └── motion_mapping_test.py
 │   ├── utilstest
 │   │   ├── csv_player_test.py
 │   │   ├── math_utils_test.py

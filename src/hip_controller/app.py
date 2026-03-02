@@ -71,7 +71,7 @@ class WalkOnController:
 
         self.plot = plot
         if plot:
-            from hip_controller.utils.plotter import PortraitWindow
+            from hip_controller.plotter.phase_portrait import PortraitWindow
 
             self.plotter = PortraitWindow(left=left)
             self.plotter.show()

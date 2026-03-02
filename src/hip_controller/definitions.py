@@ -92,9 +92,12 @@ class LogLevel:
 DEFAULT_LOG_LEVEL = LogLevel.info
 DEFAULT_LOG_FILENAME = "log_file"
 
-
+# ---high level---
 # centering & normalization
 VALUE_NEAR_ZERO = 1e-6
+
+# stride event detector
+STRIDE_EVENT_COUNTER_TIME = 0.3099  # in ms
 
 # ---mid level---
 LAG_CORRECTION = pi / 7
@@ -107,6 +110,23 @@ SCALE_LEVEL_GROUND = 1
 # Kalman filter definitions
 PROCESS_NOISE = 2e-2
 MEASUREMENT_NOISE = 0.75
+
+
+# Cubic Spline Interpolation
+@dataclass(frozen=True)
+class MotionMapping:
+    """Stores breakpoint and table data of the motion mapping."""
+
+    BREAKPOINTS = np.array(
+        [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0.1, 0.2, 0.4, 0.6, 0.8, 1],
+        dtype=np.float64,
+    )
+
+    TABLE = np.array(
+        [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0, 0.005, 0.01, 0.015, 0.02, 0.025],
+        dtype=np.float64,
+    )
+
 
 # S Gait stopping threshold
 STOP_THRESHOLD = 0.5

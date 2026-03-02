@@ -64,3 +64,20 @@ class CSVPlayer:
                 velocity_rad_per_sec=float(row[RecordedSensorData.vel_right]),
             ),
         )
+
+    def get_data_from_csv(
+        self, input_name: str, output_name: str
+    ) -> tuple[float, float, float]:
+        """Get the recorded data from csv line by line.
+
+        :return: timestamp, angle_left, velocity_left, angle_right, velocity_right packed together as a dataclass
+        :rtype: Sensordata
+        """
+        row = self.dataframe.iloc[self.counter]
+        self.counter += 1
+        if self.has_timestamp:
+            timestamp = float(row[RecordedSensorData.timestamp])
+        else:
+            timestamp = self.counter / RecordedSensorData.fake_frequency_hz
+
+        return timestamp, float(row[input_name]), float(row[output_name])

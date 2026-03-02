@@ -99,7 +99,7 @@ def convert_xlsx_to_csv(path: Path) -> Path:
         from pathlib import Path
 
         csv_path = convert_xlsx_to_csv(
-            path=Path('controller_test/high_level_controller/high_level_testing_data/gait_phase_left_2026_01_21.xlsx'))
+            path=Path('controller_test/mid_level_testing/mid_level_testing_data/stride_event_detector_2026_02_26.xlsx'))
     """
     xlsx_path = TESTING_DIR / path
 
@@ -115,3 +115,22 @@ def convert_xlsx_to_csv(path: Path) -> Path:
     data.to_csv(output_path, index=False)
 
     return output_path
+
+
+def convert_zero_one_to_boolean(path: Path) -> None:
+    """Convert 0/1 in column to boolean.
+
+    :param Path path: The path of the CSV file.
+
+    Usage:
+    convert_zero_one_to_boolean(
+            path=Path('controller_test/mid_level_testing/mid_level_testing_data/stride_event_detector_2026_02_26.csv'))
+    """
+    df = pd.read_csv(path)
+
+    df["enable_trigger"] = df["enable_trigger"].astype(int).astype(bool)
+    df["valid_ang_max"] = df["valid_ang_max"].astype(int).astype(bool)
+    df["enable_detector"] = df["enable_detector"].astype(int).astype(bool)
+
+    # Save back to CSV
+    df.to_csv(path, index=False)

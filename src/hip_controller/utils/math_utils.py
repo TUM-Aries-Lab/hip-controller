@@ -21,7 +21,7 @@ def symmetrize_matrix(matrix: NDArray) -> NDArray:
     return (matrix + matrix.T) / 2
 
 
-def hit_crossing_from_upper(curr: float, prev: float, offset: float = 0) -> bool:
+def hit_crossing_falling(curr: float, prev: float, offset: float = 0) -> bool:
     """Detect certain crossing from upper to lower.
 
     Checks if a value transitions from non-negative to negative.
@@ -34,7 +34,7 @@ def hit_crossing_from_upper(curr: float, prev: float, offset: float = 0) -> bool
     return prev >= offset > curr
 
 
-def hit_crossing_from_lower(curr: float, prev: float, offset: float = 0) -> bool:
+def hit_crossing_rising(curr: float, prev: float, offset: float = 0) -> bool:
     """Detect certain crossing from lower to upper.
 
     Checks if a value transitions from non-positive to positive.

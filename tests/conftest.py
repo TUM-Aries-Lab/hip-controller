@@ -37,10 +37,14 @@ class HighLevelData:
     DATA_ANG_SS: Path = TESTING_HIGH_LEVEL_DIR / "ang_ss_2026_01_26.csv"
     DATA_GAIT_PHASE: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_01_21.csv"
 
+    DATA_STRIDE_EVENT_DETECTOR: Path = (
+        TESTING_HIGH_LEVEL_DIR / "stride_event_detector_2026_02_26.csv"
+    )
+
 
 @dataclass
 class MidLevelData:
-    """High level data for testing."""
+    """Mid level data for testing."""
 
     TESTING_MID_LEVEL_DIR: Path = (
         TESTING_DIR / "controller_test" / "mid_level_testing" / "mid_level_testing_data"
@@ -49,6 +53,8 @@ class MidLevelData:
     DATA_SINUSOIDAL_BEHAVIOR: Path = (
         TESTING_MID_LEVEL_DIR / "sinusoidal_behavior_left_2026_01_29.csv"
     )
+
+    DATA_MOTION_MAPPING: Path = TESTING_MID_LEVEL_DIR / "look_up_table_2026_02_25.csv"
 
 
 @dataclass
@@ -85,3 +91,13 @@ class KinematicsDataColumnName:
 
     GAIT_PHASE: str = "gait_phase_left"
     SINUSOIDAL_BEHAVIOR: str = "sinusoidal_behavior"
+
+    # Cubic Spline Interpolation
+    MAPPING_KEY: str = "motion_mapping_key"
+    MAPPING_VALUE: str = "motion_mapping_value"
+
+    # Stride event detector
+    ENABLE_TRIGGER: str = "enable_trigger"
+    ENABLE_DETECTOR: str = "enable_detector"
+    VALID_STRIDE: str = "valid_stride"
+    STRIDE_EVENT: str = "stride_event"

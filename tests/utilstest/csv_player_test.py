@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from hip_controller.definitions import ExosuitData, RecordedSensorData, SensorSignal
-from hip_controller.utils.csv_player import CSVPlayer
+from hip_controller.plotter.csv_player import CSVPlayer
 
 
 def create_test_csv(path: Path):

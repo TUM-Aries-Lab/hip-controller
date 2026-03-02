@@ -26,8 +26,8 @@ from hip_controller.control.high_level import (
     SteadyStateTracker,
 )
 from hip_controller.utils.math_utils import (
-    hit_crossing_from_lower,
-    hit_crossing_from_upper,
+    hit_crossing_falling,
+    hit_crossing_rising,
 )
 from tests.conftest import HighLevelData, KinematicsDataColumnName
 
@@ -48,10 +48,10 @@ def test_extrema_trigger() -> None:
         curr_angle = curr[KinematicsDataColumnName.ANGLE]
         prev_angle = prev[KinematicsDataColumnName.ANGLE]
 
-        angle_max = hit_crossing_from_upper(curr=curr_velocity, prev=prev_velocity)
-        angle_min = hit_crossing_from_lower(curr=curr_velocity, prev=prev_velocity)
-        velocity_max = hit_crossing_from_lower(curr=curr_angle, prev=prev_angle)
-        velocity_min = hit_crossing_from_upper(curr=curr_angle, prev=prev_angle)
+        angle_max = hit_crossing_falling(curr=curr_velocity, prev=prev_velocity)
+        angle_min = hit_crossing_rising(curr=curr_velocity, prev=prev_velocity)
+        velocity_max = hit_crossing_rising(curr=curr_angle, prev=prev_angle)
+        velocity_min = hit_crossing_falling(curr=curr_angle, prev=prev_angle)
 
         expected_vel_max = curr[KinematicsDataColumnName.TRIGG_VEL_MAX]
         expected_ang_max = curr[KinematicsDataColumnName.TRIGG_ANG_MAX]
