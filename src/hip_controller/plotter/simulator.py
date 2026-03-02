@@ -44,7 +44,9 @@ def simulate(
         )
 
         output = lookup.step(input)
-        plotter.update_plots(timestamp=timestamp, left_input=input, right_input=output)
+        plotter.update_plots(
+            timestamp=timestamp, first_input=input, second_input=output
+        )
 
     def sigint_handler(signal, frame) -> None:
         """Handle SIGINT (Ctrl+C) gracefully."""

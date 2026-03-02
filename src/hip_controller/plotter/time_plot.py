@@ -15,7 +15,7 @@ class PlotterWindow(QtWidgets.QMainWindow):  # pragma: no cover
     def __init__(self, separated: bool) -> None:
         """Initialize the real-time plotting window.
 
-        :param bool left: Whether this plot is for the left or right limb, used for titles and labels.
+        :param bool separated: Whether the data should be showed in a separated way, or not.
         :return: None
         """
         # Initialize the QMainWindow base class
@@ -46,7 +46,6 @@ class PlotterWindow(QtWidgets.QMainWindow):  # pragma: no cover
         This method is called once during initialization and should
         not contain any real-time logic.
 
-        :param bool left: Whether this plot is for the left or right limb, used for titles and labels.
         :return: None
         """
         # Create a central widget to hold everything
@@ -132,21 +131,21 @@ class PlotterWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self._draw_every = ConfigPlot.DRAW_SAMPLE_FREQUENCY
 
     def update_plots(
-        self, timestamp: float, left_input: float, right_input: float
+        self, timestamp: float, first_input: float, second_input: float
     ) -> None:
         """Update both plots using new data.
 
         :param float timestamp: Time stamp.
-        :param float sinusoidal: Output signal plotted in the time-domain view.
-        :param float angle: Normalized angle in rad.
-        :param float velocity: Normalized angular velocity in rad/s.
+
+        :param float first_input:  First input.
+        :param float second_input: Second input.
         """
         # ---- store incoming data ----
 
         # Append the newest time and signal value to the buffers
         self.time_buf.append(timestamp)
-        self.left_buf.append(left_input)
-        self.right_buf.append(right_input)
+        self.left_buf.append(first_input)
+        self.right_buf.append(second_input)
 
         # ---- draw every certain batch of sample ----
         self._sample_counter += 1
