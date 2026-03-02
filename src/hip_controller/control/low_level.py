@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from hip_controller.definitions import STOP_THRESHOLD
+from hip_controller.definitions import STOP_THRESHOLD, SensorSignal
 
 
 def stop_condition(gait_speed: float) -> bool:
@@ -14,11 +14,10 @@ def stop_condition(gait_speed: float) -> bool:
     return gait_speed < STOP_THRESHOLD
 
 
-def get_gait_speed(theta: float, theta_dot: float) -> float:
+def get_gait_speed(signal: SensorSignal) -> float:
     """Calculate the s gait.
 
-    :param float theta: angle in radians.
-    :param float theta_dot: angle in radians / sec.
+    :param SensorSignal signal: angle in radians and velocity in radius per second.
     :returns: The gait speed.
     """
-    return np.sqrt(theta**2 + theta_dot**2)
+    return np.sqrt(signal.angle_rad**2 + signal.velocity_rad_per_sec**2)

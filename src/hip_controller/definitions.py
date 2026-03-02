@@ -9,6 +9,51 @@ import numpy as np
 np.set_printoptions(precision=3, floatmode="fixed", suppress=True)
 
 
+@dataclass(frozen=True)
+class ConfigPlot:
+    """Plot Configurations for the hip controller."""
+
+    # if the graph is displayed or not
+    left_limb_plot: bool = True
+    right_limb_plot: bool = False
+
+    GRAPH_WIDTH = 1000
+    GRAPH_HEIGHT = 500
+
+    DRAW_SAMPLE_FREQUENCY = 10
+
+    # left time-series graph config
+    TIME_PLOT_SIZE: int = 150
+    TIME_PLOT_WINDOW_SIZE_SEC = (
+        2  # This should align with the plot number size with frequency of the samples
+    )
+
+    # sin-wave is always between 1 and -1
+    TIME_PLOT_YMIN = -1.1
+    TIME_PLOT_YMAX = 1.1
+
+    TIME_PLOT_CURVE_COLOR = (244, 96, 144)
+    TIME_PLOT_CURVE_WIDTH = 2
+    TIME_PLOT_CURVE_NAME = "<math>-sin(Φ) with lag correction </math>"
+    TIME_PLOT_WINDOW_LEAD_SEC = 0.5
+    TIME_PLOT_WINDOW_FOLLOW = TIME_PLOT_WINDOW_LEAD_SEC - TIME_PLOT_WINDOW_SIZE_SEC
+
+    # right phase portrait config
+    PHASE_PLOT_SIZE: int = 150
+    PHASE_PLOT_WINDOW_MARGIN = 1.1
+
+    PHASE_PLOT_AXIS_ANGLE = "Angle (rad)"
+    PHASE_PLOT_AXIS_VELOCITY = "Velocity (rad/s)"
+    PHASE_PLOT_SCATTER_SIZE = 5
+
+    # Since the spots are fading transparently, RGB values are be given separately
+    PHASE_PLOT_SCATTER_COLOR_R = 56
+    PHASE_PLOT_SCATTER_COLOR_G = 136
+    PHASE_PLOT_SCATTER_COLOR_B = 56
+    PHASE_PLOT_LINE_WIDTH = 2
+    PHASE_PLOT_LINE_COLOR = "g"
+
+
 # --- Directories ---
 
 ROOT_DIR: Path = Path(__file__).resolve().parents[2]
@@ -48,17 +93,23 @@ DEFAULT_LOG_LEVEL = LogLevel.info
 DEFAULT_LOG_FILENAME = "log_file"
 
 
+# centering & normalization
+VALUE_NEAR_ZERO = 1e-6
+
+# ---mid level---
+LAG_CORRECTION = pi / 7
+
+# Amplitude modulation
+AMPLITUDE_GAIN = -6.5
+SIGMOID_POWER = 50
+SCALE_LEVEL_GROUND = 1
+
 # Kalman filter definitions
 PROCESS_NOISE = 2e-2
 MEASUREMENT_NOISE = 0.75
 
 # S Gait stopping threshold
 STOP_THRESHOLD = 0.5
-
-
-# centering & normalization
-LAG_CORRECTION = pi / 7
-VALUE_NEAR_ZERO = 1e-6
 
 
 @dataclass(frozen=True)
@@ -76,3 +127,46 @@ class PositionLimitation:
     # both are []
     UPPER = 10.0
     LOWER = -10.0
+
+
+@dataclass
+class SensorSignal:
+    """Container for timestamp, angle and velocity measurements from the sensor.
+
+    Represents a single snapshot of kinematic data (angle and velocity) read from
+    the hip joint sensor at a specific point in time. Used throughout the control
+    system to maintain consistent representation of joint state.
+
+    :angle_rad: hip angle of the lower limb in radians.
+    :velocity_rad_per_sec: hip angle velocity of the lower limb in radians per second.
+    """
+
+    angle_rad: float = 0.0
+    velocity_rad_per_sec: float = 0.0
+
+
+@dataclass
+class ExosuitData:
+    """Container for the measurements from the sensor of both lower limbs.
+
+    :timestamp: current timestamp.
+    :left: Signal state of the left lower limb.
+    :right: Signal state of the right lower limb.
+    """
+
+    timestamp: float
+    left: SensorSignal
+    right: SensorSignal
+
+
+@dataclass
+class RecordedSensorData:
+    """Names of columns of recorded sensor data."""
+
+    timestamp: str = "time (s)"
+    ang_left: str = "angle_left (rad)"
+    vel_left: str = "vel_left (rad/s)"
+    ang_right: str = "angle_right (rad)"
+    vel_right: str = "vel_right (rad/s)"
+
+    fake_frequency_hz: int = 100

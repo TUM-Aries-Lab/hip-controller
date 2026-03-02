@@ -3,11 +3,11 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import pandas as pd
-import pytest
+from pandas import DataFrame, ExcelWriter, read_csv, testing
+from pytest import raises
 
 from hip_controller.definitions import DEFAULT_LOG_FILENAME, LogLevel
-from hip_controller.utils import convert_xlsx_to_csv, setup_logger
+from hip_controller.utils.utils import convert_xlsx_to_csv, setup_logger
 
 
 def test_logger_init() -> None:
@@ -31,14 +31,14 @@ def test_log_level() -> None:
     assert type(log_levels) is list
 
 
-def _make_excel(path: Path, sheets: dict[str, pd.DataFrame]) -> None:
+def _make_excel(path: Path, sheets: dict[str, DataFrame]) -> None:
     """Write an Excel file with the given sheets.
 
     :param path: Output Excel file path.
     :param sheets: Mapping of sheet name to DataFrame.
     :return: None
     """
-    with pd.ExcelWriter(path) as writer:
+    with ExcelWriter(path) as writer:
         for name, df in sheets.items():
             df.to_excel(writer, sheet_name=name, index=False)
 
@@ -49,7 +49,7 @@ def test_convert_xlsx_to_csv_creates_csv(tmp_path: Path) -> None:
     :param tmp_path: Temporary output Excel file path for testing.
     :return: None
     """
-    df: pd.DataFrame = pd.DataFrame(
+    df: DataFrame = DataFrame(
         {"FirstColumn": [0.1, -0.2], "SecondColumn": [1.0, -0.5]},
     )
     xlsx: Path = tmp_path / "test.xlsx"
@@ -58,8 +58,8 @@ def test_convert_xlsx_to_csv_creates_csv(tmp_path: Path) -> None:
     out: Path = convert_xlsx_to_csv(xlsx)
     assert out.exists()
 
-    read: pd.DataFrame = pd.read_csv(out)
-    pd.testing.assert_frame_equal(read, df)
+    read: DataFrame = read_csv(out)
+    testing.assert_frame_equal(read, df)
 
 
 def test_convert_xlsx_to_csv_file_not_found(tmp_path: Path) -> None:
@@ -71,5 +71,5 @@ def test_convert_xlsx_to_csv_file_not_found(tmp_path: Path) -> None:
     """
     missing_file: Path = tmp_path / "does_not_exist.xlsx"
 
-    with pytest.raises(FileNotFoundError):
+    with raises(FileNotFoundError):
         convert_xlsx_to_csv(missing_file)

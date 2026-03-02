@@ -5,7 +5,7 @@ from numpy.typing import NDArray
 
 from hip_controller.control.state_space import StateSpaceLinear
 from hip_controller.definitions import MEASUREMENT_NOISE, PROCESS_NOISE
-from hip_controller.math_utils import symmetrize_matrix
+from hip_controller.utils.math_utils import symmetrize_matrix
 
 
 class KalmanFilter:

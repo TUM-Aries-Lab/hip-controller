@@ -1,6 +1,6 @@
 """Test the main program."""
 
-from hip_controller.app import WalkOnController
+from hip_controller.app import SensorSignal, WalkOnController
 
 
 def test_controller():
@@ -8,7 +8,9 @@ def test_controller():
     # Arrange
 
     # Act
-    controller = WalkOnController()
-    controller.step(theta=0.0, theta_dot=0.0, timestamp=0.0)
+    controller = WalkOnController(plot=False)
+    controller.step(
+        curr_signal=SensorSignal(angle_rad=0.0, velocity_rad_per_sec=0.0), timestamp=0.0
+    )
 
     # Assert
