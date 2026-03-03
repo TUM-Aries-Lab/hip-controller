@@ -2,9 +2,14 @@
 
 from loguru import logger
 
-from hip_controller.control.high_level import HighLevelController
-from hip_controller.control.low_level import get_gait_speed, stop_condition
-from hip_controller.control.mid_level import center_and_transform_gait_phase
+from hip_controller.control.high_level_controller.high_level import HighLevelController
+from hip_controller.control.low_level_controller.low_level import (
+    get_gait_speed,
+    stop_condition,
+)
+from hip_controller.control.mid_level_controller.mid_level import (
+    center_and_transform_gait_phase,
+)
 from hip_controller.definitions import ConfigPlot, ExosuitData, SensorSignal
 
 
@@ -35,8 +40,6 @@ class ExoController:
         :return: None
 
         """
-        # TODO: a better structure for sensordata combining the dataclass sensorSignal
-
         self.left_controller.step(
             timestamp=sensor_data.timestamp, curr_signal=sensor_data.left
         )
@@ -75,7 +78,6 @@ class WalkOnController:
 
             self.plotter = PortraitWindow(left=left)
             self.plotter.show()
-
             # Execute the Qt plot application.
 
         self.high_level_controller = HighLevelController()

@@ -75,15 +75,19 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   └── logs
 │   └── hip_controller
 │       ├── control
+│       │   ├── high_level_controller
+│       │   │   ├── high_level.py
+│       │   │   ├── motion_state_machine.py
+│       │   │   ├── steady_state_tracker.py
+│       │   │   └── stride_event_detector.py
+│       │   ├── low_level_controller
+│       │   │   └── low_level.py
+│       │   ├── mid_level_controller
+│       │   │   ├── cubic_spline_interpolation.py
+│       │   │   ├── kalman.py
+│       │   │   └── mid_level.py
 │       │   ├── __init__.py
-│       │   ├── cubic_spline_interpolation.py
-│       │   ├── high_level.py
-│       │   ├── kalman.py
-│       │   ├── low_level.py
-│       │   ├── mid_level.py
-│       │   ├── motion_state_machine.py
-│       │   ├── state_space.py
-│       │   └── stride_event_detector.py
+│       │   └── app.py
 │       ├── plotter
 │       │   ├── csv_player.py
 │       │   ├── phase_portrait.py
@@ -91,10 +95,10 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   └── time_plot.py
 │       ├── utils
 │       │   ├── math_utils.py
+│       │   ├── state_space.py
 │       │   └── utils.py
 │       ├── __init__.py
 │       ├── __main__.py
-│       ├── app.py
 │       └── definitions.py
 ├── tests
 │   ├── controller_test
@@ -103,25 +107,27 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │   │   ├── ang_ss_2026_01_26.csv
 │   │   │   │   ├── extrema_2026_01_26.csv
 │   │   │   │   ├── gait_phase_left_2026_01_21.csv
+│   │   │   │   ├── gait_phase_left_2026_03_03.csv
 │   │   │   │   ├── stride_event_detector_2026_02_26.csv
 │   │   │   │   ├── valid_trigger_left_2026_01_15.csv
 │   │   │   │   ├── vel_ss_2026_01_26.csv
 │   │   │   │   └── zero_crossing_left_2026_01_09.csv
 │   │   │   ├── high_level_test.py
+│   │   │   ├── motion_state_machine_test.py
 │   │   │   └── stride_event_detector_test.py
-│   │   └── mid_level_testing
-│   │       ├── mid_level_testing_data
-│   │       │   ├── look_up_table_2026_02_25.csv
-│   │       │   └── sinusoidal_behavior_left_2026_01_29.csv
-│   │       ├── cubic_spline_interpolation_test.py
-│   │       ├── kalman_test.py
-│   │       └── mid_level_test.py
+│   │   ├── mid_level_testing
+│   │   │   ├── mid_level_testing_data
+│   │   │   │   ├── look_up_table_2026_02_25.csv
+│   │   │   │   └── sinusoidal_behavior_left_2026_01_29.csv
+│   │   │   ├── cubic_spline_interpolation_test.py
+│   │   │   ├── kalman_test.py
+│   │   │   └── mid_level_test.py
+│   │   └── app_test.py
 │   ├── utilstest
 │   │   ├── csv_player_test.py
 │   │   ├── math_utils_test.py
 │   │   └── utils_test.py
 │   ├── __init__.py
-│   ├── app_test.py
 │   └── conftest.py
 ├── .darglint
 ├── .dockerignore

@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from src.hip_controller.control.kalman import KalmanFilter
-from src.hip_controller.control.state_space import StateSpaceLinear
+from hip_controller.control.mid_level_controller.kalman import KalmanFilter
+from hip_controller.utils.state_space import StateSpaceLinear
 
 
 def test_kalman_filter_initialization() -> None:

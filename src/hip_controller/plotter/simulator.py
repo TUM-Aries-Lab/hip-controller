@@ -5,7 +5,9 @@ from pathlib import Path  # pragma: no cover
 
 from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
-from hip_controller.control.cubic_spline_interpolation import CubicSplineInterpolation
+from hip_controller.control.mid_level_controller.cubic_spline_interpolation import (
+    CubicSplineInterpolation,
+)
 from hip_controller.definitions import DATA_DIR
 
 # pragma: no cover

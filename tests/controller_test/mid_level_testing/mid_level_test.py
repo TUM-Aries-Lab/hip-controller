@@ -4,7 +4,9 @@ from math import isclose
 
 from pandas import read_csv
 
-from hip_controller.control.mid_level import center_and_transform_gait_phase
+from hip_controller.control.mid_level_controller.mid_level import (
+    center_and_transform_gait_phase,
+)
 from tests.conftest import KinematicsDataColumnName, MidLevelData
 
 

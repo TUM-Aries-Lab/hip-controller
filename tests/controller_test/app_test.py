@@ -1,6 +1,6 @@
 """Test the main program."""
 
-from hip_controller.app import SensorSignal, WalkOnController
+from hip_controller.control.app import SensorSignal, WalkOnController
 
 
 def test_controller():

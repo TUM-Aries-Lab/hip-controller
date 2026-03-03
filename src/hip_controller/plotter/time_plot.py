@@ -38,7 +38,7 @@ class PlotterWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self._init_ui()
 
         self._sample_counter = 0
-        self._draw_every = ConfigPlot.DRAW_SAMPLE_FREQUENCY
+        self._draw_every = 1
 
     def _init_ui(self) -> None:
         """Create and configure all Qt and PyQtGraph widgets.

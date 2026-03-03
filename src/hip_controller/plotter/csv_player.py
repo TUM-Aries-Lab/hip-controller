@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pandas as pd
 from loguru import logger
 from pandas import read_csv
 
@@ -81,3 +82,48 @@ class CSVPlayer:
             timestamp = self.counter / RecordedSensorData.fake_frequency_hz
 
         return timestamp, float(row[input_name]), float(row[output_name])
+
+
+def convert_xlsx_to_csv(path: Path) -> Path:
+    """Convert an Excel file to CSV format.
+
+    Reads a single Excel file (.xls or .xlsx) from the testing directory and writes
+    its contents to a CSV file with the same filename stem in the same directory.
+    This is useful for converting test data and measurement recordings to a
+    more portable and scriptable format.
+
+    :param Path path: Absolute path to the Excel file.
+    :return: Path to the newly created CSV file with the same name as the input file but with .csv extension.
+    :rtype: Path
+    """
+    xlsx_path = path
+
+    if not xlsx_path.exists():
+        raise FileNotFoundError(f"File not found: {xlsx_path}")
+
+    output_path = xlsx_path.with_suffix(".csv")
+
+    logger.info(f"Reading Excel file: {xlsx_path}")
+    data: pd.DataFrame = pd.read_excel(xlsx_path)
+
+    logger.info(f"Writing CSV file: {output_path}")
+    data.to_csv(output_path, index=False)
+
+    return output_path
+
+
+def convert_zero_one_to_boolean(path: Path, column_names: list[str]) -> None:
+    """Convert 0/1 values in columns to boolean.
+
+    :param Path path: The path of the CSV file.
+    :param list[str] columnnames: Names of columns which has 0 and 1 values that needs to be converted.
+
+    :return: None
+    """
+    df = pd.read_csv(path)
+
+    for column_name in column_names:
+        df[column_name] = df[column_name].astype(int).astype(bool)
+
+    # Save back to CSV
+    df.to_csv(path, index=False)

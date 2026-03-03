@@ -14,107 +14,21 @@ value for which the test passes, ensuring strict yet numerically
 robust validation.
 """
 
-from math import atan2, isclose
+# Due to floating-point round-off/precision differences between MATLAB and Python numerical backends, exact equality comparisons seem to be not reliable.
+
+from math import isclose
 
 from pandas import read_csv
 
-from hip_controller.control.high_level import (
+from hip_controller.control.high_level_controller.high_level import (
     HighLevelController,
-    MotionState,
-    MotionStateMachine,
     SensorSignal,
-    SteadyStateTracker,
-)
-from hip_controller.utils.math_utils import (
-    hit_crossing_falling,
-    hit_crossing_rising,
 )
 from tests.conftest import HighLevelData, KinematicsDataColumnName
 
 
-def test_extrema_trigger() -> None:
-    """Test angle extrema detection based on velocity zero-crossings.
-
-    :return: None
-    """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_ZERO_CROSSING)
-
-    for i in range(1, len(df)):
-        prev = df.iloc[i - 1]
-        curr = df.iloc[i]
-
-        curr_velocity = curr[KinematicsDataColumnName.VELOCITY]
-        prev_velocity = prev[KinematicsDataColumnName.VELOCITY]
-        curr_angle = curr[KinematicsDataColumnName.ANGLE]
-        prev_angle = prev[KinematicsDataColumnName.ANGLE]
-
-        angle_max = hit_crossing_falling(curr=curr_velocity, prev=prev_velocity)
-        angle_min = hit_crossing_rising(curr=curr_velocity, prev=prev_velocity)
-        velocity_max = hit_crossing_rising(curr=curr_angle, prev=prev_angle)
-        velocity_min = hit_crossing_falling(curr=curr_angle, prev=prev_angle)
-
-        expected_vel_max = curr[KinematicsDataColumnName.TRIGG_VEL_MAX]
-        expected_ang_max = curr[KinematicsDataColumnName.TRIGG_ANG_MAX]
-        expected_vel_min = curr[KinematicsDataColumnName.TRIGG_VEL_MIN]
-        expected_ang_min = curr[KinematicsDataColumnName.TRIGG_ANG_MIN]
-
-        assert velocity_max == expected_vel_max, f"Row {i}"
-        assert angle_max == expected_ang_max, f"Row {i}"
-        assert velocity_min == expected_vel_min, f"Row {i}"
-        assert angle_min == expected_ang_min, f"Row {i}"
-
-
-def test_valid_trigger() -> None:
-    """Test angle extrema detection based on velocity zero-crossings.
-
-    :return: None
-    """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_VALID_TRIGGER)
-    state_machine = MotionStateMachine()
-
-    for i in range(1, len(df)):
-        prev = df.iloc[i - 1]
-        curr = df.iloc[i]
-
-        timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
-        prev_signal = SensorSignal(
-            angle_rad=prev[KinematicsDataColumnName.ANGLE],
-            velocity_rad_per_sec=prev[KinematicsDataColumnName.VELOCITY],
-        )
-        curr_signal = SensorSignal(
-            angle_rad=curr[KinematicsDataColumnName.ANGLE],
-            velocity_rad_per_sec=curr[KinematicsDataColumnName.VELOCITY],
-        )
-
-        state_machine.update_motion_state(
-            curr=curr_signal, prev=prev_signal, timestamp=timestamp
-        )
-
-        vel_max = curr[KinematicsDataColumnName.VALID_TRIGG_VEL_MAX]
-        ang_max = curr[KinematicsDataColumnName.VALID_TRIGG_ANG_MAX]
-        vel_min = curr[KinematicsDataColumnName.VALID_TRIGG_VEL_MIN]
-        ang_min = curr[KinematicsDataColumnName.VALID_TRIGG_ANG_MIN]
-
-        if vel_max:
-            assert state_machine.state == MotionState.VELOCITY_MAX, (
-                f"Row {i}, vel_max {vel_max}, angle_max {ang_max}, vel_min {vel_min}, ang_min {ang_min}"
-            )
-        if ang_max:
-            assert state_machine.state == MotionState.ANGLE_MAX, (
-                f"Row {i}, vel_max {vel_max}, angle_max {ang_max}, vel_min {vel_min}, ang_min {ang_min}"
-            )
-        if vel_min:
-            assert state_machine.state == MotionState.VELOCITY_MIN, (
-                f"Row {i}, vel_max {vel_max}, angle_max {ang_max}, vel_min {vel_min}, ang_min {ang_min}"
-            )
-        if ang_min:
-            assert state_machine.state == MotionState.ANGLE_MIN, (
-                f"Row {i}, vel_max {vel_max}, angle_max {ang_max}, vel_min {vel_min}, ang_min {ang_min}"
-            )
-
-
-def test_set_state() -> None:
-    """Test angle extrema detection based on velocity zero-crossings.
+def test_extrema_values() -> None:
+    """Test angle and velocity extrema are updated correctly each step based on the given timestamp angle and velocity.
 
     :return: None
     """
@@ -124,10 +38,12 @@ def test_set_state() -> None:
     for i in range(0, len(df)):
         curr = df.iloc[i]
 
+        # Arrange
         timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
         curr_velocity = curr[KinematicsDataColumnName.VELOCITY]
         curr_angle = curr[KinematicsDataColumnName.ANGLE]
 
+        # Act
         controller.update_and_compute(
             curr_signal=SensorSignal(
                 angle_rad=curr_angle, velocity_rad_per_sec=curr_velocity
@@ -135,113 +51,24 @@ def test_set_state() -> None:
             timestamp=timestamp,
         )
 
+        # Assert
         vel_max = curr[KinematicsDataColumnName.VALUE_VEL_MAX]
         ang_max = curr[KinematicsDataColumnName.VALUE_ANG_MAX]
         vel_min = curr[KinematicsDataColumnName.VALUE_VEL_MIN]
         ang_min = curr[KinematicsDataColumnName.VALUE_ANG_MIN]
 
-        assert controller.steady_state_tracker.velocity_max == vel_max
-        assert controller.steady_state_tracker.angle_max == ang_max
-        assert controller.steady_state_tracker.velocity_min == vel_min
-        assert controller.steady_state_tracker.angle_min == ang_min
+        assert controller.steady_state_tracker._velocity_max == vel_max
+        assert controller.steady_state_tracker._angle_max == ang_max
+        assert controller.steady_state_tracker._velocity_min == vel_min
+        assert controller.steady_state_tracker._angle_min == ang_min
 
 
-def test_calculate_vel_ss() -> None:
-    """Test the calculation of vel_ss.
-
-    :return: None
-    """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_VEL_SS)
-    controller = HighLevelController()
-
-    for i in range(0, len(df)):
-        curr = df.iloc[i]
-
-        # Arrange
-        controller.curr_signal.velocity_rad_per_sec = curr[
-            KinematicsDataColumnName.VELOCITY
-        ]
-        controller.steady_state_tracker.velocity_max = curr[
-            KinematicsDataColumnName.VALUE_VEL_MAX
-        ]
-        controller.steady_state_tracker.velocity_min = curr[
-            KinematicsDataColumnName.VALUE_VEL_MIN
-        ]
-
-        # Act
-        sum = (
-            controller.steady_state_tracker.velocity_max
-            + controller.steady_state_tracker.velocity_min
-        )
-        gamma_t = (
-            -(
-                controller.steady_state_tracker.velocity_max
-                + controller.steady_state_tracker.velocity_min
-            )
-            / 2.0
-        )
-        vel_ss = controller.steady_state_tracker._calculate_velocity_steady_state(
-            curr_velocity=controller.curr_signal.velocity_rad_per_sec
-        )
-
-        # Assert
-        expected_sum = curr[KinematicsDataColumnName.VEL_SUM_MINMAX]
-        expected_gamma_t = curr[KinematicsDataColumnName.VEL_GAMMA_T]
-        expected_vel_ss = curr[KinematicsDataColumnName.VEL_STEADY_STATE]
-
-        # Due to floating-point round-off/precision differences between MATLAB and Python numerical backends, exact equality comparisons seem to be not reliable.
-        assert isclose(sum, expected_sum, rel_tol=1e-13)
-        assert isclose(gamma_t, expected_gamma_t, rel_tol=1e-13)
-        assert isclose(vel_ss, expected_vel_ss, rel_tol=1e-12)
-
-
-def test_calculate_ang_ss() -> None:
-    """Test the calculation of ang_ss.
+def test_high_level() -> None:
+    """Test all the functions combined with compute_and_update function.
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_ANG_SS)
-    controller = HighLevelController()
-
-    for i in range(0, len(df)):
-        curr = df.iloc[i]
-
-        # Arrange
-        controller.curr_signal.angle_rad = curr[KinematicsDataColumnName.ANGLE]
-        controller.steady_state_tracker.angle_max = curr[
-            KinematicsDataColumnName.VALUE_ANG_MAX
-        ]
-        controller.steady_state_tracker.angle_min = curr[
-            KinematicsDataColumnName.VALUE_ANG_MIN
-        ]
-
-        # Act
-        gamma_t = (
-            -(
-                controller.steady_state_tracker.angle_max
-                + controller.steady_state_tracker.angle_min
-            )
-            / 2.0
-        )
-        ang_ss = controller.steady_state_tracker._calculate_centered_angle(
-            curr_angle=controller.curr_signal.angle_rad
-        )
-
-        # Assert
-        expected_gamma_t = curr[KinematicsDataColumnName.ANG_GAMMA_T]
-        expected_ang_ss = curr[KinematicsDataColumnName.ANG_STEADY_STATE]
-
-        # Due to floating-point round-off/precision differences between MATLAB and Python numerical backends, exact equality comparisons seem to be not reliable.
-        assert isclose(gamma_t, expected_gamma_t, rel_tol=1e-12)
-        assert isclose(ang_ss, expected_ang_ss, rel_tol=1e-11)
-
-
-def test_z_t_and_pos_ss() -> None:
-    """Test z(t) and pos_ss if these values are correctly set through the update method.
-
-    :return: None
-    """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_GAIT_PHASE)
+    df = read_csv(filepath_or_buffer=HighLevelData.DATA_HIGH_LEVEL)
     controller = HighLevelController()
 
     for i in range(0, len(df)):
@@ -253,60 +80,54 @@ def test_z_t_and_pos_ss() -> None:
         curr_angle = curr[KinematicsDataColumnName.ANGLE]
 
         # Act
-        controller.update_and_compute(
+        gait_phase = controller.update_and_compute(
             curr_signal=SensorSignal(
                 angle_rad=curr_angle, velocity_rad_per_sec=curr_velocity
             ),
             timestamp=timestamp,
         )
 
-        # Assert
-        expected_z_t = curr[KinematicsDataColumnName.RESCALE_FACTOR]
-        expected_pos_ss = curr[KinematicsDataColumnName.POSTION_STEADY_STATE]
+        signal = controller.get_signal_steady_state()
 
-        assert isclose(
-            controller.steady_state_tracker.rescale_factor, expected_z_t, rel_tol=1e-12
-        ), f"Row {i}"
-        assert isclose(
-            controller.steady_state_tracker.pos_steady_state,
-            expected_pos_ss,
-            rel_tol=1e-11,
-        ), (
-            f"Row {i}, expected_z_t{expected_z_t}, current_z_t{controller.steady_state_tracker.rescale_factor}, "
-            f"ang_ss{controller.steady_state_tracker._calculate_centered_angle(controller.curr_signal.angle_rad)}, multiplication{controller.steady_state_tracker.rescale_factor * controller.steady_state_tracker._calculate_centered_angle(curr_angle=controller.curr_signal.angle_rad)}; "
-            f"pos_ss{controller.steady_state_tracker.pos_steady_state}"
-        )
+        # boolean initialization
+        expected_not_initialized = curr[KinematicsDataColumnName.NOT_INITIALIZED]
 
+        # center_vel, center_ang, rescale_factor in steadyStateDetector which should be updated with the correct timing through stride event detector
+        expected_center_vel = curr[KinematicsDataColumnName.CENTER_VEL]
+        expected_center_ang = curr[KinematicsDataColumnName.CENTER_ANG]
+        expected_rescale_factor = curr[KinematicsDataColumnName.RESCALE_FACTOR]
 
-def test_gait_phase_calculation() -> None:
-    """Test the calculation of gait phase.
+        # steady state of velocity and angle
+        expected_vel_steady_state = curr[KinematicsDataColumnName.VEL_STEADY_STATE]
+        expected_ang_steady_state = curr[KinematicsDataColumnName.ANG_STEADY_STATE]
 
-    :return: None
-    """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_GAIT_PHASE)
-    steady_state_tracker = SteadyStateTracker()
-
-    for i in range(0, len(df)):
-        curr = df.iloc[i]
-
-        # Arrange
-        steady_state_tracker.vel_steady_state = curr[
-            KinematicsDataColumnName.VEL_STEADY_STATE
-        ]
-        steady_state_tracker.rescale_factor = curr[
-            KinematicsDataColumnName.RESCALE_FACTOR
-        ]
-        steady_state_tracker.pos_steady_state = curr[
-            KinematicsDataColumnName.POSTION_STEADY_STATE
-        ]
-
-        # Act
-        gait_phase = steady_state_tracker.calculate_gait_phase()
-
-        # Assert
+        # gait phase value
         expected_gait_phase = curr[KinematicsDataColumnName.GAIT_PHASE]
 
-        assert isclose(gait_phase, expected_gait_phase, rel_tol=1e-12), (
-            f"Row {i}, current_z_t{steady_state_tracker.rescale_factor}, "
-            f"calculated_gait_phase{atan2(steady_state_tracker.vel_steady_state, -steady_state_tracker.pos_steady_state)}, "
+        # Assert
+        assert (not controller.initialized) == expected_not_initialized, f"Row {i}"
+
+        assert isclose(
+            controller.steady_state_tracker._center_vel,
+            expected_center_vel,
+            rel_tol=1e-14,
+        ), f"Row {i}"
+        assert isclose(
+            controller.steady_state_tracker._center_ang,
+            expected_center_ang,
+            rel_tol=1e-13,
+        ), f"Row {i}"
+        assert isclose(
+            controller.steady_state_tracker._rescale_factor,
+            expected_rescale_factor,
+            rel_tol=1e-14,
+        ), f"Row {i}"
+
+        assert isclose(
+            signal.velocity_rad_per_sec, expected_vel_steady_state, rel_tol=1e-12
+        ), f"Row {i}"
+        assert isclose(signal.angle_rad, expected_ang_steady_state, rel_tol=1e-11), (
+            f"Row {i}"
         )
+
+        assert isclose(gait_phase, expected_gait_phase, rel_tol=1e-11), f"Row {i}"

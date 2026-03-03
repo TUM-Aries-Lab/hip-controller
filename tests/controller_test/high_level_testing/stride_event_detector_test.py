@@ -2,7 +2,9 @@
 
 from pandas import read_csv
 
-from hip_controller.control.stride_event_detector import StrideEventDetector
+from hip_controller.control.high_level_controller.stride_event_detector import (
+    StrideEventDetector,
+)
 from tests.conftest import HighLevelData, KinematicsDataColumnName
 
 

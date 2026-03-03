@@ -41,6 +41,8 @@ class HighLevelData:
         TESTING_HIGH_LEVEL_DIR / "stride_event_detector_2026_02_26.csv"
     )
 
+    DATA_HIGH_LEVEL: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_03_03.csv"
+
 
 @dataclass
 class MidLevelData:
@@ -77,17 +79,15 @@ class KinematicsDataColumnName:
 
     VALUE_VEL_MAX: str = "vel_max_left (rad/s)"
     VALUE_VEL_MIN: str = "vel_min_left (rad/s)"
-    VEL_GAMMA_T: str = "vel_gamma_t"
-    VEL_SUM_MINMAX: str = "sum_vel_minmax"
-    VEL_STEADY_STATE: str = "vel_ss"
-
     VALUE_ANG_MAX: str = "ang_max_left (rad)"
     VALUE_ANG_MIN: str = "ang_min_left (rad)"
-    ANG_GAMMA_T: str = "ang_gamma_t"
-    ANG_STEADY_STATE: str = "ang_ss"
 
-    POSTION_STEADY_STATE: str = "pos_ss"
-    RESCALE_FACTOR: str = "z_t"
+    CENTER_ANG: str = "center_ang"
+    CENTER_VEL: str = "center_vel"
+
+    VEL_STEADY_STATE: str = "normalized_centered_velocity"
+    ANG_STEADY_STATE: str = "normalized_centered_angle"
+    RESCALE_FACTOR: str = "gamma"
 
     GAIT_PHASE: str = "gait_phase_left"
     SINUSOIDAL_BEHAVIOR: str = "sinusoidal_behavior"
@@ -97,6 +97,7 @@ class KinematicsDataColumnName:
     MAPPING_VALUE: str = "motion_mapping_value"
 
     # Stride event detector
+    NOT_INITIALIZED: str = "before_initialization"
     ENABLE_TRIGGER: str = "enable_trigger"
     ENABLE_DETECTOR: str = "enable_detector"
     VALID_STRIDE: str = "valid_stride"

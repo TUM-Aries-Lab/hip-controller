@@ -47,7 +47,7 @@ def hit_crossing_rising(curr: float, prev: float, offset: float = 0) -> bool:
     return prev <= offset and curr > offset
 
 
-def normalize(center_val: float, val_curr: float) -> float:
+def align(center_val: float, curr_val: float) -> float:
     """Normalize value relative to bounded range.
 
     Computes a normalized steady-state value by removing the midpoint offset of
@@ -63,10 +63,10 @@ def normalize(center_val: float, val_curr: float) -> float:
         Steady-state value relative to the range center value.
     :rtype: float
     """
-    return val_curr - center_val
+    return curr_val - center_val
 
 
-def center(val_max: float, val_min: float) -> float:
+def calculate_center_value(val_max: float, val_min: float) -> float:
     """Calculate a centered value of max and min values.
 
     :param float val_max:

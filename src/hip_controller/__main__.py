@@ -10,7 +10,7 @@ from pathlib import Path  # pragma: no cover
 from loguru import logger  # pragma: no cover
 from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
-from hip_controller.app import ExoController  # pragma: no cover
+from hip_controller.control.app import ExoController  # pragma: no cover
 from hip_controller.definitions import (
     DATA_DIR,
     DEFAULT_LOG_LEVEL,

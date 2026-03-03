@@ -26,16 +26,18 @@ class StrideEventDetector:
 
         :Return: None
         """
+        # Valid stride detector
         self.enable_detector: bool = False
         self.valid_stride: bool = False
-
         self.detector_count = True
-        # Reset value is zero. It is only 0.01 while initializing because there is no delay time when the detector is enabled for the first time.
-        self.detector_counter_time = 0.01
+        self.detector_counter_time = 0.01  # Reset value is zero. It is only 0.01 while initializing because there is no delay time when the detector is enabled for the first time.
 
         # Valid trigger detector
         self.enable_trigger = True
         self.trigger_counter_time = 0.0
+
+        # Previous timestamp to calculate timestamp difference
+        self.prev_timestamp = None
 
     def stride_event(
         self, dt: float, valid_ang_max: bool, prev_vel: float, curr_vel: float

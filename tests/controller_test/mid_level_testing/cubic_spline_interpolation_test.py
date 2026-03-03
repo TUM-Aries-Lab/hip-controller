@@ -3,7 +3,9 @@
 import numpy as np
 from pandas import read_csv
 
-from hip_controller.control.cubic_spline_interpolation import CubicSplineInterpolation
+from hip_controller.control.mid_level_controller.cubic_spline_interpolation import (
+    CubicSplineInterpolation,
+)
 from tests.conftest import KinematicsDataColumnName, MidLevelData
 
 
