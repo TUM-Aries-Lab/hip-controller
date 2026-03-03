@@ -57,6 +57,9 @@ class MidLevelData:
     )
 
     DATA_MOTION_MAPPING: Path = TESTING_MID_LEVEL_DIR / "look_up_table_2026_02_25.csv"
+    DATA_AMPLITUDE_MODULATION: Path = (
+        TESTING_MID_LEVEL_DIR / "amplitude_modulation_2026_03_03.csv"
+    )
 
 
 @dataclass
@@ -102,3 +105,9 @@ class KinematicsDataColumnName:
     ENABLE_DETECTOR: str = "enable_detector"
     VALID_STRIDE: str = "valid_stride"
     STRIDE_EVENT: str = "stride_event"
+
+    # Amplitude Modulation
+    RADIUS: str = "portrait_radius"
+    SCALED_RADIUS: str = "scaled_portrait_radius"
+    SIGMOID_RADIUS: str = "after_sigmoid"
+    AMPLITUDE: str = "amplitude"

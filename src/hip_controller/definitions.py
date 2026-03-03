@@ -101,11 +101,13 @@ STRIDE_EVENT_COUNTER_TIME = 0.3099  # in ms
 
 # ---mid level---
 LAG_CORRECTION = pi / 7
+LAG_COMPENSATION = 0
 
 # Amplitude modulation
-AMPLITUDE_GAIN = -6.5
+
+SCALE_LEVEL_MODE = 1
 SIGMOID_POWER = 50
-SCALE_LEVEL_GROUND = 1
+AMPLITUDE_GAIN = -6.5
 
 # Kalman filter definitions
 PROCESS_NOISE = 2e-2

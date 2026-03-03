@@ -83,6 +83,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   ├── low_level_controller
 │       │   │   └── low_level.py
 │       │   ├── mid_level_controller
+│       │   │   ├── amplitude_modulation.py
 │       │   │   ├── cubic_spline_interpolation.py
 │       │   │   ├── kalman.py
 │       │   │   └── mid_level.py
@@ -117,8 +118,10 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │   └── stride_event_detector_test.py
 │   │   ├── mid_level_testing
 │   │   │   ├── mid_level_testing_data
+│   │   │   │   ├── amplitude_modulation_2026_03_03.csv
 │   │   │   │   ├── look_up_table_2026_02_25.csv
 │   │   │   │   └── sinusoidal_behavior_left_2026_01_29.csv
+│   │   │   ├── amplitude_test.py
 │   │   │   ├── cubic_spline_interpolation_test.py
 │   │   │   ├── kalman_test.py
 │   │   │   └── mid_level_test.py
