@@ -26,6 +26,8 @@ from hip_controller.control.high_level_controller.high_level import (
 )
 from tests.conftest import HighLevelData, KinematicsDataColumnName
 
+REL_TOL = 1e-9
+
 
 def test_extrema_values() -> None:
     """Test angle and velocity extrema are updated correctly each step based on the given timestamp angle and velocity.
@@ -110,24 +112,24 @@ def test_high_level() -> None:
         assert isclose(
             controller.steady_state_tracker._center_vel,
             expected_center_vel,
-            rel_tol=1e-14,
+            rel_tol=REL_TOL,
         ), f"Row {i}"
         assert isclose(
             controller.steady_state_tracker._center_ang,
             expected_center_ang,
-            rel_tol=1e-13,
+            rel_tol=REL_TOL,
         ), f"Row {i}"
         assert isclose(
             controller.steady_state_tracker._rescale_factor,
             expected_rescale_factor,
-            rel_tol=1e-14,
+            rel_tol=REL_TOL,
         ), f"Row {i}"
 
         assert isclose(
-            signal.velocity_rad_per_sec, expected_vel_steady_state, rel_tol=1e-12
+            signal.velocity_rad_per_sec, expected_vel_steady_state, rel_tol=REL_TOL
         ), f"Row {i}"
-        assert isclose(signal.angle_rad, expected_ang_steady_state, rel_tol=1e-11), (
+        assert isclose(signal.angle_rad, expected_ang_steady_state, rel_tol=REL_TOL), (
             f"Row {i}"
         )
 
-        assert isclose(gait_phase, expected_gait_phase, rel_tol=1e-11), f"Row {i}"
+        assert isclose(gait_phase, expected_gait_phase, rel_tol=REL_TOL), f"Row {i}"

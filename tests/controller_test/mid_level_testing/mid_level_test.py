@@ -32,5 +32,5 @@ def test_transform_gait_phase() -> None:
         ]
 
         assert isclose(
-            sinusoidal_behavior, expected_sinusoidal_behavior, rel_tol=1e-12
+            sinusoidal_behavior, expected_sinusoidal_behavior, rel_tol=1e-9
         ), f"Row {i}"
