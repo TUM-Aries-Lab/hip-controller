@@ -3,13 +3,10 @@
 from loguru import logger
 
 from hip_controller.control.high_level_controller.high_level import HighLevelController
-from hip_controller.control.low_level_controller.low_level import (
-    get_gait_speed,
-    stop_condition,
+from hip_controller.control.mid_level_controller.amplitude_modulation import (
+    AmplitudeModulation,
 )
-from hip_controller.control.mid_level_controller.mid_level import (
-    center_and_transform_gait_phase,
-)
+from hip_controller.control.mid_level_controller.mid_level import MidLevelController
 from hip_controller.definitions import ConfigPlot, ExosuitData, SensorSignal
 
 
@@ -40,20 +37,14 @@ class ExoController:
         :return: None
 
         """
-        self.left_controller.step(
-            timestamp=sensor_data.timestamp, curr_signal=sensor_data.left
-        )
-        self.right_controller.step(
-            timestamp=sensor_data.timestamp, curr_signal=sensor_data.right
-        )
+        # TODO due to different wire settings one of them might need to be mirrored with -1
         try:
-            left_gait_speed = get_gait_speed(signal=sensor_data.left)
-            right_gait_speed = get_gait_speed(signal=sensor_data.right)
-            if stop_condition(gait_speed=left_gait_speed) or stop_condition(
-                gait_speed=right_gait_speed
-            ):
-                logger.info("Stop condition reached.")
-            return
+            self.left_controller.step(
+                timestamp=sensor_data.timestamp, curr_signal=sensor_data.left
+            )
+            self.right_controller.step(
+                timestamp=sensor_data.timestamp, curr_signal=sensor_data.right
+            )
         except Exception as err:
             logger.error(f"{err} - Something went wrong.")
 
@@ -81,14 +72,18 @@ class WalkOnController:
             # Execute the Qt plot application.
 
         self.high_level_controller = HighLevelController()
+        self.mid_level_controller = MidLevelController()
 
-    def step(self, curr_signal: SensorSignal, timestamp: float) -> None:
+        self.amplitude_modulation = AmplitudeModulation()
+
+    def step(self, curr_signal: SensorSignal, timestamp: float) -> float:
         """Step the controller ahead.
 
         :param angle: hip angle in radians.
         :param velocity: hip angle velocity in radians per second.
         :param timestamp: current timestamp.
-        :return: None
+        :return: Motor command for motion reference.
+        :rtype: float
         """
         logger.debug("Stepping controller ahead.")
 
@@ -98,7 +93,10 @@ class WalkOnController:
         )
 
         # Mid-level
-        minus_sin_phi = center_and_transform_gait_phase(gait_phase=gait_phase)
+        amplitude = self.amplitude_modulation.compute_amplitude(signal=curr_signal)
+        motor_command = self.mid_level_controller.compute_motor_command(
+            gait_phase=gait_phase, amplitude=amplitude
+        )
 
         # Low-level
 
@@ -106,5 +104,7 @@ class WalkOnController:
         if self.plot:
             steady = self.high_level_controller.get_signal_steady_state()
             self.plotter.update_plots(
-                timestamp=timestamp, sinusoidal=minus_sin_phi, steady=steady
+                timestamp=timestamp, sinusoidal=motor_command, steady=steady
             )
+
+        return motor_command

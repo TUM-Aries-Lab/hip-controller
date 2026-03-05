@@ -9,7 +9,7 @@ from PyQt6 import QtWidgets
 from hip_controller.definitions import ConfigPlot
 
 
-class PlotterWindow(QtWidgets.QMainWindow):  # pragma: no cover
+class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
     """PyQt6 window that displays two real-time plots."""
 
     def __init__(self, separated: bool) -> None:
@@ -38,7 +38,7 @@ class PlotterWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self._init_ui()
 
         self._sample_counter = 0
-        self._draw_every = 1
+        self._draw_every = 5
 
     def _init_ui(self) -> None:
         """Create and configure all Qt and PyQtGraph widgets.

@@ -97,17 +97,15 @@ DEFAULT_LOG_FILENAME = "log_file"
 VALUE_NEAR_ZERO = 1e-6
 
 # stride event detector
-STRIDE_EVENT_COUNTER_TIME = 0.3099  # in ms
+STRIDE_EVENT_COUNTER_TIME = 0.3099  # in s
 
 # ---mid level---
-LAG_CORRECTION = pi / 7
-LAG_COMPENSATION = 0
+LAG_COMPENSATION = 0  # Lag correction
 
 # Amplitude modulation
-
 SCALE_LEVEL_MODE = 1
 SIGMOID_POWER = 50
-AMPLITUDE_GAIN = -6.5
+AMPLITUDE_GAIN = -6.5  # Motor position desidered amplitude (rad)
 
 # Kalman filter definitions
 PROCESS_NOISE = 2e-2
@@ -116,7 +114,7 @@ MEASUREMENT_NOISE = 0.75
 
 # Cubic Spline Interpolation
 @dataclass(frozen=True)
-class MotionMapping:
+class LookUpTable:
     """Stores breakpoint and table data of the motion mapping."""
 
     BREAKPOINTS = np.array(
@@ -124,7 +122,7 @@ class MotionMapping:
         dtype=np.float64,
     )
 
-    TABLE = np.array(
+    TABLEDATA = np.array(
         [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0, 0.005, 0.01, 0.015, 0.02, 0.025],
         dtype=np.float64,
     )
@@ -147,8 +145,8 @@ class PositionLimitation:
     """Limitations of position steady states."""
 
     # both are []
-    UPPER = 10.0
-    LOWER = -10.0
+    UPPER = 600 * pi / 180
+    LOWER = -600 * pi / 180
 
 
 @dataclass

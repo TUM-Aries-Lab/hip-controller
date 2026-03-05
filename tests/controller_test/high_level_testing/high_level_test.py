@@ -24,9 +24,7 @@ from hip_controller.control.high_level_controller.high_level import (
     HighLevelController,
     SensorSignal,
 )
-from tests.conftest import HighLevelData, KinematicsDataColumnName
-
-REL_TOL = 1e-9
+from tests.conftest import REL_TOL, HighLevelData, KinematicsDataColumnName
 
 
 def test_extrema_values() -> None:

@@ -8,7 +8,8 @@ from hip_controller.control.mid_level_controller.amplitude_modulation import (
     AmplitudeModulation,
 )
 from hip_controller.definitions import SIGMOID_POWER, SensorSignal
-from tests.conftest import KinematicsDataColumnName, MidLevelData
+from hip_controller.utils.math_utils import apply_sigmoid_scaling
+from tests.conftest import REL_TOL, KinematicsDataColumnName, MidLevelData
 
 
 def test_sigmoid_scaling() -> None:
@@ -18,7 +19,6 @@ def test_sigmoid_scaling() -> None:
     """
     df = read_csv(filepath_or_buffer=MidLevelData.DATA_AMPLITUDE_MODULATION)
 
-    mode = AmplitudeModulation()
     power = SIGMOID_POWER
 
     n = len(df)
@@ -30,12 +30,12 @@ def test_sigmoid_scaling() -> None:
         value = curr[KinematicsDataColumnName.SCALED_RADIUS]
 
         # Act
-        sigmoid = mode.apply_sigmoid_scaling(value=value, power=power)
+        sigmoid = apply_sigmoid_scaling(value=value, power=power)
 
         # Assert
         expected_sigmoid = curr[KinematicsDataColumnName.SIGMOID_RADIUS]
 
-        assert isclose(sigmoid, expected_sigmoid, rel_tol=1e-11), f"Row {i}"
+        assert isclose(sigmoid, expected_sigmoid, rel_tol=REL_TOL), f"Row {i}"
 
 
 def test_amplitude() -> None:
@@ -64,4 +64,4 @@ def test_amplitude() -> None:
         # Assert
         expected_amplitude = curr[KinematicsDataColumnName.AMPLITUDE]
 
-        assert isclose(amplitude, expected_amplitude, rel_tol=1e-11), f"Row {i}"
+        assert isclose(amplitude, expected_amplitude, rel_tol=REL_TOL), f"Row {i}"

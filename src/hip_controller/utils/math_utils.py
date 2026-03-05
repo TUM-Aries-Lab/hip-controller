@@ -1,5 +1,7 @@
 """Math utilities for the hip controller."""
 
+from math import sin
+
 import numpy as np
 from loguru import logger
 from numpy.typing import NDArray
@@ -79,3 +81,24 @@ def calculate_center_value(val_max: float, val_min: float) -> float:
         :rtype: float
     """
     return (val_max + val_min) / 2.0
+
+
+def transform_to_cyclic(val: float) -> float:
+    """Transform the signal into a cyclic motion which the motor can follow by applying a negative sine.
+
+    :param float val: Value to be transformed.
+
+    :return: Transformed sinusoidal control signal.
+    :rtype: float
+    """
+    return -sin(val)
+
+
+def apply_sigmoid_scaling(value: float, power: float) -> float:
+    """Apply sigmoid scaling a^n / (a^n + 1) so that he higher n, the more low amplitudes are scaled down.
+
+    :return: Amplitude.
+    :rtype: float
+    """
+    # TODO scale to 1
+    return (value**power) / ((value**power) + 1)

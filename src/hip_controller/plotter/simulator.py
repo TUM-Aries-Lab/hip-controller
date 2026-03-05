@@ -5,14 +5,12 @@ from pathlib import Path  # pragma: no cover
 
 from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
-from hip_controller.control.mid_level_controller.cubic_spline_interpolation import (
-    CubicSplineInterpolation,
-)
+from hip_controller.control.mid_level_controller.mid_level import MotionMapping
 from hip_controller.definitions import DATA_DIR
 
 # pragma: no cover
 from hip_controller.plotter.csv_player import CSVPlayer  # pragma: no cover
-from hip_controller.plotter.time_plot import PlotterWindow
+from hip_controller.plotter.time_plot import TimePlotterComparisonWindow
 
 
 def simulate(
@@ -30,9 +28,9 @@ def simulate(
     app = QtWidgets.QApplication([])
 
     player = CSVPlayer(csv_path=path)
-    lookup = CubicSplineInterpolation()
+    lookup = MotionMapping()
     timer = QtCore.QTimer()
-    plotter = PlotterWindow(separated=False)
+    plotter = TimePlotterComparisonWindow(separated=False)
     plotter.show()
 
     def update() -> None:
@@ -45,7 +43,7 @@ def simulate(
             input_name=input_name, output_name=output_name
         )
 
-        output = lookup.step(input)
+        output = lookup.spline(input)
         plotter.update_plots(
             timestamp=timestamp, first_input=input, second_input=output
         )
@@ -62,6 +60,7 @@ def simulate(
 
 
 if __name__ == "__main__":  # pragma: no cover
+    # /home/minz/thesisproject/hip-controller/
     simulate(
         input_name="motion_mapping_key",
         output_name="motion_mapping_value",

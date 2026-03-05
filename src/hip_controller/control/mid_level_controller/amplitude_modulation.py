@@ -11,6 +11,7 @@ from hip_controller.definitions import (
     SIGMOID_POWER,
     SensorSignal,
 )
+from hip_controller.utils.math_utils import apply_sigmoid_scaling
 
 
 @dataclass
@@ -88,16 +89,6 @@ class AmplitudeModulation:
         """
         return np.sqrt(signal.angle_rad**2 + signal.velocity_rad_per_sec**2)
 
-    @staticmethod
-    def apply_sigmoid_scaling(value: float, power: float) -> float:
-        """Apply sigmoid scaling a^n / (a^n + 1) so that he higher n, the more low amplitudes are scaled down.
-
-        :return: Amplitude.
-        :rtype: float
-        """
-        # TODO scale to 1
-        return (value**power) / ((value**power) + 1)
-
     def compute_amplitude(self, signal: SensorSignal) -> float:
         """Calculate the amplitude modulation factor based on the current signal and mode parameters.
 
@@ -111,8 +102,6 @@ class AmplitudeModulation:
             self.compute_portrait_radius(signal=signal) * params.scale
         )
 
-        amplitude = self.apply_sigmoid_scaling(
-            scaled_portrait_radius, params.sigmoid_power
-        )
+        amplitude = apply_sigmoid_scaling(scaled_portrait_radius, params.sigmoid_power)
 
         return amplitude * params.gain
