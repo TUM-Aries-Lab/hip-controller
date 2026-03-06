@@ -14,8 +14,8 @@ class ConfigPlot:
     """Plot Configurations for the hip controller."""
 
     # if the graph is displayed or not
-    left_limb_plot: bool = True
-    right_limb_plot: bool = False
+    left_limb_plot: bool = False
+    right_limb_plot: bool = True
 
     GRAPH_WIDTH = 1000
     GRAPH_HEIGHT = 500
@@ -28,9 +28,9 @@ class ConfigPlot:
         2  # This should align with the plot number size with frequency of the samples
     )
 
-    # sin-wave is always between 1 and -1
-    TIME_PLOT_YMIN = -1.1
-    TIME_PLOT_YMAX = 1.1
+    # Motor command has a range between about [-10.472, 10.472]
+    TIME_PLOT_YMIN = -11
+    TIME_PLOT_YMAX = 11
 
     TIME_PLOT_CURVE_COLOR = (244, 96, 144)
     TIME_PLOT_CURVE_WIDTH = 2

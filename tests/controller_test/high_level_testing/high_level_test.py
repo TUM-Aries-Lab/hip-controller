@@ -24,7 +24,7 @@ from hip_controller.control.high_level_controller.high_level import (
     HighLevelController,
     SensorSignal,
 )
-from tests.conftest import REL_TOL, HighLevelData, KinematicsDataColumnName
+from tests.conftest import REL_TOL, ControllerDataPath, KinematicsDataColumnName
 
 
 def test_extrema_values() -> None:
@@ -32,7 +32,7 @@ def test_extrema_values() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_EXTREMA_VALUES)
+    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_EXTREMA_VALUES)
     controller = HighLevelController()
 
     for i in range(0, len(df)):
@@ -40,8 +40,8 @@ def test_extrema_values() -> None:
 
         # Arrange
         timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
-        curr_velocity = curr[KinematicsDataColumnName.VELOCITY]
-        curr_angle = curr[KinematicsDataColumnName.ANGLE]
+        curr_velocity = curr[KinematicsDataColumnName.VELOCITY_LEFT]
+        curr_angle = curr[KinematicsDataColumnName.ANGLE_LEFT]
 
         # Act
         controller.update_and_compute(
@@ -68,7 +68,7 @@ def test_high_level() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_HIGH_LEVEL)
+    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_HIGH_LEVEL)
     controller = HighLevelController()
 
     for i in range(0, len(df)):
@@ -76,8 +76,8 @@ def test_high_level() -> None:
 
         # Arrange
         timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
-        curr_velocity = curr[KinematicsDataColumnName.VELOCITY]
-        curr_angle = curr[KinematicsDataColumnName.ANGLE]
+        curr_velocity = curr[KinematicsDataColumnName.VELOCITY_LEFT]
+        curr_angle = curr[KinematicsDataColumnName.ANGLE_LEFT]
 
         # Act
         gait_phase = controller.update_and_compute(
@@ -102,7 +102,7 @@ def test_high_level() -> None:
         expected_ang_steady_state = curr[KinematicsDataColumnName.ANG_STEADY_STATE]
 
         # gait phase value
-        expected_gait_phase = curr[KinematicsDataColumnName.GAIT_PHASE]
+        expected_gait_phase = curr[KinematicsDataColumnName.GAIT_PHASE_LEFT]
 
         # Assert
         assert (not controller.initialized) == expected_not_initialized, f"Row {i}"

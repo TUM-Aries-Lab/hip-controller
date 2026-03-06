@@ -16,9 +16,14 @@ REL_TOL = 1e-9
 
 # Offers path and column strings for testing.
 @dataclass
-class HighLevelData:
-    """High level data for testing."""
+class ControllerDataPath:
+    """All data path for testing."""
 
+    TESTING_CONTROLLER_DIR: Path = TESTING_DIR / "controller_test" / "testing_data"
+
+    DATA_REFERENCE_MOTION_RIGHT: Path = (
+        TESTING_CONTROLLER_DIR / "reference_motion_2026_03_06.csv"
+    )
     TESTING_HIGH_LEVEL_DIR: Path = (
         TESTING_DIR
         / "controller_test"
@@ -41,11 +46,6 @@ class HighLevelData:
 
     DATA_HIGH_LEVEL: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_03_03.csv"
 
-
-@dataclass
-class MidLevelData:
-    """Mid level data for testing."""
-
     TESTING_MID_LEVEL_DIR: Path = (
         TESTING_DIR / "controller_test" / "mid_level_testing" / "mid_level_testing_data"
     )
@@ -56,7 +56,7 @@ class MidLevelData:
         TESTING_MID_LEVEL_DIR / "amplitude_modulation_2026_03_03.csv"
     )
 
-    DATA_REFERENCE_MOTION: Path = (
+    DATA_REFERENCE_MOTION_LEFT: Path = (
         TESTING_MID_LEVEL_DIR / "reference_motion_2026_03_05.csv"
     )
 
@@ -66,8 +66,8 @@ class KinematicsDataColumnName:
     """Names of columns for csv files for high-level controller testing."""
 
     TIMESTAMP: str = "time (s)"
-    ANGLE: str = "angle_left (rad)"
-    VELOCITY: str = "vel_left (rad/s)"
+    ANGLE_LEFT: str = "angle_left (rad)"
+    VELOCITY_LEFT: str = "vel_left (rad/s)"
 
     TRIGG_VEL_MAX: str = "vel_max_trigg_left"
     TRIGG_ANG_MAX: str = "ang_max_trigg_left"
@@ -102,13 +102,23 @@ class KinematicsDataColumnName:
     RADIUS: str = "portrait_radius"
     SCALED_RADIUS: str = "scaled_portrait_radius"
     SIGMOID_RADIUS: str = "after_sigmoid"
-    AMPLITUDE: str = "amplitude"
+    AMPLITUDE_LEFT: str = "amplitude"
 
     # Reference Motion
-    GAIT_PHASE: str = "gait_phase_left"
-    SIN_WAVE: str = "sinusoidal_behavior"
-    REFERENCE_MOTION: str = "reference_motion"
+    GAIT_PHASE_LEFT: str = "gait_phase_left"
+    SIN_WAVE_LEFT: str = "sinusoidal_behavior"
+    REF_MOT_LEFT: str = "reference_motion"
 
     # Cubic Spline Interpolation
     MAPPING_KEY: str = "motion_mapping_key"
     MAPPING_VALUE: str = "motion_mapping_value"
+
+    # Right lower limb tests
+    ANG_RIGHT: str = "angle_right (rad)"
+    VEL_RIGHT: str = "velocity_right (rad/s)"
+
+    GAIT_PHASE_RIGHT: str = "gait_phase_right"
+    SIN_WAVE_RIGHT: str = "sinusoidal_behavior_right"
+    AMPLITUDE_RIGHT: str = "amplitude_right"
+
+    REF_MOT_RIGHT: str = "motor_reference_right (rad)"

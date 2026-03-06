@@ -70,9 +70,15 @@ class DescendStairsMode(ModeStrategy):
 class AmplitudeModulation:
     """Amplitude Modulation Class."""
 
-    def __init__(self):
+    def __init__(self, reverse: bool):
         """Initialize for the amplitude modulation block with level ground mode set as default."""
         self._mode = LevelGroundMode()
+
+        # The amplitude could be reversed due to different wiring settings
+        if reverse:
+            self.reverse_amplitude = -1
+        else:
+            self.reverse_amplitude = 1
 
     def set_mode(self, mode: ModeStrategy):
         """Switch mode at runtime."""
@@ -104,4 +110,4 @@ class AmplitudeModulation:
 
         amplitude = apply_sigmoid_scaling(scaled_portrait_radius, params.sigmoid_power)
 
-        return amplitude * params.gain
+        return (amplitude * params.gain) * self.reverse_amplitude

@@ -11,7 +11,7 @@ from hip_controller.utils.math_utils import (
     hit_crossing_falling,
     hit_crossing_rising,
 )
-from tests.conftest import HighLevelData, KinematicsDataColumnName
+from tests.conftest import ControllerDataPath, KinematicsDataColumnName
 
 
 def test_extrema_trigger() -> None:
@@ -19,16 +19,16 @@ def test_extrema_trigger() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_ZERO_CROSSING)
+    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_ZERO_CROSSING)
 
     for i in range(1, len(df)):
         prev = df.iloc[i - 1]
         curr = df.iloc[i]
 
-        curr_velocity = curr[KinematicsDataColumnName.VELOCITY]
-        prev_velocity = prev[KinematicsDataColumnName.VELOCITY]
-        curr_angle = curr[KinematicsDataColumnName.ANGLE]
-        prev_angle = prev[KinematicsDataColumnName.ANGLE]
+        curr_velocity = curr[KinematicsDataColumnName.VELOCITY_LEFT]
+        prev_velocity = prev[KinematicsDataColumnName.VELOCITY_LEFT]
+        curr_angle = curr[KinematicsDataColumnName.ANGLE_LEFT]
+        prev_angle = prev[KinematicsDataColumnName.ANGLE_LEFT]
 
         angle_max = hit_crossing_falling(curr=curr_velocity, prev=prev_velocity)
         angle_min = hit_crossing_rising(curr=curr_velocity, prev=prev_velocity)
@@ -51,7 +51,7 @@ def test_valid_trigger() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_VALID_TRIGGER)
+    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_VALID_TRIGGER)
     state_machine = MotionStateMachine()
 
     for i in range(1, len(df)):
@@ -60,12 +60,12 @@ def test_valid_trigger() -> None:
 
         timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
         prev_signal = SensorSignal(
-            angle_rad=prev[KinematicsDataColumnName.ANGLE],
-            velocity_rad_per_sec=prev[KinematicsDataColumnName.VELOCITY],
+            angle_rad=prev[KinematicsDataColumnName.ANGLE_LEFT],
+            velocity_rad_per_sec=prev[KinematicsDataColumnName.VELOCITY_LEFT],
         )
         curr_signal = SensorSignal(
-            angle_rad=curr[KinematicsDataColumnName.ANGLE],
-            velocity_rad_per_sec=curr[KinematicsDataColumnName.VELOCITY],
+            angle_rad=curr[KinematicsDataColumnName.ANGLE_LEFT],
+            velocity_rad_per_sec=curr[KinematicsDataColumnName.VELOCITY_LEFT],
         )
 
         state_machine.update_motion_state(

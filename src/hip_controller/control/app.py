@@ -18,12 +18,12 @@ class ExoController:
 
         :return: None
         """
-        logger.info("Initializing controller.")
+        logger.info("Initializing the lower limb controller.")
         self.left_controller = WalkOnController(
-            left=True, plot=ConfigPlot.left_limb_plot
+            reverse=False, plot=ConfigPlot.left_limb_plot
         )
         self.right_controller = WalkOnController(
-            left=False, plot=ConfigPlot.right_limb_plot
+            reverse=True, plot=ConfigPlot.right_limb_plot
         )
 
     def step(self, sensor_data: ExosuitData):
@@ -52,29 +52,23 @@ class ExoController:
 class WalkOnController:
     """Walk ON Controller for a single lower limb."""
 
-    def __init__(self, left: bool = True, plot: bool = False):
+    def __init__(self, reverse: bool = False, plot: bool = False):
         """Initialize the controller.
 
         :return: None
         """
-        self.left = left
-        if left:
-            logger.info("Initializing the left lower limb controller.")
-        else:
-            logger.info("Initializing the right lower limb controller.")
-
         self.plot = plot
         if plot:
             from hip_controller.plotter.phase_portrait import PortraitWindow
 
-            self.plotter = PortraitWindow(left=left)
+            self.plotter = PortraitWindow(left=reverse)
             self.plotter.show()
             # Execute the Qt plot application.
 
         self.high_level_controller = HighLevelController()
-        self.mid_level_controller = MidLevelController()
 
-        self.amplitude_modulation = AmplitudeModulation()
+        self.amplitude_modulation = AmplitudeModulation(reverse=reverse)
+        self.mid_level_controller = MidLevelController()
 
     def step(self, curr_signal: SensorSignal, timestamp: float) -> float:
         """Step the controller ahead.
@@ -85,8 +79,6 @@ class WalkOnController:
         :return: Motor command for motion reference.
         :rtype: float
         """
-        logger.debug("Stepping controller ahead.")
-
         # High-level
         gait_phase = self.high_level_controller.update_and_compute(
             curr_signal=curr_signal, timestamp=timestamp
@@ -104,7 +96,7 @@ class WalkOnController:
         if self.plot:
             steady = self.high_level_controller.get_signal_steady_state()
             self.plotter.update_plots(
-                timestamp=timestamp, sinusoidal=motor_command, steady=steady
+                timestamp=timestamp, reference_motor=motor_command, steady=steady
             )
 
         return motor_command

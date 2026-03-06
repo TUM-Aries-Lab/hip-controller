@@ -9,7 +9,7 @@ from hip_controller.control.mid_level_controller.amplitude_modulation import (
 )
 from hip_controller.definitions import SIGMOID_POWER, SensorSignal
 from hip_controller.utils.math_utils import apply_sigmoid_scaling
-from tests.conftest import REL_TOL, KinematicsDataColumnName, MidLevelData
+from tests.conftest import REL_TOL, ControllerDataPath, KinematicsDataColumnName
 
 
 def test_sigmoid_scaling() -> None:
@@ -17,7 +17,7 @@ def test_sigmoid_scaling() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=MidLevelData.DATA_AMPLITUDE_MODULATION)
+    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_AMPLITUDE_MODULATION)
 
     power = SIGMOID_POWER
 
@@ -43,9 +43,9 @@ def test_amplitude() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=MidLevelData.DATA_AMPLITUDE_MODULATION)
+    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_AMPLITUDE_MODULATION)
 
-    mode = AmplitudeModulation()
+    mode = AmplitudeModulation(reverse=False)
 
     n = len(df)
     for i in range(0, n):
@@ -53,8 +53,8 @@ def test_amplitude() -> None:
 
         # Arrange
 
-        vel = curr[KinematicsDataColumnName.VELOCITY]
-        ang = curr[KinematicsDataColumnName.ANGLE]
+        vel = curr[KinematicsDataColumnName.VELOCITY_LEFT]
+        ang = curr[KinematicsDataColumnName.ANGLE_LEFT]
 
         # Act
         amplitude = mode.compute_amplitude(
@@ -62,6 +62,6 @@ def test_amplitude() -> None:
         )
 
         # Assert
-        expected_amplitude = curr[KinematicsDataColumnName.AMPLITUDE]
+        expected_amplitude = curr[KinematicsDataColumnName.AMPLITUDE_LEFT]
 
         assert isclose(amplitude, expected_amplitude, rel_tol=REL_TOL), f"Row {i}"

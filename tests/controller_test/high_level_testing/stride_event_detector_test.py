@@ -5,7 +5,7 @@ from pandas import read_csv
 from hip_controller.control.high_level_controller.stride_event_detector import (
     StrideEventDetector,
 )
-from tests.conftest import HighLevelData, KinematicsDataColumnName
+from tests.conftest import ControllerDataPath, KinematicsDataColumnName
 
 
 def test_stride_event_detector() -> None:
@@ -13,7 +13,7 @@ def test_stride_event_detector() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_STRIDE_EVENT_DETECTOR)
+    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_STRIDE_EVENT_DETECTOR)
 
     sed = StrideEventDetector()
 
@@ -21,8 +21,8 @@ def test_stride_event_detector() -> None:
         prev = df.iloc[i - 1]
         curr = df.iloc[i]
 
-        curr_velocity = curr[KinematicsDataColumnName.VELOCITY]
-        prev_velocity = prev[KinematicsDataColumnName.VELOCITY]
+        curr_velocity = curr[KinematicsDataColumnName.VELOCITY_LEFT]
+        prev_velocity = prev[KinematicsDataColumnName.VELOCITY_LEFT]
         curr_timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
         prev_timestamp = prev[KinematicsDataColumnName.TIMESTAMP]
 
@@ -46,7 +46,7 @@ def test_stride_event_trigger() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=HighLevelData.DATA_STRIDE_EVENT_DETECTOR)
+    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_STRIDE_EVENT_DETECTOR)
 
     sed = StrideEventDetector()
 
@@ -55,8 +55,8 @@ def test_stride_event_trigger() -> None:
         curr = df.iloc[i]
 
         valid_ang_max = curr[KinematicsDataColumnName.VALID_TRIGG_ANG_MAX]
-        curr_velocity = curr[KinematicsDataColumnName.VELOCITY]
-        prev_velocity = prev[KinematicsDataColumnName.VELOCITY]
+        curr_velocity = curr[KinematicsDataColumnName.VELOCITY_LEFT]
+        prev_velocity = prev[KinematicsDataColumnName.VELOCITY_LEFT]
         curr_timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
         prev_timestamp = prev[KinematicsDataColumnName.TIMESTAMP]
 

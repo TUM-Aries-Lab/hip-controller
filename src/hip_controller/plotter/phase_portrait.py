@@ -129,7 +129,7 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self._draw_every = ConfigPlot.DRAW_SAMPLE_FREQUENCY
 
     def update_plots(
-        self, timestamp: float, sinusoidal: float, steady: SensorSignal
+        self, timestamp: float, reference_motor: float, steady: SensorSignal
     ) -> None:
         """Update both plots using new data.
 
@@ -142,7 +142,7 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
 
         # Append the newest time and signal value to the buffers
         self.time_buf.append(timestamp)
-        self.signal_buf.append(sinusoidal)
+        self.signal_buf.append(reference_motor)
 
         # Append the newest phase point
         self.angle_buf.append(steady.angle_rad)

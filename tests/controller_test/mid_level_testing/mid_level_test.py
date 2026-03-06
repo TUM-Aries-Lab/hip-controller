@@ -11,7 +11,7 @@ from hip_controller.control.mid_level_controller.mid_level import (
     MotionMapping,
     transform_to_cyclic,
 )
-from tests.conftest import REL_TOL, KinematicsDataColumnName, MidLevelData
+from tests.conftest import REL_TOL, ControllerDataPath, KinematicsDataColumnName
 
 
 def test_transform_gait_phase() -> None:
@@ -19,18 +19,18 @@ def test_transform_gait_phase() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=MidLevelData.DATA_REFERENCE_MOTION)
+    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_REFERENCE_MOTION_LEFT)
 
     for i in range(0, len(df)):
         curr = df.iloc[i]
 
         # Arrange
-        gait_phase = curr[KinematicsDataColumnName.GAIT_PHASE]
+        gait_phase = curr[KinematicsDataColumnName.GAIT_PHASE_LEFT]
         # Act
         sinusoidal_behavior = transform_to_cyclic(val=gait_phase)
 
         # Assert
-        expected_sinusoidal_behavior = curr[KinematicsDataColumnName.SIN_WAVE]
+        expected_sinusoidal_behavior = curr[KinematicsDataColumnName.SIN_WAVE_LEFT]
 
         assert isclose(
             sinusoidal_behavior, expected_sinusoidal_behavior, rel_tol=REL_TOL
@@ -42,7 +42,7 @@ def test_cubic_spline_interpolation() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=MidLevelData.DATA_REFERENCE_MOTION)
+    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_REFERENCE_MOTION_LEFT)
     lookup = MotionMapping()
 
     values = []
@@ -72,15 +72,15 @@ def test_motor_command() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=MidLevelData.DATA_REFERENCE_MOTION)
+    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_REFERENCE_MOTION_LEFT)
     controller = MidLevelController()
 
     for i in range(0, len(df)):
         curr = df.iloc[i]
 
         # Arrange
-        gait_phase = curr[KinematicsDataColumnName.GAIT_PHASE]
-        amplitude = curr[KinematicsDataColumnName.AMPLITUDE]
+        gait_phase = curr[KinematicsDataColumnName.GAIT_PHASE_LEFT]
+        amplitude = curr[KinematicsDataColumnName.AMPLITUDE_LEFT]
         mapping_value = curr[KinematicsDataColumnName.MAPPING_VALUE]
 
         # Act
@@ -92,7 +92,7 @@ def test_motor_command() -> None:
             )
 
         # Assert
-        expected_reference_motion = curr[KinematicsDataColumnName.REFERENCE_MOTION]
+        expected_reference_motion = curr[KinematicsDataColumnName.REF_MOT_LEFT]
 
         assert isclose(reference_motion, expected_reference_motion, rel_tol=REL_TOL), (
             f"Row {i}, \n mapping_value {mapping_value}, \n amplitude {amplitude}, \n reference motion {reference_motion}, \n expected {expected_reference_motion}"
