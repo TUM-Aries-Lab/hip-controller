@@ -27,20 +27,24 @@ class StrideEventDetector:
         :Return: None
         """
         # Valid stride detector
-        self.enable_detector: bool = False
         self.valid_stride: bool = False
-        self.detector_count = True
-        self.detector_counter_time = 0.01  # Reset value is zero. It is only 0.01 while initializing because there is no delay time when the detector is enabled for the first time.
+        self._enable_detector: bool = False
+        self._detector_count = True
+        self._detector_counter_time = 0.01  # Reset value is zero. It is only 0.01 while initializing because there is no delay time when the detector is enabled for the first time.
 
         # Valid trigger detector
-        self.enable_trigger = True
-        self.trigger_counter_time = 0.0
+        self._enable_trigger = True
+        self._trigger_counter_time = 0.0
 
         # Previous timestamp to calculate timestamp difference
-        self.prev_timestamp = None
+        self._prev_timestamp = None
 
     def stride_event(
-        self, dt: float, valid_ang_max: bool, prev_vel: float, curr_vel: float
+        self,
+        time_difference: float,
+        valid_ang_max: bool,
+        prev_vel: float,
+        curr_vel: float,
     ) -> bool:
         """Detect stride event and trigger the update of centered values when valid angle maximum is reached.
 
@@ -51,12 +55,14 @@ class StrideEventDetector:
 
         :return: True if stride event is detected and valid angle maximum is reached, False otherwise
         """
-        self._detect(dt=dt, prev_vel=prev_vel, curr_vel=curr_vel)
-        self._refract(dt=dt, valid_ang_max=valid_ang_max)
+        self._detect(
+            time_difference=time_difference, prev_vel=prev_vel, curr_vel=curr_vel
+        )
+        self._refract(time_difference=time_difference, valid_ang_max=valid_ang_max)
 
-        return self.valid_stride and self.enable_trigger
+        return self.valid_stride and self._enable_trigger
 
-    def _detect(self, dt: float, prev_vel: float, curr_vel: float) -> None:
+    def _detect(self, time_difference: float, prev_vel: float, curr_vel: float) -> None:
         """Detect stride and proceed the countdown steps when necessary.
 
         :param dt: Time difference between current and previous timestamp.
@@ -64,15 +70,15 @@ class StrideEventDetector:
         :param curr_vel: Current velocity value.
         :return: None
         """
-        if self.detector_count and self._countdown_detector(dt):
+        if self._detector_count and self._countdown_detector(time_difference):
             self._reset()
 
-        elif self.enable_detector:
+        elif self._enable_detector:
             if is_stride_detected(prev_vel=prev_vel, curr_vel=curr_vel):
                 self.valid_stride = True
-                self.detector_count = True
+                self._detector_count = True
 
-    def _refract(self, dt: float, valid_ang_max: bool) -> None:
+    def _refract(self, time_difference: float, valid_ang_max: bool) -> None:
         """Trigger the update of centered values when valid angle maximum is reached and proceed the countdown steps when necessary.
 
         :param dt: Time difference between current and previous timestamp.
@@ -80,11 +86,11 @@ class StrideEventDetector:
         :return: None
         """
         if valid_ang_max:
-            self.enable_trigger = True
+            self._enable_trigger = True
 
-        elif self.enable_trigger and self._countdown_trigger(dt):
-            self.enable_trigger = False
-            self.trigger_counter_time = 0
+        elif self._enable_trigger and self._countdown_trigger(time_difference):
+            self._enable_trigger = False
+            self._trigger_counter_time = 0
 
     def _countdown_trigger(self, dt: float) -> bool:
         """Check if the trigger countdown has reached the specified time threshold.
@@ -92,9 +98,9 @@ class StrideEventDetector:
         :param dt: Time difference between current and previous timestamp.
         :return: True if the stride event detector countdown has reached the specified time threshold, False otherwise.
         """
-        self.trigger_counter_time += dt
-        self.enable_trigger = True
-        return self.trigger_counter_time >= STRIDE_EVENT_COUNTER_TIME
+        self._trigger_counter_time += dt
+        self._enable_trigger = True
+        return self._trigger_counter_time >= STRIDE_EVENT_COUNTER_TIME
 
     def _countdown_detector(self, dt: float) -> bool:
         """Check if the stride event detector countdown has reached the specified time threshold.
@@ -103,16 +109,16 @@ class StrideEventDetector:
 
         :return: True if the stride event detector countdown has reached the specified time threshold, False otherwise.
         """
-        self.detector_counter_time += dt
-        self.enable_detector = False
-        return self.detector_counter_time >= STRIDE_EVENT_COUNTER_TIME
+        self._detector_counter_time += dt
+        self._enable_detector = False
+        return self._detector_counter_time >= STRIDE_EVENT_COUNTER_TIME
 
     def _reset(self) -> None:
         """Reset the stride event detector to the initial state.
 
         :return: None
         """
-        self.detector_counter_time = 0.0
-        self.detector_count = False
+        self._detector_counter_time = 0.0
+        self._detector_count = False
         self.valid_stride = False
-        self.enable_detector = True
+        self._enable_detector = True

@@ -37,7 +37,6 @@ class ExoController:
         :return: None
 
         """
-        # TODO due to different wire settings one of them might need to be mirrored with -1
         try:
             self.left_controller.step(
                 timestamp=sensor_data.timestamp, curr_signal=sensor_data.left
@@ -52,7 +51,7 @@ class ExoController:
 class WalkOnController:
     """Walk ON Controller for a single lower limb."""
 
-    def __init__(self, reverse: bool = False, plot: bool = False):
+    def __init__(self, reverse: bool, plot: bool = False):
         """Initialize the controller.
 
         :return: None
@@ -67,6 +66,7 @@ class WalkOnController:
 
         self.high_level_controller = HighLevelController()
 
+        # due to different wire settings one of them might need to be reversed - mirrored with -1
         self.amplitude_modulation = AmplitudeModulation(reverse=reverse)
         self.mid_level_controller = MidLevelController()
 

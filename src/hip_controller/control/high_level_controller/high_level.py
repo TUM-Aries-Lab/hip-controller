@@ -47,8 +47,8 @@ class HighLevelController:
         self.state_machine: MotionStateMachine = MotionStateMachine()
         self.steady_state_tracker: SteadyStateTracker = SteadyStateTracker()
 
-        self.initialized: bool = False
-        self.prev_detector: bool = False
+        self.controller_initialized: bool = False
+        self.last_detection: bool = False
 
     def update_and_compute(self, curr_signal: SensorSignal, timestamp: float) -> float:
         """Update controller state with latest sensor data.
@@ -81,25 +81,25 @@ class HighLevelController:
 
         # stride event detector
         curr_detector = self.stride_event_detector.stride_event(
-            dt=timestamp - self.last_timestamp,
+            time_difference=timestamp - self.last_timestamp,
             valid_ang_max=(state == MotionState.ANGLE_MAX),
             prev_vel=self.prev_signal.velocity_rad_per_sec,
             curr_vel=self.curr_signal.velocity_rad_per_sec,
         )
 
         # Rising pattern of the stride event detector
-        if not self.prev_detector and curr_detector:
+        if not self.last_detection and curr_detector:
             self.steady_state_tracker.recenter()
 
-        self.prev_detector = curr_detector
+        self.last_detection = curr_detector
 
         # Computes the steady-state gait phase parameters
         self.steady_state_tracker.update_steady_state(curr_signal=self.curr_signal)
 
         if self.stride_event_detector.valid_stride:
-            self.initialized = True
+            self.controller_initialized = True
 
-        if not self.initialized:
+        if not self.controller_initialized:
             return 0
         else:
             return self.calculate_gait_phase()

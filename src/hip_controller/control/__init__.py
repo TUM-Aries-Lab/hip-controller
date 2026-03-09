@@ -1,1 +1,1 @@
-"""Sample doc string."""
+"""Hip controller of the lower limb."""

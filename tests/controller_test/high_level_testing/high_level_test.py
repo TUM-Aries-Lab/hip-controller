@@ -105,7 +105,9 @@ def test_high_level() -> None:
         expected_gait_phase = curr[KinematicsDataColumnName.GAIT_PHASE_LEFT]
 
         # Assert
-        assert (not controller.initialized) == expected_not_initialized, f"Row {i}"
+        assert (not controller.controller_initialized) == expected_not_initialized, (
+            f"Row {i}"
+        )
 
         assert isclose(
             controller.steady_state_tracker._center_vel,

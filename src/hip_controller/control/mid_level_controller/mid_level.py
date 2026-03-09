@@ -47,10 +47,10 @@ class MotionMapping:
 
     def __init__(self):
         """Initialize the table."""
-        self.cubic_spline = CubicSpline(
+        self._cubic_spline = CubicSpline(
             x=LookUpTable.BREAKPOINTS, y=LookUpTable.TABLEDATA, extrapolate=True
         )
 
     def spline(self, value: float):
         """Evaluate lookup table for an input each time stamp value."""
-        return self.cubic_spline(value)
+        return self._cubic_spline(value)

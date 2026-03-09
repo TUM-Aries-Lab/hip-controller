@@ -28,16 +28,16 @@ def test_stride_event_detector() -> None:
 
         dt = curr_timestamp - prev_timestamp
 
-        sed._detect(dt=dt, prev_vel=prev_velocity, curr_vel=curr_velocity)
+        sed._detect(time_difference=dt, prev_vel=prev_velocity, curr_vel=curr_velocity)
 
         expected_enable_detector = curr[KinematicsDataColumnName.ENABLE_DETECTOR]
         expected_valid_stride = curr[KinematicsDataColumnName.VALID_STRIDE]
 
         assert sed.valid_stride == expected_valid_stride, (
-            f"Row {i}, time {sed.detector_counter_time}"
+            f"Row {i}, time {sed._detector_counter_time}"
         )
-        assert sed.enable_detector == expected_enable_detector, (
-            f"Row {i}, time {sed.detector_counter_time}"
+        assert sed._enable_detector == expected_enable_detector, (
+            f"Row {i}, time {sed._detector_counter_time}"
         )
 
 
@@ -63,7 +63,7 @@ def test_stride_event_trigger() -> None:
         dt = curr_timestamp - prev_timestamp
 
         stride_event = sed.stride_event(
-            dt=dt,
+            time_difference=dt,
             curr_vel=curr_velocity,
             prev_vel=prev_velocity,
             valid_ang_max=valid_ang_max,
@@ -72,9 +72,9 @@ def test_stride_event_trigger() -> None:
         expected_enable_trigger = curr[KinematicsDataColumnName.ENABLE_TRIGGER]
         expected_stride_event = curr[KinematicsDataColumnName.STRIDE_EVENT]
 
-        assert sed.enable_trigger == expected_enable_trigger, (
-            f"Row {i}, time {sed.trigger_counter_time}, angle_max_trigger {valid_ang_max}"
+        assert sed._enable_trigger == expected_enable_trigger, (
+            f"Row {i}, time {sed._trigger_counter_time}, angle_max_trigger {valid_ang_max}"
         )
         assert stride_event == expected_stride_event, (
-            f"Row {i}, time {sed.trigger_counter_time}"
+            f"Row {i}, time {sed._trigger_counter_time}"
         )
