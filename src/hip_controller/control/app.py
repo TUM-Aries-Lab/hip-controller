@@ -7,7 +7,7 @@ from hip_controller.control.mid_level_controller.amplitude_modulation import (
     AmplitudeModulation,
 )
 from hip_controller.control.mid_level_controller.mid_level import MidLevelController
-from hip_controller.definitions import ConfigPlot, ExosuitData, SensorSignal
+from hip_controller.definitions import BasicConfig, ExosuitData, SensorSignal
 
 
 class ExoController:
@@ -20,10 +20,10 @@ class ExoController:
         """
         logger.info("Initializing the lower limb controller.")
         self.left_controller = WalkOnController(
-            reverse=False, plot=ConfigPlot.left_limb_plot
+            reverse=BasicConfig.left_limb_reverse, plot=BasicConfig.left_limb_plot
         )
         self.right_controller = WalkOnController(
-            reverse=True, plot=ConfigPlot.right_limb_plot
+            reverse=BasicConfig.right_limb_reverse, plot=BasicConfig.right_limb_plot
         )
 
     def step(self, sensor_data: ExosuitData):
