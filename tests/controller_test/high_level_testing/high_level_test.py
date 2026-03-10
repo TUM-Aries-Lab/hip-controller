@@ -120,7 +120,7 @@ def test_high_level() -> None:
             rel_tol=REL_TOL,
         ), f"Row {i}"
         assert isclose(
-            controller.steady_state_tracker._rescale_factor,
+            controller.steady_state_tracker._scale_factor,
             expected_rescale_factor,
             rel_tol=REL_TOL,
         ), f"Row {i}"

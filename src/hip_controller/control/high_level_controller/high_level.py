@@ -80,7 +80,7 @@ class HighLevelController:
             )
 
         # stride event detector
-        curr_detector = self.stride_event_detector.stride_event(
+        curr_detector = self.stride_event_detector.is_valid_stride_event(
             time_difference=timestamp - self.last_timestamp,
             valid_ang_max=(state == MotionState.ANGLE_MAX),
             prev_vel=self.prev_signal.velocity_rad_per_sec,
@@ -116,11 +116,12 @@ class HighLevelController:
         )
 
     def calculate_gait_phase(self) -> float:
-        """Calculate the current gait phase as an angle in the phase plane that represents the current position in the gait cycle.
+        """Calculate the current gait phase with as an angle in the phase plane that represents the current position in the gait cycle.
 
         :return: Gait phase angle in radians.
         :rtype: float
         """
+        # atan2(velocity/angle) computes the angle of a point (x,y) from the origin
         return atan2(
             self.steady_state_tracker.vel_steady_state,
             self.steady_state_tracker.ang_steady_state,

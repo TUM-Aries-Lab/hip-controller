@@ -3,6 +3,7 @@
 import os
 import sys
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 
 from hip_controller.definitions import TESTING_DIR
@@ -19,7 +20,7 @@ REL_TOL = 1e-9
 class ControllerDataPath:
     """All data path for testing."""
 
-    TESTING_CONTROLLER_DIR: Path = TESTING_DIR / "controller_test" / "testing_data"
+    TESTING_CONTROLLER_DIR = TESTING_DIR / "controller_test" / "testing_data"
 
     DATA_REFERENCE_MOTION_RIGHT: Path = (
         TESTING_CONTROLLER_DIR / "reference_motion_2026_03_06.csv"
@@ -61,64 +62,63 @@ class ControllerDataPath:
     )
 
 
-@dataclass
-class KinematicsDataColumnName:
+class KinematicsDataColumnName(StrEnum):
     """Names of columns for csv files for high-level controller testing."""
 
-    TIMESTAMP: str = "time (s)"
-    ANGLE_LEFT: str = "angle_left (rad)"
-    VELOCITY_LEFT: str = "vel_left (rad/s)"
+    TIMESTAMP = "time (s)"
+    ANGLE_LEFT = "angle_left (rad)"
+    VELOCITY_LEFT = "vel_left (rad/s)"
 
-    TRIGG_VEL_MAX: str = "vel_max_trigg_left"
-    TRIGG_ANG_MAX: str = "ang_max_trigg_left"
-    TRIGG_VEL_MIN: str = "vel_min_trigg_left"
-    TRIGG_ANG_MIN: str = "ang_min_trigg_left"
+    TRIGG_VEL_MAX = "vel_max_trigg_left"
+    TRIGG_ANG_MAX = "ang_max_trigg_left"
+    TRIGG_VEL_MIN = "vel_min_trigg_left"
+    TRIGG_ANG_MIN = "ang_min_trigg_left"
 
-    VALID_TRIGG_VEL_MAX: str = "valid_vel_max_left"
-    VALID_TRIGG_ANG_MAX: str = "valid_ang_max_left"
-    VALID_TRIGG_VEL_MIN: str = "valid_vel_min_left"
-    VALID_TRIGG_ANG_MIN: str = "valid_ang_min_left"
+    VALID_TRIGG_VEL_MAX = "valid_vel_max_left"
+    VALID_TRIGG_ANG_MAX = "valid_ang_max_left"
+    VALID_TRIGG_VEL_MIN = "valid_vel_min_left"
+    VALID_TRIGG_ANG_MIN = "valid_ang_min_left"
 
-    VALUE_VEL_MAX: str = "vel_max_left (rad/s)"
-    VALUE_VEL_MIN: str = "vel_min_left (rad/s)"
-    VALUE_ANG_MAX: str = "ang_max_left (rad)"
-    VALUE_ANG_MIN: str = "ang_min_left (rad)"
+    VALUE_VEL_MAX = "vel_max_left (rad/s)"
+    VALUE_VEL_MIN = "vel_min_left (rad/s)"
+    VALUE_ANG_MAX = "ang_max_left (rad)"
+    VALUE_ANG_MIN = "ang_min_left (rad)"
 
-    CENTER_ANG: str = "center_ang"
-    CENTER_VEL: str = "center_vel"
+    CENTER_ANG = "center_ang"
+    CENTER_VEL = "center_vel"
 
-    VEL_STEADY_STATE: str = "normalized_centered_velocity"
-    ANG_STEADY_STATE: str = "normalized_centered_angle"
-    RESCALE_FACTOR: str = "gamma"
+    VEL_STEADY_STATE = "normalized_centered_velocity"
+    ANG_STEADY_STATE = "normalized_centered_angle"
+    RESCALE_FACTOR = "gamma"
 
     # Stride event detector
-    NOT_INITIALIZED: str = "before_initialization"
-    ENABLE_TRIGGER: str = "enable_trigger"
-    ENABLE_DETECTOR: str = "enable_detector"
-    VALID_STRIDE: str = "valid_stride"
-    STRIDE_EVENT: str = "stride_event"
+    NOT_INITIALIZED = "before_initialization"
+    ENABLE_TRIGGER = "enable_trigger"
+    ENABLE_DETECTOR = "enable_detector"
+    VALID_STRIDE = "valid_stride"
+    STRIDE_EVENT = "stride_event"
 
     # Amplitude Modulation
-    RADIUS: str = "portrait_radius"
-    SCALED_RADIUS: str = "scaled_portrait_radius"
-    SIGMOID_RADIUS: str = "after_sigmoid"
-    AMPLITUDE_LEFT: str = "amplitude"
+    RADIUS = "portrait_radius"
+    SCALED_RADIUS = "scaled_portrait_radius"
+    SIGMOID_RADIUS = "after_sigmoid"
+    AMPLITUDE_LEFT = "amplitude"
 
     # Reference Motion
-    GAIT_PHASE_LEFT: str = "gait_phase_left"
-    SIN_WAVE_LEFT: str = "sinusoidal_behavior"
-    REF_MOT_LEFT: str = "reference_motion"
+    GAIT_PHASE_LEFT = "gait_phase_left"
+    SIN_WAVE_LEFT = "sinusoidal_behavior"
+    REF_MOT_LEFT = "reference_motion"
 
     # Cubic Spline Interpolation
-    MAPPING_KEY: str = "motion_mapping_key"
-    MAPPING_VALUE: str = "motion_mapping_value"
+    MAPPING_KEY = "motion_mapping_key"
+    MAPPING_VALUE = "motion_mapping_value"
 
     # Right lower limb tests
-    ANG_RIGHT: str = "angle_right (rad)"
-    VEL_RIGHT: str = "velocity_right (rad/s)"
+    ANG_RIGHT = "angle_right (rad)"
+    VEL_RIGHT = "velocity_right (rad/s)"
 
-    GAIT_PHASE_RIGHT: str = "gait_phase_right"
-    SIN_WAVE_RIGHT: str = "sinusoidal_behavior_right"
-    AMPLITUDE_RIGHT: str = "amplitude_right"
+    GAIT_PHASE_RIGHT = "gait_phase_right"
+    SIN_WAVE_RIGHT = "sinusoidal_behavior_right"
+    AMPLITUDE_RIGHT = "amplitude_right"
 
-    REF_MOT_RIGHT: str = "motor_reference_right (rad)"
+    REF_MOT_RIGHT = "motor_reference_right (rad)"

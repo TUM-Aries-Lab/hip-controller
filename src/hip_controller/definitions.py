@@ -73,6 +73,7 @@ VALUE_NEAR_ZERO = 1e-6
 
 # stride event detector
 STRIDE_EVENT_COUNTER_TIME = 0.3099  # in s
+STRIDE_EVENT_HIT_CROSSING_OFFSET = -0.1
 
 # ---mid level---
 LAG_COMPENSATION = 0  # Lag correction

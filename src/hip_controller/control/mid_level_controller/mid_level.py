@@ -1,5 +1,6 @@
 """Mid-level control functions."""
 
+from loguru import logger
 from scipy.interpolate import CubicSpline
 
 from hip_controller.definitions import LAG_COMPENSATION, LookUpTable, PositionLimitation
@@ -33,8 +34,10 @@ class MidLevelController:
 
         # Saturation
         if motor_command < PositionLimitation.LOWER:
+            logger.warning("Motor velocity command reached the lower limitation.")
             return PositionLimitation.LOWER
         elif motor_command > PositionLimitation.UPPER:
+            logger.warning("Motor velocity command reached the upper limitation.")
             return PositionLimitation.UPPER
         else:
             return motor_command

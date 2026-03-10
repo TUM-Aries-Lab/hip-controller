@@ -24,7 +24,7 @@ class SteadyStateTracker:
         # center velocity, center angle and rescale factor, updated when valid stride event is detected
         self._center_vel = 0.0
         self._center_ang = 0.0
-        self._rescale_factor: float = 0.0
+        self._scale_factor: float = 0.0
 
         # normalized and centered values, updated each step
         self.vel_steady_state: float = 0.0
@@ -42,7 +42,7 @@ class SteadyStateTracker:
 
         # Avoid division by zero
         if angle_range <= 0.0:
-            return 1
+            return 1.0
 
         velocity_range = abs(self._velocity_max - self._velocity_min)
 
@@ -59,7 +59,7 @@ class SteadyStateTracker:
         self._center_vel = calculate_center_value(
             val_max=self._velocity_max, val_min=self._velocity_min
         )
-        self._rescale_factor = self._calculate_rescale_factor()
+        self._scale_factor = self._calculate_rescale_factor()
 
     def update_steady_state(self, curr_signal: SensorSignal) -> None:
         """Update steady-state of current signal by aligning them with center values.
@@ -72,7 +72,7 @@ class SteadyStateTracker:
         )
         self.ang_steady_state = -(
             align(curr_val=curr_signal.angle_rad, center_val=self._center_ang)
-            * self._rescale_factor
+            * self._scale_factor
         )
 
     def update_extrema(self, state: MotionState, curr_signal: SensorSignal) -> None:
@@ -93,3 +93,6 @@ class SteadyStateTracker:
 
         elif state == MotionState.VELOCITY_MIN:
             self._velocity_min = curr_signal.velocity_rad_per_sec
+
+        else:
+            return

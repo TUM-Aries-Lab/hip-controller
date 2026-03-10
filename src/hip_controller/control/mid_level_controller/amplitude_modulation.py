@@ -85,7 +85,7 @@ class AmplitudeModulation:
         self._mode = mode
 
     @staticmethod
-    def compute_portrait_radius(signal: SensorSignal) -> float:
+    def _compute_portrait_radius(signal: SensorSignal) -> float:
         """Calculate the portrait radius.
 
         :param SensorSignal signal: angle estimation in radians and quarature component velocity surrogate in radians per sec.
@@ -105,7 +105,7 @@ class AmplitudeModulation:
         params = self._mode.get_parameters()
 
         scaled_portrait_radius = (
-            self.compute_portrait_radius(signal=signal) * params.scale
+            self._compute_portrait_radius(signal=signal) * params.scale
         )
 
         amplitude = apply_sigmoid_scaling(scaled_portrait_radius, params.sigmoid_power)

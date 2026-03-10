@@ -134,9 +134,8 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         """Update both plots using new data.
 
         :param float timestamp: Time stamp.
-        :param float sinusoidal: Output signal plotted in the time-domain view.
-        :param float angle: Normalized angle in rad.
-        :param float velocity: Normalized angular velocity in rad/s.
+        :param float reference_motor: Output signal plotted in the time-domain view.
+        :param float steady: Normalized angle in rad and normalized angular velocity in rad/s.
         """
         # ---- store incoming data ----
 

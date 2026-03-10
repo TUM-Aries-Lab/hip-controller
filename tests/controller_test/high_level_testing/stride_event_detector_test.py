@@ -28,7 +28,9 @@ def test_stride_event_detector() -> None:
 
         dt = curr_timestamp - prev_timestamp
 
-        sed._detect(time_difference=dt, prev_vel=prev_velocity, curr_vel=curr_velocity)
+        sed._detect_new_stride(
+            time_difference=dt, prev_vel=prev_velocity, curr_vel=curr_velocity
+        )
 
         expected_enable_detector = curr[KinematicsDataColumnName.ENABLE_DETECTOR]
         expected_valid_stride = curr[KinematicsDataColumnName.VALID_STRIDE]
@@ -62,7 +64,7 @@ def test_stride_event_trigger() -> None:
 
         dt = curr_timestamp - prev_timestamp
 
-        stride_event = sed.stride_event(
+        stride_event = sed.is_valid_stride_event(
             time_difference=dt,
             curr_vel=curr_velocity,
             prev_vel=prev_velocity,

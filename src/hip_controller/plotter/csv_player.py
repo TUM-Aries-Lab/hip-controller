@@ -69,10 +69,10 @@ class CSVPlayer:
     def get_data_from_csv(
         self, input_name: str, output_name: str
     ) -> tuple[float, float, float]:
-        """Get the recorded data from csv line by line.
+        """Get the data input and expected output from csv line by line to compare output executed from input and expected output.
 
-        :return: timestamp, angle_left, velocity_left, angle_right, velocity_right packed together as a dataclass
-        :rtype: Sensordata
+        :return: timestamp, float value of given input, float value of given output
+        :rtype:tuple[float, float, float]
         """
         row = self.dataframe.iloc[self.counter]
         self.counter += 1
@@ -84,7 +84,7 @@ class CSVPlayer:
         return timestamp, float(row[input_name]), float(row[output_name])
 
 
-def convert_xlsx_to_csv(path: Path) -> Path:
+def convert_xlsx_to_csv(xlsx_path: Path) -> Path:
     """Convert an Excel file to CSV format.
 
     Reads a single Excel file (.xls or .xlsx) from the testing directory and writes
@@ -96,8 +96,6 @@ def convert_xlsx_to_csv(path: Path) -> Path:
     :return: Path to the newly created CSV file with the same name as the input file but with .csv extension.
     :rtype: Path
     """
-    xlsx_path = path
-
     if not xlsx_path.exists():
         raise FileNotFoundError(f"File not found: {xlsx_path}")
 

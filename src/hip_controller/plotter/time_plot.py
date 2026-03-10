@@ -135,10 +135,13 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
     ) -> None:
         """Update both plots using new data.
 
-        :param float timestamp: Time stamp.
+        :param float timestamp: Timestamp.
 
         :param float first_input:  First input.
         :param float second_input: Second input.
+
+        :return: None
+        :rtype: None
         """
         # ---- store incoming data ----
 

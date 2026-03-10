@@ -95,10 +95,12 @@ def transform_to_cyclic(val: float) -> float:
 
 
 def apply_sigmoid_scaling(value: float, power: float) -> float:
-    """Apply sigmoid scaling a^n / (a^n + 1) so that he higher n, the more low amplitudes are scaled down.
+    """Apply sigmoid scaling a^n / (a^n + 1) so that the higher n is, the lower amplitudes are scaled down.
+
+    :param float value: Variable a.
+    :param float power: Variable n.
 
     :return: Amplitude.
     :rtype: float
     """
-    # TODO scale to 1
     return (value**power) / ((value**power) + 1)
