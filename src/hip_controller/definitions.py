@@ -8,52 +8,6 @@ import numpy as np
 
 np.set_printoptions(precision=3, floatmode="fixed", suppress=True)
 
-
-@dataclass(frozen=True)
-class ConfigPlot:
-    """Plot Configurations for the hip controller."""
-
-    # if the graph is displayed or not
-    left_limb_plot: bool = True
-    right_limb_plot: bool = False
-
-    GRAPH_WIDTH = 1000
-    GRAPH_HEIGHT = 500
-
-    DRAW_SAMPLE_FREQUENCY = 10
-
-    # left time-series graph config
-    TIME_PLOT_SIZE: int = 150
-    TIME_PLOT_WINDOW_SIZE_SEC = (
-        2  # This should align with the plot number size with frequency of the samples
-    )
-
-    # sin-wave is always between 1 and -1
-    TIME_PLOT_YMIN = -1.1
-    TIME_PLOT_YMAX = 1.1
-
-    TIME_PLOT_CURVE_COLOR = (244, 96, 144)
-    TIME_PLOT_CURVE_WIDTH = 2
-    TIME_PLOT_CURVE_NAME = "<math>-sin(Φ) with lag correction </math>"
-    TIME_PLOT_WINDOW_LEAD_SEC = 0.5
-    TIME_PLOT_WINDOW_FOLLOW = TIME_PLOT_WINDOW_LEAD_SEC - TIME_PLOT_WINDOW_SIZE_SEC
-
-    # right phase portrait config
-    PHASE_PLOT_SIZE: int = 150
-    PHASE_PLOT_WINDOW_MARGIN = 1.1
-
-    PHASE_PLOT_AXIS_ANGLE = "Angle (rad)"
-    PHASE_PLOT_AXIS_VELOCITY = "Velocity (rad/s)"
-    PHASE_PLOT_SCATTER_SIZE = 5
-
-    # Since the spots are fading transparently, RGB values are be given separately
-    PHASE_PLOT_SCATTER_COLOR_R = 56
-    PHASE_PLOT_SCATTER_COLOR_G = 136
-    PHASE_PLOT_SCATTER_COLOR_B = 56
-    PHASE_PLOT_LINE_WIDTH = 2
-    PHASE_PLOT_LINE_COLOR = "g"
-
-
 # --- Directories ---
 
 ROOT_DIR: Path = Path(__file__).resolve().parents[2]
@@ -64,6 +18,27 @@ DATA_DIR: Path = ROOT_DIR / "data"
 TESTING_DIR: Path = ROOT_DIR / "tests"
 RECORDINGS_DIR: Path = DATA_DIR / "recordings"
 LOG_DIR: Path = DATA_DIR / "logs"
+
+
+@dataclass(frozen=True)
+class BasicConfig:
+    """Basic configurations for the hip controller."""
+
+    # if the graph is displayed or not
+    left_limb_plot: bool = True
+    right_limb_plot: bool = True
+
+    # if the wiring settings are reversed or not
+    left_limb_reverse: bool = False
+    right_limb_reverse: bool = True
+
+    # either read data from imu or read data from csv file using csv player
+    read_from_imu: bool = False
+
+    # the path where data is read from
+    read_data_from_path: Path = (
+        DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
+    )
 
 
 # Default encoding
@@ -92,21 +67,42 @@ class LogLevel:
 DEFAULT_LOG_LEVEL = LogLevel.info
 DEFAULT_LOG_FILENAME = "log_file"
 
-
+# ---high level---
 # centering & normalization
 VALUE_NEAR_ZERO = 1e-6
 
+# stride event detector
+STRIDE_EVENT_COUNTER_TIME = 0.3099  # in s
+STRIDE_EVENT_HIT_CROSSING_OFFSET = -0.1
+
 # ---mid level---
-LAG_CORRECTION = pi / 7
+LAG_COMPENSATION = 0  # Lag correction
 
 # Amplitude modulation
-AMPLITUDE_GAIN = -6.5
+SCALE_LEVEL_MODE = 1
 SIGMOID_POWER = 50
-SCALE_LEVEL_GROUND = 1
+AMPLITUDE_GAIN = -6.5  # Motor position desidered amplitude (rad)
 
 # Kalman filter definitions
 PROCESS_NOISE = 2e-2
 MEASUREMENT_NOISE = 0.75
+
+
+# Cubic Spline Interpolation
+@dataclass(frozen=True)
+class LookUpTable:
+    """Stores breakpoint and table data of the motion mapping."""
+
+    breakpoints = np.array(
+        [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0.1, 0.2, 0.4, 0.6, 0.8, 1],
+        dtype=np.float64,
+    )
+
+    tabledata = np.array(
+        [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0, 0.005, 0.01, 0.015, 0.02, 0.025],
+        dtype=np.float64,
+    )
+
 
 # S Gait stopping threshold
 STOP_THRESHOLD = 0.5
@@ -116,8 +112,8 @@ STOP_THRESHOLD = 0.5
 class StateChangeTimeThreshold:
     """TMIN and TMAX in seconds."""
 
-    TMIN: float = 0.0
-    TMAX: float = 0.6
+    tmin: float = 0.0
+    tmax: float = 0.6
 
 
 @dataclass(frozen=True)
@@ -125,8 +121,8 @@ class PositionLimitation:
     """Limitations of position steady states."""
 
     # both are []
-    UPPER = 10.0
-    LOWER = -10.0
+    upper = 600 * pi / 180
+    lower = -600 * pi / 180
 
 
 @dataclass
@@ -170,3 +166,44 @@ class RecordedSensorData:
     vel_right: str = "vel_right (rad/s)"
 
     fake_frequency_hz: int = 100
+
+
+@dataclass(frozen=True)
+class ConfigPlot:
+    """Plot Configurations for the hip controller."""
+
+    graph_width = 1000
+    graph_height = 500
+
+    draw_sample_frequency = 10
+
+    # left time-series graph config
+    time_plot_size: int = 150
+    time_plot_window_size_sec = (
+        2  # This should align with the plot number size with frequency of the samples
+    )
+
+    # Motor command has a range between about [-10.472, 10.472]
+    time_plot_ymin = -11
+    time_plot_ymax = 11
+
+    time_plot_curve_color = (244, 96, 144)
+    time_plot_curve_width = 2
+    time_plot_curve_name = "Reference motion motor command"
+    time_plot_window_lead_sec = 0.5
+    time_plot_window_follow = time_plot_window_lead_sec - time_plot_window_size_sec
+
+    # right phase portrait config
+    phase_plot_size: int = 150
+    phase_plot_window_margin = 1.1
+
+    phase_plot_axis_angle = "Angle (rad)"
+    phase_plot_axis_velocity = "Velocity (rad/s)"
+    phase_plot_scatter_size = 5
+
+    # Since the spots are fading transparently, RGB values are be given separately
+    phase_plot_scatter_color_r = 56
+    phase_plot_scatter_color_g = 136
+    phase_plot_scatter_color_b = 56
+    phase_plot_line_width = 2
+    phase_plot_line_color = "g"

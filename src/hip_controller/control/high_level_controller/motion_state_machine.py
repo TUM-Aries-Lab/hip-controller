@@ -8,8 +8,8 @@ from hip_controller.definitions import (
     StateChangeTimeThreshold,
 )
 from hip_controller.utils.math_utils import (
-    hit_crossing_from_lower,
-    hit_crossing_from_upper,
+    hit_crossing_falling,
+    hit_crossing_rising,
 )
 
 
@@ -60,7 +60,7 @@ class ExtremaTrigger:
         :return: True if angle maximum is detected, False otherwise.
         """
         return (
-            hit_crossing_from_upper(curr=curr_velocity, prev=prev_velocity)
+            hit_crossing_falling(curr=curr_velocity, prev=prev_velocity)
             and curr_angle > 0
         )
 
@@ -74,7 +74,7 @@ class ExtremaTrigger:
         :return: True if angle minimum is detected, False otherwise.
         """
         return (
-            hit_crossing_from_lower(curr=curr_velocity, prev=prev_velocity)
+            hit_crossing_rising(curr=curr_velocity, prev=prev_velocity)
             and curr_angle < 0
         )
 
@@ -88,8 +88,7 @@ class ExtremaTrigger:
         :return: True if velocity maximum is detected, False otherwise.
         """
         return (
-            hit_crossing_from_lower(curr=curr_angle, prev=prev_angle)
-            and curr_velocity > 0
+            hit_crossing_rising(curr=curr_angle, prev=prev_angle) and curr_velocity > 0
         )
 
     def _velocity_min_trigger(
@@ -102,8 +101,7 @@ class ExtremaTrigger:
         :return: True if velocity minimum is detected, False otherwise.
         """
         return (
-            hit_crossing_from_upper(curr=curr_angle, prev=prev_angle)
-            and curr_velocity < 0
+            hit_crossing_falling(curr=curr_angle, prev=prev_angle) and curr_velocity < 0
         )
 
     def set_triggers(self, curr: SensorSignal, prev: SensorSignal) -> None:
@@ -264,10 +262,10 @@ class MotionStateMachine:
         dt = timestamp - self.timestamp_sec
 
         # before: inclusive, after: exclusive
-        if dt < StateChangeTimeThreshold.TMIN:
+        if dt < StateChangeTimeThreshold.tmin:
             return True
 
-        elif dt >= StateChangeTimeThreshold.TMAX:
+        elif dt >= StateChangeTimeThreshold.tmax:
             self.state = MotionState.INITIAL
             self.timestamp_sec = None
             return True

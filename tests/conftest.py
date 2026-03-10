@@ -2,7 +2,7 @@
 
 import os
 import sys
-from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 
 from hip_controller.definitions import TESTING_DIR
@@ -11,77 +11,102 @@ from hip_controller.definitions import TESTING_DIR
 my_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(my_path, "../src"))
 
+REL_TOL = 1e-9
+
 
 # Offers path and column strings for testing.
-@dataclass
-class HighLevelData:
-    """High level data for testing."""
+TESTING_CONTROLLER_DIR = TESTING_DIR / "controller_test" / "testing_data"
 
-    TESTING_HIGH_LEVEL_DIR: Path = (
-        TESTING_DIR
-        / "controller_test"
-        / "high_level_testing"
-        / "high_level_testing_data"
-    )
-    DATA_ZERO_CROSSING: Path = (
-        TESTING_HIGH_LEVEL_DIR / "zero_crossing_left_2026_01_09.csv"
-    )
+DATA_REFERENCE_MOTION_RIGHT: Path = (
+    TESTING_CONTROLLER_DIR / "reference_motion_2026_03_06.csv"
+)
+TESTING_HIGH_LEVEL_DIR: Path = (
+    TESTING_DIR / "controller_test" / "high_level_testing" / "high_level_testing_data"
+)
+DATA_ZERO_CROSSING: Path = TESTING_HIGH_LEVEL_DIR / "zero_crossing_left_2026_01_09.csv"
 
-    DATA_VALID_TRIGGER: Path = (
-        TESTING_HIGH_LEVEL_DIR / "valid_trigger_left_2026_01_15.csv"
-    )
+DATA_VALID_TRIGGER: Path = TESTING_HIGH_LEVEL_DIR / "valid_trigger_left_2026_01_15.csv"
 
-    DATA_EXTREMA_VALUES: Path = TESTING_HIGH_LEVEL_DIR / "extrema_2026_01_26.csv"
+DATA_EXTREMA_VALUES: Path = TESTING_HIGH_LEVEL_DIR / "extrema_2026_01_26.csv"
 
-    DATA_VEL_SS: Path = TESTING_HIGH_LEVEL_DIR / "vel_ss_2026_01_26.csv"
-    DATA_ANG_SS: Path = TESTING_HIGH_LEVEL_DIR / "ang_ss_2026_01_26.csv"
-    DATA_GAIT_PHASE: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_01_21.csv"
+DATA_STRIDE_EVENT_DETECTOR: Path = (
+    TESTING_HIGH_LEVEL_DIR / "stride_event_detector_2026_02_26.csv"
+)
 
+DATA_HIGH_LEVEL: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_03_03.csv"
 
-@dataclass
-class MidLevelData:
-    """High level data for testing."""
+TESTING_MID_LEVEL_DIR: Path = (
+    TESTING_DIR / "controller_test" / "mid_level_testing" / "mid_level_testing_data"
+)
 
-    TESTING_MID_LEVEL_DIR: Path = (
-        TESTING_DIR / "controller_test" / "mid_level_testing" / "mid_level_testing_data"
-    )
+DATA_MOTION_MAPPING: Path = TESTING_MID_LEVEL_DIR / "look_up_table_2026_02_25.csv"
 
-    DATA_SINUSOIDAL_BEHAVIOR: Path = (
-        TESTING_MID_LEVEL_DIR / "sinusoidal_behavior_left_2026_01_29.csv"
-    )
+DATA_AMPLITUDE_MODULATION: Path = (
+    TESTING_MID_LEVEL_DIR / "amplitude_modulation_2026_03_03.csv"
+)
+
+DATA_REFERENCE_MOTION_LEFT: Path = (
+    TESTING_MID_LEVEL_DIR / "reference_motion_2026_03_05.csv"
+)
 
 
-@dataclass
-class KinematicsDataColumnName:
+class KinematicsDataColumnName(StrEnum):
     """Names of columns for csv files for high-level controller testing."""
 
-    TIMESTAMP: str = "time (s)"
-    ANGLE: str = "angle_left (rad)"
-    VELOCITY: str = "vel_left (rad/s)"
+    TIMESTAMP = "time (s)"
+    ANGLE_LEFT = "angle_left (rad)"
+    VELOCITY_LEFT = "vel_left (rad/s)"
 
-    TRIGG_VEL_MAX: str = "vel_max_trigg_left"
-    TRIGG_ANG_MAX: str = "ang_max_trigg_left"
-    TRIGG_VEL_MIN: str = "vel_min_trigg_left"
-    TRIGG_ANG_MIN: str = "ang_min_trigg_left"
+    TRIGG_VEL_MAX = "vel_max_trigg_left"
+    TRIGG_ANG_MAX = "ang_max_trigg_left"
+    TRIGG_VEL_MIN = "vel_min_trigg_left"
+    TRIGG_ANG_MIN = "ang_min_trigg_left"
 
-    VALID_TRIGG_VEL_MAX: str = "valid_vel_max_left"
-    VALID_TRIGG_ANG_MAX: str = "valid_ang_max_left"
-    VALID_TRIGG_VEL_MIN: str = "valid_vel_min_left"
-    VALID_TRIGG_ANG_MIN: str = "valid_ang_min_left"
+    VALID_TRIGG_VEL_MAX = "valid_vel_max_left"
+    VALID_TRIGG_ANG_MAX = "valid_ang_max_left"
+    VALID_TRIGG_VEL_MIN = "valid_vel_min_left"
+    VALID_TRIGG_ANG_MIN = "valid_ang_min_left"
 
-    VALUE_VEL_MAX: str = "vel_max_left (rad/s)"
-    VALUE_VEL_MIN: str = "vel_min_left (rad/s)"
-    VEL_GAMMA_T: str = "vel_gamma_t"
-    VEL_SUM_MINMAX: str = "sum_vel_minmax"
-    VEL_STEADY_STATE: str = "vel_ss"
+    VALUE_VEL_MAX = "vel_max_left (rad/s)"
+    VALUE_VEL_MIN = "vel_min_left (rad/s)"
+    VALUE_ANG_MAX = "ang_max_left (rad)"
+    VALUE_ANG_MIN = "ang_min_left (rad)"
 
-    VALUE_ANG_MAX: str = "ang_max_left (rad)"
-    VALUE_ANG_MIN: str = "ang_min_left (rad)"
-    ANG_GAMMA_T: str = "ang_gamma_t"
-    ANG_STEADY_STATE: str = "ang_ss"
+    CENTER_ANG = "center_ang"
+    CENTER_VEL = "center_vel"
 
-    POSTION_STEADY_STATE: str = "pos_ss"
-    RESCALE_FACTOR: str = "z_t"
+    VEL_STEADY_STATE = "normalized_centered_velocity"
+    ANG_STEADY_STATE = "normalized_centered_angle"
+    RESCALE_FACTOR = "gamma"
 
-    GAIT_PHASE: str = "gait_phase_left"
-    SINUSOIDAL_BEHAVIOR: str = "sinusoidal_behavior"
+    # Stride event detector
+    NOT_INITIALIZED = "before_initialization"
+    ENABLE_TRIGGER = "enable_trigger"
+    ENABLE_DETECTOR = "enable_detector"
+    VALID_STRIDE = "valid_stride"
+    STRIDE_EVENT = "stride_event"
+
+    # Amplitude Modulation
+    RADIUS = "portrait_radius"
+    SCALED_RADIUS = "scaled_portrait_radius"
+    SIGMOID_RADIUS = "after_sigmoid"
+    AMPLITUDE_LEFT = "amplitude"
+
+    # Reference Motion
+    GAIT_PHASE_LEFT = "gait_phase_left"
+    SIN_WAVE_LEFT = "sinusoidal_behavior"
+    REF_MOT_LEFT = "reference_motion"
+
+    # Cubic Spline Interpolation
+    MAPPING_KEY = "motion_mapping_key"
+    MAPPING_VALUE = "motion_mapping_value"
+
+    # Right lower limb tests
+    ANG_RIGHT = "angle_right (rad)"
+    VEL_RIGHT = "velocity_right (rad/s)"
+
+    GAIT_PHASE_RIGHT = "gait_phase_right"
+    SIN_WAVE_RIGHT = "sinusoidal_behavior_right"
+    AMPLITUDE_RIGHT = "amplitude_right"
+
+    REF_MOT_RIGHT = "motor_reference_right (rad)"

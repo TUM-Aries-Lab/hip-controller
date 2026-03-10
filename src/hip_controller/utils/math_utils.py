@@ -1,5 +1,7 @@
 """Math utilities for the hip controller."""
 
+from math import sin
+
 import numpy as np
 from loguru import logger
 from numpy.typing import NDArray
@@ -21,7 +23,7 @@ def symmetrize_matrix(matrix: NDArray) -> NDArray:
     return (matrix + matrix.T) / 2
 
 
-def hit_crossing_from_upper(curr: float, prev: float, offset: float = 0) -> bool:
+def hit_crossing_falling(curr: float, prev: float, offset: float = 0) -> bool:
     """Detect certain crossing from upper to lower.
 
     Checks if a value transitions from non-negative to negative.
@@ -34,7 +36,7 @@ def hit_crossing_from_upper(curr: float, prev: float, offset: float = 0) -> bool
     return prev >= offset > curr
 
 
-def hit_crossing_from_lower(curr: float, prev: float, offset: float = 0) -> bool:
+def hit_crossing_rising(curr: float, prev: float, offset: float = 0) -> bool:
     """Detect certain crossing from lower to upper.
 
     Checks if a value transitions from non-positive to positive.
@@ -47,7 +49,7 @@ def hit_crossing_from_lower(curr: float, prev: float, offset: float = 0) -> bool
     return prev <= offset and curr > offset
 
 
-def normalize(center_val: float, val_curr: float) -> float:
+def align(center_val: float, curr_val: float) -> float:
     """Normalize value relative to bounded range.
 
     Computes a normalized steady-state value by removing the midpoint offset of
@@ -63,10 +65,10 @@ def normalize(center_val: float, val_curr: float) -> float:
         Steady-state value relative to the range center value.
     :rtype: float
     """
-    return val_curr - center_val
+    return curr_val - center_val
 
 
-def center(val_max: float, val_min: float) -> float:
+def calculate_center_value(val_max: float, val_min: float) -> float:
     """Calculate a centered value of max and min values.
 
     :param float val_max:
@@ -79,3 +81,26 @@ def center(val_max: float, val_min: float) -> float:
         :rtype: float
     """
     return (val_max + val_min) / 2.0
+
+
+def transform_to_cyclic(val: float) -> float:
+    """Transform the signal into a cyclic motion which the motor can follow by applying a negative sine.
+
+    :param float val: Value to be transformed.
+
+    :return: Transformed sinusoidal control signal.
+    :rtype: float
+    """
+    return -sin(val)
+
+
+def apply_sigmoid_scaling(value: float, power: float) -> float:
+    """Apply sigmoid scaling a^n / (a^n + 1) so that the higher n is, the lower amplitudes are scaled down.
+
+    :param float value: Variable a.
+    :param float power: Variable n.
+
+    :return: Amplitude.
+    :rtype: float
+    """
+    return (value**power) / ((value**power) + 1)
