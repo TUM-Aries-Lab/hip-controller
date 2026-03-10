@@ -262,10 +262,10 @@ class MotionStateMachine:
         dt = timestamp - self.timestamp_sec
 
         # before: inclusive, after: exclusive
-        if dt < StateChangeTimeThreshold.TMIN:
+        if dt < StateChangeTimeThreshold.tmin:
             return True
 
-        elif dt >= StateChangeTimeThreshold.TMAX:
+        elif dt >= StateChangeTimeThreshold.tmax:
             self.state = MotionState.INITIAL
             self.timestamp_sec = None
             return True

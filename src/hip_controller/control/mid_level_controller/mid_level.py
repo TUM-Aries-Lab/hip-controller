@@ -33,12 +33,12 @@ class MidLevelController:
         motor_command = mapping_value * amplitude
 
         # Saturation
-        if motor_command < PositionLimitation.LOWER:
+        if motor_command < PositionLimitation.lower:
             logger.warning("Motor velocity command reached the lower limitation.")
-            return PositionLimitation.LOWER
-        elif motor_command > PositionLimitation.UPPER:
+            return PositionLimitation.lower
+        elif motor_command > PositionLimitation.upper:
             logger.warning("Motor velocity command reached the upper limitation.")
-            return PositionLimitation.UPPER
+            return PositionLimitation.upper
         else:
             return motor_command
 
@@ -51,7 +51,7 @@ class MotionMapping:
     def __init__(self):
         """Initialize the table."""
         self._cubic_spline = CubicSpline(
-            x=LookUpTable.BREAKPOINTS, y=LookUpTable.TABLEDATA, extrapolate=True
+            x=LookUpTable.breakpoints, y=LookUpTable.tabledata, extrapolate=True
         )
 
     def spline(self, value: float):

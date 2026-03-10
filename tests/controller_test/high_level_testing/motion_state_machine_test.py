@@ -11,7 +11,11 @@ from hip_controller.utils.math_utils import (
     hit_crossing_falling,
     hit_crossing_rising,
 )
-from tests.conftest import ControllerDataPath, KinematicsDataColumnName
+from tests.conftest import (
+    DATA_VALID_TRIGGER,
+    DATA_ZERO_CROSSING,
+    KinematicsDataColumnName,
+)
 
 
 def test_extrema_trigger() -> None:
@@ -19,7 +23,7 @@ def test_extrema_trigger() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_ZERO_CROSSING)
+    df = read_csv(filepath_or_buffer=DATA_ZERO_CROSSING)
 
     for i in range(1, len(df)):
         prev = df.iloc[i - 1]
@@ -51,7 +55,7 @@ def test_valid_trigger() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_VALID_TRIGGER)
+    df = read_csv(filepath_or_buffer=DATA_VALID_TRIGGER)
     state_machine = MotionStateMachine()
 
     for i in range(1, len(df)):

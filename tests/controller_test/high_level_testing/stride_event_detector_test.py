@@ -5,7 +5,7 @@ from pandas import read_csv
 from hip_controller.control.high_level_controller.stride_event_detector import (
     StrideEventDetector,
 )
-from tests.conftest import ControllerDataPath, KinematicsDataColumnName
+from tests.conftest import DATA_STRIDE_EVENT_DETECTOR, KinematicsDataColumnName
 
 
 def test_stride_event_detector() -> None:
@@ -13,7 +13,7 @@ def test_stride_event_detector() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_STRIDE_EVENT_DETECTOR)
+    df = read_csv(filepath_or_buffer=DATA_STRIDE_EVENT_DETECTOR)
 
     sed = StrideEventDetector()
 
@@ -48,7 +48,7 @@ def test_stride_event_trigger() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_STRIDE_EVENT_DETECTOR)
+    df = read_csv(filepath_or_buffer=DATA_STRIDE_EVENT_DETECTOR)
 
     sed = StrideEventDetector()
 

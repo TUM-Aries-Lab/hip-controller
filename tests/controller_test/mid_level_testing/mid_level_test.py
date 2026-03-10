@@ -11,7 +11,7 @@ from hip_controller.control.mid_level_controller.mid_level import (
     MotionMapping,
     transform_to_cyclic,
 )
-from tests.conftest import REL_TOL, ControllerDataPath, KinematicsDataColumnName
+from tests.conftest import DATA_REFERENCE_MOTION_LEFT, REL_TOL, KinematicsDataColumnName
 
 
 def test_transform_gait_phase() -> None:
@@ -19,7 +19,7 @@ def test_transform_gait_phase() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_REFERENCE_MOTION_LEFT)
+    df = read_csv(filepath_or_buffer=DATA_REFERENCE_MOTION_LEFT)
 
     for i in range(0, len(df)):
         curr = df.iloc[i]
@@ -42,7 +42,7 @@ def test_cubic_spline_interpolation() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_REFERENCE_MOTION_LEFT)
+    df = read_csv(filepath_or_buffer=DATA_REFERENCE_MOTION_LEFT)
     lookup = MotionMapping()
 
     values = []
@@ -72,7 +72,7 @@ def test_motor_command() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_REFERENCE_MOTION_LEFT)
+    df = read_csv(filepath_or_buffer=DATA_REFERENCE_MOTION_LEFT)
     controller = MidLevelController()
 
     for i in range(0, len(df)):

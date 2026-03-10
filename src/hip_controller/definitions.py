@@ -93,12 +93,12 @@ MEASUREMENT_NOISE = 0.75
 class LookUpTable:
     """Stores breakpoint and table data of the motion mapping."""
 
-    BREAKPOINTS = np.array(
+    breakpoints = np.array(
         [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0.1, 0.2, 0.4, 0.6, 0.8, 1],
         dtype=np.float64,
     )
 
-    TABLEDATA = np.array(
+    tabledata = np.array(
         [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0, 0.005, 0.01, 0.015, 0.02, 0.025],
         dtype=np.float64,
     )
@@ -112,8 +112,8 @@ STOP_THRESHOLD = 0.5
 class StateChangeTimeThreshold:
     """TMIN and TMAX in seconds."""
 
-    TMIN: float = 0.0
-    TMAX: float = 0.6
+    tmin: float = 0.0
+    tmax: float = 0.6
 
 
 @dataclass(frozen=True)
@@ -121,8 +121,8 @@ class PositionLimitation:
     """Limitations of position steady states."""
 
     # both are []
-    UPPER = 600 * pi / 180
-    LOWER = -600 * pi / 180
+    upper = 600 * pi / 180
+    lower = -600 * pi / 180
 
 
 @dataclass
@@ -172,38 +172,38 @@ class RecordedSensorData:
 class ConfigPlot:
     """Plot Configurations for the hip controller."""
 
-    GRAPH_WIDTH = 1000
-    GRAPH_HEIGHT = 500
+    graph_width = 1000
+    graph_height = 500
 
-    DRAW_SAMPLE_FREQUENCY = 10
+    draw_sample_frequency = 10
 
     # left time-series graph config
-    TIME_PLOT_SIZE: int = 150
-    TIME_PLOT_WINDOW_SIZE_SEC = (
+    time_plot_size: int = 150
+    time_plot_window_size_sec = (
         2  # This should align with the plot number size with frequency of the samples
     )
 
     # Motor command has a range between about [-10.472, 10.472]
-    TIME_PLOT_YMIN = -11
-    TIME_PLOT_YMAX = 11
+    time_plot_ymin = -11
+    time_plot_ymax = 11
 
-    TIME_PLOT_CURVE_COLOR = (244, 96, 144)
-    TIME_PLOT_CURVE_WIDTH = 2
-    TIME_PLOT_CURVE_NAME = "Reference motion motor command"
-    TIME_PLOT_WINDOW_LEAD_SEC = 0.5
-    TIME_PLOT_WINDOW_FOLLOW = TIME_PLOT_WINDOW_LEAD_SEC - TIME_PLOT_WINDOW_SIZE_SEC
+    time_plot_curve_color = (244, 96, 144)
+    time_plot_curve_width = 2
+    time_plot_curve_name = "Reference motion motor command"
+    time_plot_window_lead_sec = 0.5
+    time_plot_window_follow = time_plot_window_lead_sec - time_plot_window_size_sec
 
     # right phase portrait config
-    PHASE_PLOT_SIZE: int = 150
-    PHASE_PLOT_WINDOW_MARGIN = 1.1
+    phase_plot_size: int = 150
+    phase_plot_window_margin = 1.1
 
-    PHASE_PLOT_AXIS_ANGLE = "Angle (rad)"
-    PHASE_PLOT_AXIS_VELOCITY = "Velocity (rad/s)"
-    PHASE_PLOT_SCATTER_SIZE = 5
+    phase_plot_axis_angle = "Angle (rad)"
+    phase_plot_axis_velocity = "Velocity (rad/s)"
+    phase_plot_scatter_size = 5
 
     # Since the spots are fading transparently, RGB values are be given separately
-    PHASE_PLOT_SCATTER_COLOR_R = 56
-    PHASE_PLOT_SCATTER_COLOR_G = 136
-    PHASE_PLOT_SCATTER_COLOR_B = 56
-    PHASE_PLOT_LINE_WIDTH = 2
-    PHASE_PLOT_LINE_COLOR = "g"
+    phase_plot_scatter_color_r = 56
+    phase_plot_scatter_color_g = 136
+    phase_plot_scatter_color_b = 56
+    phase_plot_line_width = 2
+    phase_plot_line_color = "g"

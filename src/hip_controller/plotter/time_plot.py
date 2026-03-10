@@ -71,15 +71,15 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
         # At runtime, ViewBox expects min and max. As a result, min and max are passed positionally here, instead of keywords.
         # This works for all the function calls setXRange, setYRange
         self.time_plot_up.setYRange(
-            ConfigPlot.TIME_PLOT_YMIN, ConfigPlot.TIME_PLOT_YMAX
+            ConfigPlot.time_plot_ymin, ConfigPlot.time_plot_ymax
         )
 
         # Create the curve that will be updated in real time
         self.time_curve_up = self.time_plot_up.plot(
             pen=pg.mkPen(
-                color=ConfigPlot.TIME_PLOT_CURVE_COLOR,
-                width=ConfigPlot.TIME_PLOT_CURVE_WIDTH,
-                name=ConfigPlot.TIME_PLOT_CURVE_NAME,
+                color=ConfigPlot.time_plot_curve_color,
+                width=ConfigPlot.time_plot_curve_width,
+                name=ConfigPlot.time_plot_curve_name,
             ),
             antialias=False,
         )
@@ -98,15 +98,15 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
             # At runtime, ViewBox expects min and max. As a result, min and max are passed positionally here, instead of keywords.
             # This works for all the function calls setXRange, setYRange
             self.time_plot_down.setYRange(
-                ConfigPlot.TIME_PLOT_YMIN, ConfigPlot.TIME_PLOT_YMAX
+                ConfigPlot.time_plot_ymin, ConfigPlot.time_plot_ymax
             )
 
             # Create the curve that will be updated in real time
             self.time_curve_down = self.time_plot_down.plot(
                 pen=pg.mkPen(
                     color="g",
-                    width=ConfigPlot.TIME_PLOT_CURVE_WIDTH,
-                    name=ConfigPlot.TIME_PLOT_CURVE_NAME,
+                    width=ConfigPlot.time_plot_curve_width,
+                    name=ConfigPlot.time_plot_curve_name,
                 ),
                 antialias=False,
             )
@@ -119,8 +119,8 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
             self.time_curve_down = self.time_plot_up.plot(
                 pen=pg.mkPen(
                     color="g",
-                    width=ConfigPlot.TIME_PLOT_CURVE_WIDTH,
-                    name=ConfigPlot.TIME_PLOT_CURVE_NAME,
+                    width=ConfigPlot.time_plot_curve_width,
+                    name=ConfigPlot.time_plot_curve_name,
                 ),
                 antialias=False,
             )
@@ -128,7 +128,7 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
             self.resize(1000, 500)
 
         self._sample_counter = 0
-        self._draw_every = ConfigPlot.DRAW_SAMPLE_FREQUENCY
+        self._draw_every = ConfigPlot.draw_sample_frequency
 
     def update_plots(
         self, timestamp: float, first_input: float, second_input: float
@@ -165,12 +165,12 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
 
         # Automatically move the visible x-range to follow time
         self.time_plot_up.setXRange(
-            timestamp + ConfigPlot.TIME_PLOT_WINDOW_FOLLOW,
-            timestamp + ConfigPlot.TIME_PLOT_WINDOW_LEAD_SEC,
+            timestamp + ConfigPlot.time_plot_window_follow,
+            timestamp + ConfigPlot.time_plot_window_lead_sec,
         )
 
         if self.separated:
             self.time_plot_down.setXRange(
-                timestamp + ConfigPlot.TIME_PLOT_WINDOW_FOLLOW,
-                timestamp + ConfigPlot.TIME_PLOT_WINDOW_LEAD_SEC,
+                timestamp + ConfigPlot.time_plot_window_follow,
+                timestamp + ConfigPlot.time_plot_window_lead_sec,
             )

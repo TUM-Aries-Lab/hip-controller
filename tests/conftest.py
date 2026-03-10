@@ -2,7 +2,6 @@
 
 import os
 import sys
-from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
@@ -16,50 +15,39 @@ REL_TOL = 1e-9
 
 
 # Offers path and column strings for testing.
-@dataclass
-class ControllerDataPath:
-    """All data path for testing."""
+TESTING_CONTROLLER_DIR = TESTING_DIR / "controller_test" / "testing_data"
 
-    TESTING_CONTROLLER_DIR = TESTING_DIR / "controller_test" / "testing_data"
+DATA_REFERENCE_MOTION_RIGHT: Path = (
+    TESTING_CONTROLLER_DIR / "reference_motion_2026_03_06.csv"
+)
+TESTING_HIGH_LEVEL_DIR: Path = (
+    TESTING_DIR / "controller_test" / "high_level_testing" / "high_level_testing_data"
+)
+DATA_ZERO_CROSSING: Path = TESTING_HIGH_LEVEL_DIR / "zero_crossing_left_2026_01_09.csv"
 
-    DATA_REFERENCE_MOTION_RIGHT: Path = (
-        TESTING_CONTROLLER_DIR / "reference_motion_2026_03_06.csv"
-    )
-    TESTING_HIGH_LEVEL_DIR: Path = (
-        TESTING_DIR
-        / "controller_test"
-        / "high_level_testing"
-        / "high_level_testing_data"
-    )
-    DATA_ZERO_CROSSING: Path = (
-        TESTING_HIGH_LEVEL_DIR / "zero_crossing_left_2026_01_09.csv"
-    )
+DATA_VALID_TRIGGER: Path = TESTING_HIGH_LEVEL_DIR / "valid_trigger_left_2026_01_15.csv"
 
-    DATA_VALID_TRIGGER: Path = (
-        TESTING_HIGH_LEVEL_DIR / "valid_trigger_left_2026_01_15.csv"
-    )
+DATA_EXTREMA_VALUES: Path = TESTING_HIGH_LEVEL_DIR / "extrema_2026_01_26.csv"
 
-    DATA_EXTREMA_VALUES: Path = TESTING_HIGH_LEVEL_DIR / "extrema_2026_01_26.csv"
+DATA_STRIDE_EVENT_DETECTOR: Path = (
+    TESTING_HIGH_LEVEL_DIR / "stride_event_detector_2026_02_26.csv"
+)
 
-    DATA_STRIDE_EVENT_DETECTOR: Path = (
-        TESTING_HIGH_LEVEL_DIR / "stride_event_detector_2026_02_26.csv"
-    )
+DATA_HIGH_LEVEL: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_03_03.csv"
 
-    DATA_HIGH_LEVEL: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_03_03.csv"
+TESTING_MID_LEVEL_DIR: Path = (
+    TESTING_DIR / "controller_test" / "mid_level_testing" / "mid_level_testing_data"
+)
 
-    TESTING_MID_LEVEL_DIR: Path = (
-        TESTING_DIR / "controller_test" / "mid_level_testing" / "mid_level_testing_data"
-    )
+DATA_MOTION_MAPPING: Path = TESTING_MID_LEVEL_DIR / "look_up_table_2026_02_25.csv"
 
-    DATA_MOTION_MAPPING: Path = TESTING_MID_LEVEL_DIR / "look_up_table_2026_02_25.csv"
+DATA_AMPLITUDE_MODULATION: Path = (
+    TESTING_MID_LEVEL_DIR / "amplitude_modulation_2026_03_03.csv"
+)
 
-    DATA_AMPLITUDE_MODULATION: Path = (
-        TESTING_MID_LEVEL_DIR / "amplitude_modulation_2026_03_03.csv"
-    )
-
-    DATA_REFERENCE_MOTION_LEFT: Path = (
-        TESTING_MID_LEVEL_DIR / "reference_motion_2026_03_05.csv"
-    )
+DATA_REFERENCE_MOTION_LEFT: Path = (
+    TESTING_MID_LEVEL_DIR / "reference_motion_2026_03_05.csv"
+)
 
 
 class KinematicsDataColumnName(StrEnum):

@@ -9,14 +9,18 @@ from hip_controller.control.app import (
     SensorSignal,
     WalkOnController,
 )
-from tests.conftest import REL_TOL, ControllerDataPath, KinematicsDataColumnName
+from tests.conftest import (
+    DATA_REFERENCE_MOTION_RIGHT,
+    REL_TOL,
+    KinematicsDataColumnName,
+)
 
 
 def test_controller_right():
     """Test the main function with the right lower limb data."""
     controller = WalkOnController(reverse=True, plot=False)
 
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_REFERENCE_MOTION_RIGHT)
+    df = read_csv(filepath_or_buffer=DATA_REFERENCE_MOTION_RIGHT)
 
     n = len(df)
     for i in range(0, n):
@@ -44,7 +48,7 @@ def test_controller_right():
 def test_amplitude_reverse():
     """Test the amplitude function of the right lower limb controller."""
     modulation = AmplitudeModulation(reverse=True)
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_REFERENCE_MOTION_RIGHT)
+    df = read_csv(filepath_or_buffer=DATA_REFERENCE_MOTION_RIGHT)
 
     n = len(df)
     for i in range(0, n):

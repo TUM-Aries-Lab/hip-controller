@@ -9,7 +9,7 @@ from hip_controller.control.mid_level_controller.amplitude_modulation import (
 )
 from hip_controller.definitions import SIGMOID_POWER, SensorSignal
 from hip_controller.utils.math_utils import apply_sigmoid_scaling
-from tests.conftest import REL_TOL, ControllerDataPath, KinematicsDataColumnName
+from tests.conftest import DATA_AMPLITUDE_MODULATION, REL_TOL, KinematicsDataColumnName
 
 
 def test_sigmoid_scaling() -> None:
@@ -17,7 +17,7 @@ def test_sigmoid_scaling() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_AMPLITUDE_MODULATION)
+    df = read_csv(filepath_or_buffer=DATA_AMPLITUDE_MODULATION)
 
     power = SIGMOID_POWER
 
@@ -43,7 +43,7 @@ def test_amplitude() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_AMPLITUDE_MODULATION)
+    df = read_csv(filepath_or_buffer=DATA_AMPLITUDE_MODULATION)
 
     mode = AmplitudeModulation(reverse=False)
 

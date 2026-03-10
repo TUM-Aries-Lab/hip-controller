@@ -39,12 +39,12 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         pg.setConfigOption(opt="antialias", value=True)
 
         # Deques for the left (time) plot
-        self.time_buf = deque(maxlen=ConfigPlot.TIME_PLOT_SIZE)
-        self.signal_buf = deque(maxlen=ConfigPlot.TIME_PLOT_SIZE)
+        self.time_buf = deque(maxlen=ConfigPlot.time_plot_size)
+        self.signal_buf = deque(maxlen=ConfigPlot.time_plot_size)
 
         # Deques for the right (phase portrait)
-        self.angle_buf = deque(maxlen=ConfigPlot.PHASE_PLOT_SIZE)
-        self.vel_buf = deque(maxlen=ConfigPlot.PHASE_PLOT_SIZE)
+        self.angle_buf = deque(maxlen=ConfigPlot.phase_plot_size)
+        self.vel_buf = deque(maxlen=ConfigPlot.phase_plot_size)
 
         # Build all UI components
         self._init_ui(left=left)
@@ -78,14 +78,14 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         # PlotWidget.setXRange(r, padding) is a wrapper that forwards arguments down to ViewBox.setXRange(min, max, padding)
         # At runtime, ViewBox expects min and max. As a result, min and max are passed positionally here, instead of keywords.
         # This works for all the function calls setXRange, setYRange
-        self.time_plot.setYRange(ConfigPlot.TIME_PLOT_YMIN, ConfigPlot.TIME_PLOT_YMAX)
+        self.time_plot.setYRange(ConfigPlot.time_plot_ymin, ConfigPlot.time_plot_ymax)
 
         # Create the curve that will be updated in real time
         self.time_curve = self.time_plot.plot(
             pen=pg.mkPen(
-                color=ConfigPlot.TIME_PLOT_CURVE_COLOR,
-                width=ConfigPlot.TIME_PLOT_CURVE_WIDTH,
-                name=ConfigPlot.TIME_PLOT_CURVE_NAME,
+                color=ConfigPlot.time_plot_curve_color,
+                width=ConfigPlot.time_plot_curve_width,
+                name=ConfigPlot.time_plot_curve_name,
             )
         )
 
@@ -93,8 +93,8 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self.phase_plot = pg.PlotWidget(title="Phase Portrait of angle vs velocity")
 
         # Create the phase portrait plot widget
-        self.phase_plot.setLabel("bottom", ConfigPlot.PHASE_PLOT_AXIS_ANGLE)
-        self.phase_plot.setLabel("left", ConfigPlot.PHASE_PLOT_AXIS_VELOCITY)
+        self.phase_plot.setLabel("bottom", ConfigPlot.phase_plot_axis_angle)
+        self.phase_plot.setLabel("left", ConfigPlot.phase_plot_axis_velocity)
         self.phase_plot.setAspectLocked(True)
 
         # Setup for the manual window range
@@ -102,7 +102,7 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self._phase_max_radius = 0.0
 
         # Scatter plot for fading phase trajectory
-        self.phase_scatter = pg.ScatterPlotItem(size=ConfigPlot.PHASE_PLOT_SCATTER_SIZE)
+        self.phase_scatter = pg.ScatterPlotItem(size=ConfigPlot.phase_plot_scatter_size)
         self.phase_plot.addItem(self.phase_scatter)
 
         # Line connecting origin (0,0) to newest phase point
@@ -110,8 +110,8 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
             [0.0, 0.0],
             [0.0, 0.0],
             pen=pg.mkPen(
-                color=ConfigPlot.PHASE_PLOT_LINE_COLOR,
-                width=ConfigPlot.PHASE_PLOT_LINE_WIDTH,
+                color=ConfigPlot.phase_plot_line_color,
+                width=ConfigPlot.phase_plot_line_width,
             ),
         )
 
@@ -122,11 +122,11 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         # Set window title and initial size
         self.setWindowTitle(f"Real-Time Phase Portrait ({'Left' if left else 'Right'})")
         self.resize(
-            ConfigPlot.GRAPH_WIDTH, ConfigPlot.GRAPH_HEIGHT
+            ConfigPlot.graph_width, ConfigPlot.graph_height
         )  #  resize() takes no keyword arguments
 
         self._sample_counter = 0
-        self._draw_every = ConfigPlot.DRAW_SAMPLE_FREQUENCY
+        self._draw_every = ConfigPlot.draw_sample_frequency
 
     def update_plots(
         self, timestamp: float, reference_motor: float, steady: SensorSignal
@@ -161,8 +161,8 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
 
         # Automatically move the visible x-range to follow time
         self.time_plot.setXRange(
-            timestamp + ConfigPlot.TIME_PLOT_WINDOW_FOLLOW,
-            timestamp + ConfigPlot.TIME_PLOT_WINDOW_LEAD_SEC,
+            timestamp + ConfigPlot.time_plot_window_follow,
+            timestamp + ConfigPlot.time_plot_window_lead_sec,
         )
 
         # ---- phase portrait with fading ----
@@ -177,9 +177,9 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
             dict(
                 pos=(self.angle_buf[i], self.vel_buf[i]),
                 brush=pg.mkBrush(
-                    ConfigPlot.PHASE_PLOT_SCATTER_COLOR_R,
-                    ConfigPlot.PHASE_PLOT_SCATTER_COLOR_G,
-                    ConfigPlot.PHASE_PLOT_SCATTER_COLOR_B,
+                    ConfigPlot.phase_plot_scatter_color_r,
+                    ConfigPlot.phase_plot_scatter_color_g,
+                    ConfigPlot.phase_plot_scatter_color_b,
                     alphas[i],
                 ),
             )
@@ -195,7 +195,7 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         if r_current > self._phase_max_radius:
             self._phase_max_radius = r_current
 
-            R = ConfigPlot.PHASE_PLOT_WINDOW_MARGIN * self._phase_max_radius
+            R = ConfigPlot.phase_plot_window_margin * self._phase_max_radius
 
             # Always symmetric around zero
             self.phase_plot.setXRange(-R, R)

@@ -24,7 +24,12 @@ from hip_controller.control.high_level_controller.high_level import (
     HighLevelController,
     SensorSignal,
 )
-from tests.conftest import REL_TOL, ControllerDataPath, KinematicsDataColumnName
+from tests.conftest import (
+    DATA_EXTREMA_VALUES,
+    DATA_HIGH_LEVEL,
+    REL_TOL,
+    KinematicsDataColumnName,
+)
 
 
 def test_extrema_values() -> None:
@@ -32,7 +37,7 @@ def test_extrema_values() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_EXTREMA_VALUES)
+    df = read_csv(filepath_or_buffer=DATA_EXTREMA_VALUES)
     controller = HighLevelController()
 
     for i in range(0, len(df)):
@@ -68,7 +73,7 @@ def test_high_level() -> None:
 
     :return: None
     """
-    df = read_csv(filepath_or_buffer=ControllerDataPath.DATA_HIGH_LEVEL)
+    df = read_csv(filepath_or_buffer=DATA_HIGH_LEVEL)
     controller = HighLevelController()
 
     for i in range(0, len(df)):
