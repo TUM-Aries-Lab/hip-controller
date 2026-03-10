@@ -61,7 +61,7 @@ class StrideEventDetector:
     ) -> None:
         """Detect stride and proceed the countdown steps when necessary.
 
-        :param dt: Time difference between current and previous timestamp.
+        :param time_difference: Time difference between current and previous timestamp.
         :param prev_vel: Previous velocity value.
         :param curr_vel: Current velocity value.
         :return: None

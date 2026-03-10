@@ -116,7 +116,7 @@ class HighLevelController:
         )
 
     def calculate_gait_phase(self) -> float:
-        """Calculate the current gait phase with as an angle in the phase plane that represents the current position in the gait cycle.
+        """Calculate the current gait phase as an angle in the phase plane that represents the current position in the gait cycle.
 
         :return: Gait phase angle in radians.
         :rtype: float
