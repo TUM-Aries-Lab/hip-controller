@@ -51,9 +51,10 @@ def test_extrema_values() -> None:
         # Act
         controller.update_and_compute(
             curr_signal=SensorSignal(
-                angle_rad=curr_angle, velocity_rad_per_sec=curr_velocity
-            ),
-            timestamp=timestamp,
+                timestamp=timestamp,
+                angle_rad=curr_angle,
+                velocity_rad_per_sec=curr_velocity,
+            )
         )
 
         # Assert
@@ -87,9 +88,10 @@ def test_high_level() -> None:
         # Act
         gait_phase = controller.update_and_compute(
             curr_signal=SensorSignal(
-                angle_rad=curr_angle, velocity_rad_per_sec=curr_velocity
-            ),
-            timestamp=timestamp,
+                timestamp=timestamp,
+                angle_rad=curr_angle,
+                velocity_rad_per_sec=curr_velocity,
+            )
         )
 
         signal = controller.get_signal_steady_state()

@@ -18,6 +18,7 @@ dependencies = [
   "pyqtgraph>=0.13.7",
   "pyside6 >= 6.10.0",
   "pyqt6>=6.10.2",
+  "matplotlib>=3.10.8",
 ]
 
 # --- Optional dependency groups (PEP 621 standard) ---

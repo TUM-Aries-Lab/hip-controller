@@ -33,14 +33,11 @@ class HighLevelController:
 
         :return: None
         """
-        self.last_timestamp: float | None = None
-        self.curr_timestamp: float | None = None
-
         self.prev_signal: SensorSignal = SensorSignal(
-            angle_rad=0.0, velocity_rad_per_sec=0.0
+            timestamp=None, angle_rad=0.0, velocity_rad_per_sec=0.0
         )
         self.curr_signal: SensorSignal = SensorSignal(
-            angle_rad=0.0, velocity_rad_per_sec=0.0
+            timestamp=None, angle_rad=0.0, velocity_rad_per_sec=0.0
         )
 
         self.stride_event_detector: StrideEventDetector = StrideEventDetector()
@@ -50,7 +47,7 @@ class HighLevelController:
         self.controller_initialized: bool = False
         self.last_detection: bool = False
 
-    def update_and_compute(self, curr_signal: SensorSignal, timestamp: float) -> float:
+    def update_and_compute(self, curr_signal: SensorSignal) -> float:
         """Update controller state with latest sensor data.
 
         :param SensorSignal curr_signal: Current hip joint angle in radians and current hip joint angular velocity in radians per second.
@@ -63,15 +60,12 @@ class HighLevelController:
         self.prev_signal = self.curr_signal
         self.curr_signal = curr_signal
 
-        self.last_timestamp = self.curr_timestamp
-        self.curr_timestamp = timestamp
-
-        if self.last_timestamp is None:
+        if self.prev_signal.timestamp is None or self.curr_signal.timestamp is None:
             return 0
 
         # Updates the motion state machine to detect extrema transitions
         state = self.state_machine.update_motion_state(
-            prev=self.prev_signal, curr=self.curr_signal, timestamp=timestamp
+            prev=self.prev_signal, curr=self.curr_signal
         )
 
         if state is not None:
@@ -81,7 +75,7 @@ class HighLevelController:
 
         # stride event detector
         curr_detector = self.stride_event_detector.is_valid_stride_event(
-            time_difference=timestamp - self.last_timestamp,
+            time_difference=self.curr_signal.timestamp - self.prev_signal.timestamp,
             valid_ang_max=(state == MotionState.ANGLE_MAX),
             prev_vel=self.prev_signal.velocity_rad_per_sec,
             curr_vel=self.curr_signal.velocity_rad_per_sec,
@@ -111,6 +105,7 @@ class HighLevelController:
         :rtype: SensorSignal
         """
         return SensorSignal(
+            timestamp=self.curr_signal.timestamp,
             angle_rad=self.steady_state_tracker.ang_steady_state,
             velocity_rad_per_sec=self.steady_state_tracker.vel_steady_state,
         )

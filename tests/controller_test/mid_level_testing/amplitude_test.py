@@ -52,13 +52,13 @@ def test_amplitude() -> None:
         curr = df.iloc[i]
 
         # Arrange
-
+        timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
         vel = curr[KinematicsDataColumnName.VELOCITY_LEFT]
         ang = curr[KinematicsDataColumnName.ANGLE_LEFT]
 
         # Act
         amplitude = mode.compute_amplitude(
-            SensorSignal(angle_rad=ang, velocity_rad_per_sec=vel)
+            SensorSignal(timestamp=timestamp, angle_rad=ang, velocity_rad_per_sec=vel)
         )
 
         # Assert

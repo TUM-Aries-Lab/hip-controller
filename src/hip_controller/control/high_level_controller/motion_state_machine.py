@@ -237,7 +237,7 @@ class MotionStateMachine:
 
         return new_state
 
-    def _is_timeout(self, timestamp: float) -> bool:
+    def _is_timeout(self, timestamp: float | None) -> bool:
         """Detect timeout condition and reset state if necessary.
 
         Checks if the system is in a timeout period (where updates are skipped) based
@@ -256,7 +256,7 @@ class MotionStateMachine:
         if self.state == MotionState.INITIAL:
             return False
 
-        if self.timestamp_sec is None:
+        if self.timestamp_sec is None or timestamp is None:
             return False
 
         dt = timestamp - self.timestamp_sec
@@ -273,7 +273,7 @@ class MotionStateMachine:
         return False
 
     def update_motion_state(
-        self, prev: SensorSignal, curr: SensorSignal, timestamp: float
+        self, prev: SensorSignal, curr: SensorSignal
     ) -> MotionState | None:
         """Update the motion state machine based on sensor signals and timing.
 
@@ -292,11 +292,11 @@ class MotionStateMachine:
             happened (either in timeout period or no valid trigger was active).
         :rtype: MotionState | None
         """
-        if not self._is_timeout(timestamp=timestamp):
+        if not self._is_timeout(timestamp=curr.timestamp):
             self.triggers.set_triggers(curr=curr, prev=prev)
             new_state = self._detect_state()
             if new_state is not None:
                 self.state = new_state
-                self.timestamp_sec = timestamp
+                self.timestamp_sec = curr.timestamp
                 return new_state
         return None

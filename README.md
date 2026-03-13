@@ -62,17 +62,19 @@ The following tree shows the important permanent files. Run `make tree` to updat
 ```
 ├── data
 │   ├── logs
+│   ├── recordings
 │   └── sensor_data
+│       ├── arduino.csv
+│       ├── arduino2.csv
 │       ├── data_input_2025_12_17.csv
 │       ├── data_input_filtered_2026_01_09.csv
 │       ├── data_kinematics_2026_02_16.csv
 │       ├── data_raw_2025_12_17.xlsx
 │       └── look_up_table_2026_02_25.csv
 ├── docs
+│   ├── UML_hip_controller_2026_03_10.json
 │   └── paper.pdf
 ├── src
-│   ├── data
-│   │   └── logs
 │   └── hip_controller
 │       ├── control
 │       │   ├── high_level_controller
@@ -81,21 +83,24 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   │   ├── steady_state_tracker.py
 │       │   │   └── stride_event_detector.py
 │       │   ├── low_level_controller
-│       │   │   └── low_level.py
+│       │   │   ├── low_level.py
+│       │   │   └── pid_controller.py
 │       │   ├── mid_level_controller
 │       │   │   ├── amplitude_modulation.py
-│       │   │   ├── cubic_spline_interpolation.py
 │       │   │   ├── kalman.py
 │       │   │   └── mid_level.py
 │       │   ├── __init__.py
 │       │   └── app.py
 │       ├── plotter
 │       │   ├── csv_player.py
-│       │   ├── phase_portrait.py
-│       │   ├── simulator.py
-│       │   └── time_plot.py
+│       │   ├── data_comparison_plot.py
+│       │   └── phase_portrait.py
 │       ├── utils
+│       │   ├── csv_converter.py
+│       │   ├── low_pass_filter.py
+│       │   ├── low_pass_filter_solvers.py
 │       │   ├── math_utils.py
+│       │   ├── simulator.py
 │       │   ├── state_space.py
 │       │   └── utils.py
 │       ├── __init__.py
@@ -105,28 +110,30 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   ├── controller_test
 │   │   ├── high_level_testing
 │   │   │   ├── high_level_testing_data
-│   │   │   │   ├── ang_ss_2026_01_26.csv
 │   │   │   │   ├── extrema_2026_01_26.csv
-│   │   │   │   ├── gait_phase_left_2026_01_21.csv
 │   │   │   │   ├── gait_phase_left_2026_03_03.csv
 │   │   │   │   ├── stride_event_detector_2026_02_26.csv
 │   │   │   │   ├── valid_trigger_left_2026_01_15.csv
-│   │   │   │   ├── vel_ss_2026_01_26.csv
 │   │   │   │   └── zero_crossing_left_2026_01_09.csv
 │   │   │   ├── high_level_test.py
 │   │   │   ├── motion_state_machine_test.py
 │   │   │   └── stride_event_detector_test.py
+│   │   ├── low_level_testing
+│   │   │   ├── low_level_testing_data
+│   │   │   │   └── second_order_lpf_2026_03_06.csv
+│   │   │   └── second_order_lpf_test.py
 │   │   ├── mid_level_testing
 │   │   │   ├── mid_level_testing_data
 │   │   │   │   ├── amplitude_modulation_2026_03_03.csv
 │   │   │   │   ├── look_up_table_2026_02_25.csv
-│   │   │   │   └── sinusoidal_behavior_left_2026_01_29.csv
+│   │   │   │   └── reference_motion_2026_03_05.csv
 │   │   │   ├── amplitude_test.py
-│   │   │   ├── cubic_spline_interpolation_test.py
 │   │   │   ├── kalman_test.py
 │   │   │   └── mid_level_test.py
+│   │   ├── testing_data
+│   │   │   └── reference_motion_2026_03_06.csv
 │   │   └── app_test.py
-│   ├── utilstest
+│   ├── utils_test
 │   │   ├── csv_player_test.py
 │   │   ├── math_utils_test.py
 │   │   └── utils_test.py

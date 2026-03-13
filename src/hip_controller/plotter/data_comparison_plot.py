@@ -12,7 +12,7 @@ from hip_controller.definitions import ConfigPlot
 class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
     """PyQt6 window that displays two real-time plots."""
 
-    def __init__(self, separated: bool) -> None:
+    def __init__(self, separated: bool, input_name: str, output_name: str) -> None:
         """Initialize the real-time plotting window.
 
         :param bool separated: Whether the data should be showed in a separated way, or not.
@@ -31,23 +31,17 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
 
         # Deques for the time plot
         self.time_buf = deque()
-        self.left_buf = deque()
-        self.right_buf = deque()
 
-        # Build all UI components
-        self._init_ui()
+        self.input_buf = deque()
+        self.output_buf = deque()
+
+        self.expected_output_buf = deque()
 
         self._sample_counter = 0
         self._draw_every = 5
 
-    def _init_ui(self) -> None:
-        """Create and configure all Qt and PyQtGraph widgets.
+        # Build all UI components
 
-        This method is called once during initialization and should
-        not contain any real-time logic.
-
-        :return: None
-        """
         # Create a central widget to hold everything
         central = QtWidgets.QWidget()
 
@@ -56,16 +50,19 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
         layout = QtWidgets.QVBoxLayout(central)
 
         # Set window title
-        self.setWindowTitle("Time domain plotter comparing two signals")
+        self.setWindowTitle(f"Time domain plotter comparing {output_name}")
 
         # Set the central widget of the window
         self.setCentralWidget(central)
 
         # ---- Up graph  ----
-        self.time_plot_up = pg.PlotWidget(title="key")
+        self.time_plot_up = pg.PlotWidget()
 
         # Label the axes
         self.time_plot_up.setLabel("bottom", "Time", units="s")
+
+        # Add legend
+        self.time_plot_up.addLegend()
 
         # PlotWidget.setXRange(r, padding) is a wrapper that forwards arguments down to ViewBox.setXRange(min, max, padding)
         # At runtime, ViewBox expects min and max. As a result, min and max are passed positionally here, instead of keywords.
@@ -75,12 +72,21 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
         )
 
         # Create the curve that will be updated in real time
-        self.time_curve_up = self.time_plot_up.plot(
+        self.input_curve = self.time_plot_up.plot(
+            pen=pg.mkPen(
+                color="#E2E2E2",
+                width=ConfigPlot.time_plot_curve_width,
+            ),
+            name="input_" + input_name,
+            antialias=False,
+        )
+
+        self.my_output_curve = self.time_plot_up.plot(
             pen=pg.mkPen(
                 color=ConfigPlot.time_plot_curve_color,
                 width=ConfigPlot.time_plot_curve_width,
-                name=ConfigPlot.time_plot_curve_name,
             ),
+            name="my_" + output_name,
             antialias=False,
         )
 
@@ -89,7 +95,7 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
         # ---- Down graph  ----
 
         if self.separated:
-            self.time_plot_down = pg.PlotWidget(title="value")
+            self.time_plot_down = pg.PlotWidget()
 
             # Label the axes
             self.time_plot_down.setLabel("bottom", "Time", units="s")
@@ -102,12 +108,12 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
             )
 
             # Create the curve that will be updated in real time
-            self.time_curve_down = self.time_plot_down.plot(
+            self.expected_output_curve = self.time_plot_down.plot(
                 pen=pg.mkPen(
                     color="g",
                     width=ConfigPlot.time_plot_curve_width,
-                    name=ConfigPlot.time_plot_curve_name,
                 ),
+                name="expected_" + output_name,
                 antialias=False,
             )
 
@@ -116,12 +122,12 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
             self.resize(1000, 1000)
         else:
             # If not separated, two curves both on the upper graph
-            self.time_curve_down = self.time_plot_up.plot(
+            self.expected_output_curve = self.time_plot_up.plot(
                 pen=pg.mkPen(
                     color="g",
                     width=ConfigPlot.time_plot_curve_width,
-                    name=ConfigPlot.time_plot_curve_name,
                 ),
+                name="expected_" + output_name,
                 antialias=False,
             )
 
@@ -131,14 +137,15 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self._draw_every = ConfigPlot.draw_sample_frequency
 
     def update_plots(
-        self, timestamp: float, first_input: float, second_input: float
+        self, timestamp: float, input: float, output: float, expected_output: float
     ) -> None:
         """Update both plots using new data.
 
         :param float timestamp: Timestamp.
 
-        :param float first_input:  First input.
-        :param float second_input: Second input.
+        :param float input:  Input.
+        :param float output: Output.
+        :param float expected_output: Expected output.
 
         :return: None
         :rtype: None
@@ -147,8 +154,9 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
 
         # Append the newest time and signal value to the buffers
         self.time_buf.append(timestamp)
-        self.left_buf.append(first_input)
-        self.right_buf.append(second_input)
+        self.input_buf.append(input)
+        self.output_buf.append(output)
+        self.expected_output_buf.append(expected_output)
 
         # ---- draw every certain batch of sample ----
         self._sample_counter += 1
@@ -160,8 +168,9 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
         # ---- sliding time window ----
 
         # Update the plotted curve with the buffered data
-        self.time_curve_up.setData(self.time_buf, self.left_buf)
-        self.time_curve_down.setData(self.time_buf, self.right_buf)
+        self.input_curve.setData(self.time_buf, self.input_buf)
+        self.my_output_curve.setData(self.time_buf, self.output_buf)
+        self.expected_output_curve.setData(self.time_buf, self.expected_output_buf)
 
         # Automatically move the visible x-range to follow time
         self.time_plot_up.setXRange(

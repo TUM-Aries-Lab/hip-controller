@@ -1,6 +1,7 @@
 """Common definitions for this module."""
 
 from dataclasses import asdict, dataclass
+from enum import Enum
 from math import pi
 from pathlib import Path
 
@@ -133,10 +134,12 @@ class SensorSignal:
     the hip joint sensor at a specific point in time. Used throughout the control
     system to maintain consistent representation of joint state.
 
+    :timestamp: current timestamp.
     :angle_rad: hip angle of the lower limb in radians.
     :velocity_rad_per_sec: hip angle velocity of the lower limb in radians per second.
     """
 
+    timestamp: float | None = None
     angle_rad: float = 0.0
     velocity_rad_per_sec: float = 0.0
 
@@ -145,12 +148,10 @@ class SensorSignal:
 class ExosuitData:
     """Container for the measurements from the sensor of both lower limbs.
 
-    :timestamp: current timestamp.
     :left: Signal state of the left lower limb.
     :right: Signal state of the right lower limb.
     """
 
-    timestamp: float
     left: SensorSignal
     right: SensorSignal
 
@@ -166,6 +167,44 @@ class RecordedSensorData:
     vel_right: str = "vel_right (rad/s)"
 
     fake_frequency_hz: int = 100
+
+
+class SolverType(Enum):
+    """Selects the numerical integration strategy for the LPF.
+
+    FORWARD_EULER   -- Discrete, output = current state before update.
+                       Maps to Simulink discrete integrator (Forward Euler method).
+    BACKWARD_EULER  -- Discrete, output = state + dt*u (input feedthrough).
+                       Maps to Simulink discrete integrator (Backward Euler method).
+    TRAPEZOIDAL     -- Discrete, output = state + dt/2*u (average of current/next).
+                       Maps to Simulink discrete integrator (Trapezoidal method).
+    RK4             -- Continuous, four-stage Runge-Kutta.
+                       Maps to Simulink continuous integrator + ode4 solver.
+    """
+
+    FORWARD_EULER = "forward_euler"
+    BACKWARD_EULER = "backward_euler"
+    TRAPEZOIDAL = "trapezoidal"
+    RK4 = "rk4"
+
+
+@dataclass
+class FilterConfig:
+    """Settings for the second-order low-pass filter.
+
+    Matches the Simulink block parameters exactly:
+        wn          : natural frequency [rad/s]
+        zt          : damping ratio
+        x0          : initial condition applied to both integrators
+        dt          : simulation timestep [s] if there is a certain timestamp difference. Usually not initialized.
+        solver_type : numerical integration strategy (SolverType enum)
+    """
+
+    wn: float = 20.0  # Natural frequency [rad/s]
+    zt: float = 1.0  # Damping ratio (1.0 = critically damped)
+    x0: float = 0.0  # Initial condition (both integrators)
+    dt: float = 0.01  # Timestep [s]
+    solver_type: SolverType = SolverType.RK4  # Integration method
 
 
 @dataclass(frozen=True)

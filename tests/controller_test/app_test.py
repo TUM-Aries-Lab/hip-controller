@@ -33,8 +33,9 @@ def test_controller_right():
 
         # Act
         motor_reference = controller.step(
-            curr_signal=SensorSignal(angle_rad=ang, velocity_rad_per_sec=vel),
-            timestamp=timestamp,
+            curr_signal=SensorSignal(
+                timestamp=timestamp, angle_rad=ang, velocity_rad_per_sec=vel
+            ),
         )
 
         # Assert
@@ -55,10 +56,13 @@ def test_amplitude_reverse():
         curr = df.iloc[i]
 
         # Arrange
+        timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
         vel = curr[KinematicsDataColumnName.VEL_RIGHT]
         ang = curr[KinematicsDataColumnName.ANG_RIGHT]
 
-        signal = SensorSignal(angle_rad=ang, velocity_rad_per_sec=vel)
+        signal = SensorSignal(
+            timestamp=timestamp, angle_rad=ang, velocity_rad_per_sec=vel
+        )
         # Act
 
         amplitude = modulation.compute_amplitude(signal=signal)

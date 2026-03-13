@@ -7,7 +7,8 @@ from pandas import DataFrame, ExcelWriter, read_csv, testing
 from pytest import raises
 
 from hip_controller.definitions import ExosuitData, RecordedSensorData, SensorSignal
-from hip_controller.plotter.csv_player import CSVPlayer, convert_xlsx_to_csv
+from hip_controller.plotter.csv_player import CSVPlayer
+from hip_controller.utils.csv_converter import convert_xlsx_to_csv
 
 
 def create_test_csv(path: Path):
@@ -51,10 +52,10 @@ def test_csv_player_reads_rows_in_order(tmp_path):
     t1 = player.get_sensor_data_from_csv()
 
     assert t0 == ExosuitData(
-        timestamp=0.0, left=SensorSignal(1.0, 0.1), right=SensorSignal(4.0, 0.4)
+        left=SensorSignal(0.0, 1.0, 0.1), right=SensorSignal(0.0, 4.0, 0.4)
     )
     assert t1 == ExosuitData(
-        timestamp=0.1, left=SensorSignal(2.0, 0.2), right=SensorSignal(5.0, 0.5)
+        left=SensorSignal(0.1, 2.0, 0.2), right=SensorSignal(0.1, 5.0, 0.5)
     )
 
 

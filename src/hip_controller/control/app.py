@@ -38,12 +38,8 @@ class ExoController:
 
         """
         try:
-            self.left_controller.step(
-                timestamp=sensor_data.timestamp, curr_signal=sensor_data.left
-            )
-            self.right_controller.step(
-                timestamp=sensor_data.timestamp, curr_signal=sensor_data.right
-            )
+            self.left_controller.step(curr_signal=sensor_data.left)
+            self.right_controller.step(curr_signal=sensor_data.right)
         except Exception as err:
             logger.error(f"{err} - Something went wrong.")
 
@@ -70,7 +66,7 @@ class WalkOnController:
         self.amplitude_modulation = AmplitudeModulation(reverse=reverse)
         self.mid_level_controller = MidLevelController()
 
-    def step(self, curr_signal: SensorSignal, timestamp: float) -> float:
+    def step(self, curr_signal: SensorSignal) -> float:
         """Step the controller ahead.
 
         :param angle: hip angle in radians.
@@ -81,7 +77,7 @@ class WalkOnController:
         """
         # High-level
         gait_phase = self.high_level_controller.update_and_compute(
-            curr_signal=curr_signal, timestamp=timestamp
+            curr_signal=curr_signal
         )
 
         # Mid-level
@@ -93,10 +89,12 @@ class WalkOnController:
         # Low-level
 
         # Plotting
-        if self.plot:
+        if self.plot and curr_signal.timestamp is not None:
             steady = self.high_level_controller.get_signal_steady_state()
             self.plotter.update_plots(
-                timestamp=timestamp, reference_motor=motor_command, steady=steady
+                timestamp=curr_signal.timestamp,
+                reference_motor=motor_command,
+                steady=steady,
             )
 
         return motor_command

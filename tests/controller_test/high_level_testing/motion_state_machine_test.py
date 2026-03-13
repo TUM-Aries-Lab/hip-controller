@@ -64,17 +64,17 @@ def test_valid_trigger() -> None:
 
         timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
         prev_signal = SensorSignal(
+            timestamp=timestamp,
             angle_rad=prev[KinematicsDataColumnName.ANGLE_LEFT],
             velocity_rad_per_sec=prev[KinematicsDataColumnName.VELOCITY_LEFT],
         )
         curr_signal = SensorSignal(
+            timestamp=timestamp,
             angle_rad=curr[KinematicsDataColumnName.ANGLE_LEFT],
             velocity_rad_per_sec=curr[KinematicsDataColumnName.VELOCITY_LEFT],
         )
 
-        state_machine.update_motion_state(
-            curr=curr_signal, prev=prev_signal, timestamp=timestamp
-        )
+        state_machine.update_motion_state(curr=curr_signal, prev=prev_signal)
 
         vel_max = curr[KinematicsDataColumnName.VALID_TRIGG_VEL_MAX]
         ang_max = curr[KinematicsDataColumnName.VALID_TRIGG_ANG_MAX]
