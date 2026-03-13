@@ -84,6 +84,8 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   │   └── stride_event_detector.py
 │       │   ├── low_level_controller
 │       │   │   ├── low_level.py
+│       │   │   ├── low_pass_filter.py
+│       │   │   ├── low_pass_filter_solvers.py
 │       │   │   └── pid_controller.py
 │       │   ├── mid_level_controller
 │       │   │   ├── amplitude_modulation.py
@@ -97,8 +99,6 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   └── phase_portrait.py
 │       ├── utils
 │       │   ├── csv_converter.py
-│       │   ├── low_pass_filter.py
-│       │   ├── low_pass_filter_solvers.py
 │       │   ├── math_utils.py
 │       │   ├── simulator.py
 │       │   ├── state_space.py

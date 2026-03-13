@@ -65,7 +65,7 @@ class LogLevel:
         return iter(asdict(self).values())
 
 
-DEFAULT_LOG_LEVEL = LogLevel.info
+DEFAULT_LOG_LEVEL: str = LogLevel.info
 DEFAULT_LOG_FILENAME = "log_file"
 
 # ---high level---
@@ -190,21 +190,25 @@ class SolverType(Enum):
 
 @dataclass
 class FilterConfig:
-    """Settings for the second-order low-pass filter.
+    """Settings for the second-order low-pass filter containing cut_off_frequency, damping_ratio, initial_condition, time_difference, solver_type."""
 
-    Matches the Simulink block parameters exactly:
-        wn          : natural frequency [rad/s]
-        zt          : damping ratio
-        x0          : initial condition applied to both integrators
-        dt          : simulation timestep [s] if there is a certain timestamp difference. Usually not initialized.
-        solver_type : numerical integration strategy (SolverType enum)
-    """
+    cut_off_frequency: float = 20.0  # in rad/s
+    damping_ratio: float = 1.0  # 1.0 = critically damped
+    initial_condition: float = 0.0
+    time_difference: float = 0.01  # TODO maybe delete this? in seconds. Usually not initialized if it is not fixed
+    solver_type: SolverType = (
+        SolverType.RK4
+    )  # SolverType enum of numerical integration strategy
 
-    wn: float = 20.0  # Natural frequency [rad/s]
-    zt: float = 1.0  # Damping ratio (1.0 = critically damped)
-    x0: float = 0.0  # Initial condition (both integrators)
-    dt: float = 0.01  # Timestep [s]
-    solver_type: SolverType = SolverType.RK4  # Integration method
+
+@dataclass(frozen=True)
+class PIDConfig:
+    """Configurations for PID controller."""
+
+    proportional_gain: float = 14.0
+    integral_gain: float = 0.0
+    derivative_gain: float = 0.02
+    output_limits: tuple[float, float] | None = None
 
 
 @dataclass(frozen=True)
@@ -245,4 +249,4 @@ class ConfigPlot:
     phase_plot_scatter_color_g = 136
     phase_plot_scatter_color_b = 56
     phase_plot_line_width = 2
-    phase_plot_line_color = "g"
+    phase_plot_line_color = "#36BB63"

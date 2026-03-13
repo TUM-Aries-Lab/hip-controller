@@ -55,7 +55,7 @@ class SolverStrategy(ABC):
         deriv_fn: DerivFn,
         q: float,
         y: float,
-        dt: float,
+        time_difference: float,
     ) -> tuple[float, float, float, float]:
         """Advance states (q, y) by one timestep of the abstract method.
 
@@ -103,7 +103,7 @@ class ForwardEulerSolver(SolverStrategy):
         deriv_fn: DerivFn,
         q: float,
         y: float,
-        dt: float,
+        time_difference: float,
     ) -> tuple[float, float, float, float]:
         """Advance states (q, y) by one timestep of the forward euler method.
 
@@ -125,8 +125,8 @@ class ForwardEulerSolver(SolverStrategy):
         q_out = q  # output = state BEFORE update
         y_out = y
 
-        q_next = q + dt * dq_dt  # state advances after output is read
-        y_next = y + dt * dy_dt
+        q_next = q + time_difference * dq_dt  # state advances after output is read
+        y_next = y + time_difference * dy_dt
 
         return q_out, y_out, q_next, y_next
 
@@ -158,7 +158,7 @@ class BackwardEulerSolver(SolverStrategy):
         deriv_fn: DerivFn,
         q: float,
         y: float,
-        dt: float,
+        time_difference: float,
     ) -> tuple[float, float, float, float]:
         """Advance states (q, y) by one timestep of the backward euler method.
 
@@ -177,8 +177,8 @@ class BackwardEulerSolver(SolverStrategy):
         """
         dq_dt, dy_dt = deriv_fn(q, y)  # slope at current states
 
-        q_out = q + dt * dq_dt  # output = state + dt*u (feedthrough)
-        y_out = y + dt * dy_dt
+        q_out = q + time_difference * dq_dt  # output = state + dt*u (feedthrough)
+        y_out = y + time_difference * dy_dt
 
         q_next = q_out  # next state carries the updated value
         y_next = y_out
@@ -214,7 +214,7 @@ class TrapezoidalSolver(SolverStrategy):
         deriv_fn: DerivFn,
         q: float,
         y: float,
-        dt: float,
+        time_difference: float,
     ) -> tuple[float, float, float, float]:
         """Advance states (q, y) by one timestep of the trapezoidal method.
 
@@ -233,11 +233,11 @@ class TrapezoidalSolver(SolverStrategy):
         """
         dq_dt, dy_dt = deriv_fn(q, y)  # slope at current states
 
-        q_out = q + (dt / 2.0) * dq_dt  # output = midpoint
-        y_out = y + (dt / 2.0) * dy_dt
+        q_out = q + (time_difference / 2.0) * dq_dt  # output = midpoint
+        y_out = y + (time_difference / 2.0) * dy_dt
 
-        q_next = q_out + (dt / 2.0) * dq_dt  # = q + dt * dq_dt
-        y_next = y_out + (dt / 2.0) * dy_dt  # = y + dt * dy_dt
+        q_next = q_out + (time_difference / 2.0) * dq_dt  # = q + dt * dq_dt
+        y_next = y_out + (time_difference / 2.0) * dy_dt  # = y + dt * dy_dt
 
         return q_out, y_out, q_next, y_next
 
@@ -278,7 +278,7 @@ class RK4Solver(SolverStrategy):
         deriv_fn: DerivFn,
         q: float,
         y: float,
-        dt: float,
+        time_difference: float,
     ) -> tuple[float, float, float, float]:
         """Advance states (q, y) by one timestep of the RK4 method.
 
@@ -299,25 +299,24 @@ class RK4Solver(SolverStrategy):
         k1_q, k1_y = deriv_fn(q, y)
 
         # Stage 2 — slope at midpoint using k1
-        k2_q, k2_y = deriv_fn(q + 0.5 * dt * k1_q, y + 0.5 * dt * k1_y)
+        k2_q, k2_y = deriv_fn(
+            q + 0.5 * time_difference * k1_q, y + 0.5 * time_difference * k1_y
+        )
 
         # Stage 3 — slope at midpoint using k2 (refined estimate)
-        k3_q, k3_y = deriv_fn(q + 0.5 * dt * k2_q, y + 0.5 * dt * k2_y)
+        k3_q, k3_y = deriv_fn(
+            q + 0.5 * time_difference * k2_q, y + 0.5 * time_difference * k2_y
+        )
 
         # Stage 4 — slope at endpoint using k3
-        k4_q, k4_y = deriv_fn(q + dt * k3_q, y + dt * k3_y)
+        k4_q, k4_y = deriv_fn(q + time_difference * k3_q, y + time_difference * k3_y)
 
         # Weighted average — midpoint stages count double
-        q_next = q + (dt / 6.0) * (k1_q + 2 * k2_q + 2 * k3_q + k4_q)
-        y_next = y + (dt / 6.0) * (k1_y + 2 * k2_y + 2 * k3_y + k4_y)
+        q_next = q + (time_difference / 6.0) * (k1_q + 2 * k2_q + 2 * k3_q + k4_q)
+        y_next = y + (time_difference / 6.0) * (k1_y + 2 * k2_y + 2 * k3_y + k4_y)
 
         # No feedthrough: output = updated state
         return q_next, y_next, q_next, y_next
-
-
-# ---------------------------------------------------------------------------
-# Factory — SolverType -> concrete solver instance
-# ---------------------------------------------------------------------------
 
 
 def make_solver(solver_type: SolverType) -> SolverStrategy:

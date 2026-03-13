@@ -4,8 +4,8 @@ from math import isclose
 
 from pandas import read_csv
 
+from hip_controller.control.low_level_controller.low_pass_filter import SecondOrderLPF
 from hip_controller.definitions import FilterConfig
-from hip_controller.utils.low_pass_filter import SecondOrderLPF
 from tests.conftest import (
     DATA_SECOND_ORDER_LOW_PASS_FILTER,
     KinematicsDataColumnName,
@@ -19,7 +19,7 @@ def test_second_order_lpf() -> None:
     :return: None
     """
     df = read_csv(filepath_or_buffer=DATA_SECOND_ORDER_LOW_PASS_FILTER)
-    config = FilterConfig(wn=20.0, zt=1, x0=0)
+    config = FilterConfig(cut_off_frequency=20.0, damping_ratio=1, initial_condition=0)
     low_pass_filter = SecondOrderLPF(config=config)
 
     n = len(df)
@@ -31,12 +31,13 @@ def test_second_order_lpf() -> None:
         curr_timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
         prev_timestamp = prev[KinematicsDataColumnName.TIMESTAMP]
         input_x = curr["x"]
+
         expected_y = next["y"]
         expected_yd = next["yd"]
 
         # Act
         output_y, output_yd = low_pass_filter.step(
-            x=input_x, dt=curr_timestamp - prev_timestamp
+            x=input_x, time_difference=curr_timestamp - prev_timestamp
         )
 
         # Assert

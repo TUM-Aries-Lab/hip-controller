@@ -39,11 +39,11 @@ is selected via FilterDefinitions.solver_type and injected at construction.
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from hip_controller.definitions import FilterConfig
-from hip_controller.utils.low_pass_filter_solvers import (
+from hip_controller.control.low_level_controller.low_pass_filter_solvers import (
     SolverStrategy,
     make_solver,
 )
+from hip_controller.definitions import FilterConfig
 
 # ---------------------------------------------------------------------------
 # State container — only the two integrator outputs are stored
@@ -110,7 +110,9 @@ class SecondOrderLPF:
     def __init__(self, config: FilterConfig) -> None:
         """Initialize the second-order low-pass filter."""
         self._config = config
-        self._state = LowPassFilterState(q=config.x0, y=config.x0)
+        self._state = LowPassFilterState(
+            q=config.initial_condition, y=config.initial_condition
+        )
         self._solver: SolverStrategy = make_solver(config.solver_type)
         self._x = 0.0  # current input, stored so _deriv_fn can access it
 
@@ -124,7 +126,7 @@ class SecondOrderLPF:
 
     def _compute_feedback(self, q: float) -> float:
         """Bottom multiplier: feedback = 2 * zt * q."""
-        return 2.0 * self._config.zt * q
+        return 2.0 * self._config.damping_ratio * q
 
     def _compute_e2(self, e1: float, feedback: float) -> float:
         """2nd summer: e2 = e1 - feedback."""
@@ -137,7 +139,7 @@ class SecondOrderLPF:
         Direct input to the 2nd integrator (= dy/dt).
         NOT a stored state — recomputed each step from q.
         """
-        return self._config.wn * q
+        return self._config.cut_off_frequency * q
 
     def _deriv_fn(self, q: float, y: float) -> tuple[float, float]:
         """Compute derivative function (dq/dt, dy/dt) from trial states (q, y) passed to the solver.
@@ -149,54 +151,41 @@ class SecondOrderLPF:
         e1 = self._compute_e1(self._x, y)
         feedback = self._compute_feedback(q)
         e2 = self._compute_e2(e1, feedback)
-        dq_dt = self._config.wn * e2  # input to 1st integrator
+        dq_dt = self._config.cut_off_frequency * e2  # input to 1st integrator
         dy_dt = self._compute_yd(q)  # yd = wn*q = input to 2nd integrator
         return dq_dt, dy_dt
 
-    # ------------------------------------------------------------------
-    # Public interface
-    # ------------------------------------------------------------------
-
-    def step(self, x: float, dt: float = FilterConfig.dt) -> tuple[float, float]:
+    def step(self, x: float, time_difference: float) -> tuple[float, float]:
         """Advance the filter by one timestep.
 
-        Parameters
-        ----------
-        x : float
-            Filter input at the current timestep.
-        dt : float, optional
+        :param float x: Filter input at the current timestep.
+        :param float time_difference:
             Timestep duration [s] for this step.
             If provided, overrides cfg.dt for this step only — the stored
             cfg.dt is NOT modified. Pass a new value every call when your
             sample intervals vary (e.g. timestamps from a sensor log).
             Defaults to cfg.dt when not provided.
 
-        Returns
-        -------
-        yd : float
-            Between-step computed wire = wn * q = dy/dt.
-            Simulink output port 2. NOT a stored integrator state.
-        y : float
-            2nd integrator output.
-            Simulink output port 1.
+        :return: [y, yd]. Filtered value y and its derivative yd.
+        :rtype: tuple [float, float]
+
 
         Examples
         --------
         # Fixed timestep — uses cfg.dt:
-        yd, y = lpf.step(sensor_value)
+        y, yd = lpf.step(sensor_value)
 
         # Variable timestep — override per call:
-        yd, y = lpf.step(sensor_value, dt=elapsed_seconds)
+        y, yd = lpf.step(sensor_value, dt=elapsed_seconds)
 
         """
         self._x = x
-        step_dt = dt
 
         q_out, y_out, q_next, y_next = self._solver.step(
             deriv_fn=self._deriv_fn,
             q=self._state.q,
             y=self._state.y,
-            dt=step_dt,
+            time_difference=time_difference,
         )
 
         self._state.q = q_next
@@ -262,7 +251,7 @@ class SecondOrderLPF:
 
         if dt_array is None:
             # Use cfg.dt for every step
-            dt_iter = [FilterConfig.dt] * n
+            dt_iter = [FilterConfig.time_difference] * n
         elif isinstance(dt_array, (int, float)):
             # Single scalar — broadcast to all steps
             dt_iter = [float(dt_array)] * n
@@ -279,7 +268,7 @@ class SecondOrderLPF:
         yd_array: list[float] = []
 
         for x, dt in zip(x_list, dt_iter, strict=False):
-            yd, y = self.step(float(x), dt=dt)
+            yd, y = self.step(float(x), time_difference=dt)
             y_array.append(y)
             yd_array.append(yd)
 
@@ -287,8 +276,8 @@ class SecondOrderLPF:
 
     def reset(self) -> None:
         """Reset both integrator states to x0."""
-        self._state.q = self._config.x0
-        self._state.y = self._config.x0
+        self._state.q = self._config.initial_condition
+        self._state.y = self._config.initial_condition
 
     @property
     def solver_name(self) -> str:
