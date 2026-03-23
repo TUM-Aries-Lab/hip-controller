@@ -1,6 +1,6 @@
 """Tracker and calculator for steady-state gait phase parameters."""
 
-from hip_controller.control.high_level_controller.motion_state_machine import (
+from hip_controller.control.gait_phase_control.motion_state_machine import (
     MotionState,
 )
 from hip_controller.definitions import SensorSignal

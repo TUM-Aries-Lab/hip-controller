@@ -46,7 +46,7 @@ class NotchFilter:
         zi = signal.lfilter_zi(numerator_coeffs_b, denominator_coeffs_a)
         return numerator_coeffs_b, denominator_coeffs_a, zi
 
-    def step(self, raw_value: float) -> float:
+    def filter(self, raw_value: float) -> float:
         """Process one raw sample through the notch filter.
 
         :param float raw_value: Raw sensor sample.

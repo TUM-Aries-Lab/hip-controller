@@ -20,7 +20,7 @@ from math import isclose
 
 from pandas import read_csv
 
-from hip_controller.control.high_level_controller.high_level import (
+from hip_controller.control.gait_phase_control.high_level import (
     HighLevelController,
     SensorSignal,
 )

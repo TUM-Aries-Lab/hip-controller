@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from enum import Enum, auto
 
-from hip_controller.control.pre_process.drift_removal import DriftRemovalStrategy
-from hip_controller.control.pre_process.velocity_estimation import (
+from hip_controller.control.signal_processing.drift_removal import DriftRemovalStrategy
+from hip_controller.control.signal_processing.velocity_estimation import (
     VelocityEstimationStrategy,
 )
 from hip_controller.definitions import SensorSignal
@@ -31,7 +31,7 @@ class SensorPreprocessor:
         self._drift_removal = drift_removal
         self._velocity_estimation = velocity_estimation
 
-    def step(
+    def filter(
         self,
         raw_angle: float,
         gyro_velocity: float,
@@ -45,10 +45,10 @@ class SensorPreprocessor:
         :return: Preprocessed :class:`SensorSignal` with angle and velocity.
         :rtype: SensorSignal
         """
-        angle_no_drift = self._drift_removal.step(
+        angle_no_drift = self._drift_removal.filter(
             raw_angle=raw_angle, timestamp=timestamp
         )
-        angle_out, velocity_out = self._velocity_estimation.step(
+        angle_out, velocity_out = self._velocity_estimation.filter(
             angle_no_drift, gyro_velocity
         )
         return SensorSignal(

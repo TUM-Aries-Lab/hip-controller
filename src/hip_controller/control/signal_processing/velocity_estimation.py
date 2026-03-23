@@ -4,29 +4,15 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from hip_controller.utils.second_order_low_pass_filter import SecondOrderLowPassFilter
-
-
-def sogi_fill(angle: float, dt: float) -> tuple[float, float]:
-    """Compute SOGI surrogate angle and quadrature velocity.
-
-    :param float angle: Input angle [rad].
-    :param float dt: Time elapsed since last sample [s].
-    :return: Tuple (angle_surrogate, vel_quadrature).
-    :rtype: tuple[float, float]
-    """
-    ...
-
-
-def discrete_derivative(angle: float, dt: float) -> float:
-    """Compute discrete derivative of angle.
-
-    :param float angle: Input angle [rad].
-    :param float dt: Time elapsed since last sample [s].
-    :return: Angular velocity [rad/s].
-    :rtype: float
-    """
-    ...
+from hip_controller.control.signal_processing.discrete_derivative_filter import (
+    DiscreteDerivativeFilter,
+)
+from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+    SecondOrderLowPassFilter,
+)
+from hip_controller.control.signal_processing.sogi_fll_filter import (
+    SogiFllFilter,
+)
 
 
 class VelocityEstimationStrategy(ABC):
@@ -38,7 +24,7 @@ class VelocityEstimationStrategy(ABC):
     """
 
     @abstractmethod
-    def step(
+    def filter(
         self,
         angle: float,
         dt: float,
@@ -60,9 +46,20 @@ class SogiVelocityEstimation(VelocityEstimationStrategy):
     The SOGI resonant structure simultaneously produces a surrogate angle
     (*angle_surrogate*) and an orthogonal quadrature velocity signal
     (*vel_quadrature*).
+
+    :param sogi_filter: A configured :class:`SogiFilter` instance.
     """
 
-    def step(
+    def __init__(self, sogi_filter: SogiFllFilter) -> None:
+        """Create a SOGI velocity estimation strategy.
+
+        :param SogiFilter sogi_filter: SOGI filter instance.
+        :return: None
+        :rtype: None
+        """
+        self._sogi_filter = sogi_filter
+
+    def filter(
         self,
         angle: float,
         dt: float,
@@ -76,7 +73,7 @@ class SogiVelocityEstimation(VelocityEstimationStrategy):
         :return: (angle_surrogate, velocity_quadrature).
         :rtype: tuple[float, float]
         """
-        angle_surrogate, vel_quadrature = sogi_fill(angle, dt)
+        angle_surrogate, vel_quadrature = self._sogi_filter.filter(angle, dt)
         return angle_surrogate, vel_quadrature
 
 
@@ -85,9 +82,20 @@ class DiscreteDerivativeVelocityEstimation(VelocityEstimationStrategy):
 
     Computationally minimal; passes the angle through unchanged and returns
     *velocity_discrete_derivative*.
+
+    :param discrete_filter: A configured :class:`DiscreteDerivativeFilter` instance.
     """
 
-    def step(
+    def __init__(self, discrete_filter: DiscreteDerivativeFilter) -> None:
+        """Create a discrete derivative velocity estimation strategy.
+
+        :param DiscreteDerivativeFilter discrete_filter: Discrete derivative filter instance.
+        :return: None
+        :rtype: None
+        """
+        self._discrete_filter = discrete_filter
+
+    def filter(
         self,
         angle: float,
         dt: float,
@@ -101,7 +109,7 @@ class DiscreteDerivativeVelocityEstimation(VelocityEstimationStrategy):
         :return: (angle, velocity_discrete_derivative).
         :rtype: tuple[float, float]
         """
-        velocity_discrete_derivative = discrete_derivative(angle, dt)
+        velocity_discrete_derivative = self._discrete_filter.filter(angle, dt)
         return angle, velocity_discrete_derivative
 
 
@@ -124,7 +132,7 @@ class LowPassVelocityEstimation(VelocityEstimationStrategy):
         """
         self._lpf = lpf
 
-    def step(
+    def filter(
         self,
         angle: float,
         dt: float,
@@ -150,7 +158,7 @@ class GyroscopeVelocityEstimation(VelocityEstimationStrategy):
     The angle passes through unchanged.
     """
 
-    def step(
+    def filter(
         self,
         angle: float,
         dt: float,

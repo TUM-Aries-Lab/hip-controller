@@ -2,14 +2,14 @@
 
 from math import atan2
 
-from hip_controller.control.high_level_controller.motion_state_machine import (
+from hip_controller.control.gait_phase_control.motion_state_machine import (
     MotionState,
     MotionStateMachine,
 )
-from hip_controller.control.high_level_controller.steady_state_tracker import (
+from hip_controller.control.gait_phase_control.steady_state_tracker import (
     SteadyStateTracker,
 )
-from hip_controller.control.high_level_controller.stride_event_detector import (
+from hip_controller.control.gait_phase_control.stride_event_detector import (
     StrideEventDetector,
 )
 from hip_controller.definitions import SensorSignal

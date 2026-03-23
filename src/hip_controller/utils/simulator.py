@@ -10,12 +10,14 @@ import numpy as np
 from loguru import logger
 from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
+from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+    SecondOrderLowPassFilter,
+)
 from hip_controller.definitions import FilterConfig, SolverType
 
 # pragma: no cover
 from hip_controller.plotter.csv_player import CSVPlayer  # pragma: no cover
 from hip_controller.plotter.data_comparison_plot import TimePlotterComparisonWindow
-from hip_controller.utils.second_order_low_pass_filter import SecondOrderLowPassFilter
 
 
 def simulate_comparison_dynamic(

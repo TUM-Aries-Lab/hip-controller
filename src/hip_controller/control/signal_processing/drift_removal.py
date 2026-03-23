@@ -9,8 +9,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from hip_controller.control.pre_process.notch_filter import NotchFilter
-from hip_controller.utils.second_order_low_pass_filter import SecondOrderLowPassFilter
+from hip_controller.control.signal_processing.notch_filter import NotchFilter
+from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+    SecondOrderLowPassFilter,
+)
 
 
 class DriftRemovalStrategy(ABC):
@@ -21,7 +23,7 @@ class DriftRemovalStrategy(ABC):
     """
 
     @abstractmethod
-    def step(self, raw_angle: float, timestamp: float) -> float:
+    def filter(self, raw_angle: float, timestamp: float) -> float:
         """Remove drift from :paramref:`raw_angle` and return the compensated angle.
 
         :param float raw_angle: Raw angle reading from the sensor [rad].
@@ -50,7 +52,7 @@ class LowPassDriftRemoval(DriftRemovalStrategy):
         """
         self._lpf = lpf
 
-    def step(self, raw_angle: float, timestamp: float) -> float:
+    def filter(self, raw_angle: float, timestamp: float) -> float:
         """Execute one drift-removal step.
 
         :param float raw_angle: Raw angle reading [rad].
@@ -81,7 +83,7 @@ class NotchDriftRemoval(DriftRemovalStrategy):
         """
         self._notch = notch
 
-    def step(self, raw_angle: float, timestamp: float) -> float:
+    def filter(self, raw_angle: float, timestamp: float) -> float:
         """Execute one drift-removal step.
 
         :param float raw_angle: Raw angle reading [rad].
@@ -89,5 +91,5 @@ class NotchDriftRemoval(DriftRemovalStrategy):
         :return: Drift-compensated angle [rad].
         :rtype: float
         """
-        angle_no_drift_notch = self._notch.step(raw_angle)
+        angle_no_drift_notch = self._notch.filter(raw_angle)
         return angle_no_drift_notch

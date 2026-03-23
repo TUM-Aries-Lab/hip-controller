@@ -6,9 +6,9 @@ from unittest.mock import patch
 import numpy as np
 from pandas import read_csv
 
-from hip_controller.control.mid_level_controller.mid_level import (
-    MidLevelController,
+from hip_controller.control.assistance_control.mid_level import (
     MotionMapping,
+    MotionReferenceController,
     transform_to_cyclic,
 )
 from tests.conftest import DATA_REFERENCE_MOTION_LEFT, REL_TOL, KinematicsDataColumnName
@@ -73,7 +73,7 @@ def test_motor_command() -> None:
     :return: None
     """
     df = read_csv(filepath_or_buffer=DATA_REFERENCE_MOTION_LEFT)
-    controller = MidLevelController()
+    controller = MotionReferenceController()
 
     for i in range(0, len(df)):
         curr = df.iloc[i]

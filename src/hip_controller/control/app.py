@@ -2,11 +2,13 @@
 
 from loguru import logger
 
-from hip_controller.control.high_level_controller.high_level import HighLevelController
-from hip_controller.control.mid_level_controller.amplitude_modulation import (
+from hip_controller.control.assistance_control.amplitude_modulation import (
     AmplitudeModulation,
 )
-from hip_controller.control.mid_level_controller.mid_level import MidLevelController
+from hip_controller.control.assistance_control.mid_level import (
+    MotionReferenceController,
+)
+from hip_controller.control.gait_phase_control.high_level import HighLevelController
 from hip_controller.definitions import BasicConfig, ExosuitData, SensorSignal
 
 
@@ -64,7 +66,7 @@ class WalkOnController:
 
         # due to different wire settings one of them might need to be reversed - mirrored with -1
         self.amplitude_modulation = AmplitudeModulation(reverse=reverse)
-        self.mid_level_controller = MidLevelController()
+        self.mid_level_controller = MotionReferenceController()
 
     def step(self, curr_signal: SensorSignal) -> float:
         """Step the controller ahead.

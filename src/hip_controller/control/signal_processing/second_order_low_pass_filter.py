@@ -156,7 +156,7 @@ class SecondOrderLowPassFilter:
         dy_dt = self._compute_yd(q)  # yd = wn*q = input to 2nd integrator
         return dq_dt, dy_dt
 
-    def step(self, x: float, timestamp: float) -> tuple[float, float]:
+    def step(self, x: float, time_difference: float) -> tuple[float, float]:
         """Advance the filter by one timestep.
 
         :param float x: Filter input at the current timestep.
@@ -179,13 +179,6 @@ class SecondOrderLowPassFilter:
         """
         self._x = x
 
-        if self._prev_timestamp is None:
-            time_difference = self._config.time_difference
-        else:
-            time_difference = timestamp - self._prev_timestamp
-
-        self._prev_timestamp = timestamp
-
         q_out, y_out, q_next, y_next = self._solver.step(
             deriv_fn=self._deriv_fn,
             q=self._state.q,
@@ -204,7 +197,7 @@ class SecondOrderLowPassFilter:
     def run(
         self,
         x_array: Iterable[float],
-        timestamp_array: float | Iterable[float] | None = None,
+        timestamp_array: Iterable[float] | None = None,
     ) -> tuple[list[float], list[float]]:
         """Filter an entire input sequence in one call.
 
@@ -217,9 +210,8 @@ class SecondOrderLowPassFilter:
         x_array : iterable of float  (list, numpy array, or any sequence)
             Input signal samples, one value per timestep.
         timestamp_array : optional
-            Timestamps [s]. Three accepted forms:
-              None          — generate timestamps starting from 0 with cfg.time_difference
-              float         — starting timestamp, then increment by cfg.time_difference
+            Timestamps [s]. Two accepted forms:
+              None          — use fixed time difference of 0.01 s for all steps
               iterable      — per-sample timestamps, must be same length as x_array
 
         Returns
@@ -231,11 +223,8 @@ class SecondOrderLowPassFilter:
 
         Examples
         --------
-        # Generate timestamps from config:
+        # Use fixed 0.01 s time difference:
         y_array, yd_array = lpf.run(x_array)
-
-        # Fixed starting timestamp, then increment by cfg.time_difference:
-        y_array, yd_array = lpf.run(x_array, timestamp_array=0.0)
 
         # Variable timestamps:
         timestamps = [0.0, 0.010, 0.023, 0.031, ...]
@@ -247,35 +236,34 @@ class SecondOrderLowPassFilter:
         """
         self.reset()
 
-        # Normalise timestamp_array into a list of floats
+        # Normalise inputs
         x_list = list(x_array)
         n = len(x_list)
 
         if timestamp_array is None:
-            # Generate timestamps starting from 0 with cfg.time_difference
-            timestamp_list = [i * self._config.time_difference for i in range(n)]
-        elif isinstance(timestamp_array, (int, float)):
-            # Starting timestamp, then increment by cfg.time_difference
-            start_t = float(timestamp_array)
-            timestamp_list = [
-                start_t + i * self._config.time_difference for i in range(n)
-            ]
+            # Use fixed time difference of 0.01 s for all steps
+            dt_list = [0.01] * n
         else:
             # Per-sample timestamps — validate length
-            timestamp_list = list(timestamp_array)
-            if len(timestamp_list) != n:
+            timestamps = list(timestamp_array)
+            if len(timestamps) != n:
                 raise ValueError(
-                    f"timestamp_array length ({len(timestamp_list)}) must match x_array length ({n})."
+                    f"timestamp_array length ({len(timestamps)}) must match x_array length ({n})."
                 )
             # Check for None values
-            if any(t is None for t in timestamp_list):
+            if any(t is None for t in timestamps):
                 raise ValueError("timestamp cannot be None")
+            # Compute time differences: first step uses 0.01, subsequent use t - prev_t
+            dt_list = [0.01]  # for first step
+            for i in range(1, n):
+                dt = timestamps[i] - timestamps[i - 1]
+                dt_list.append(dt)
 
         y_array: list[float] = []
         yd_array: list[float] = []
 
-        for x, t in zip(x_list, timestamp_list, strict=False):
-            yd, y = self.step(float(x), timestamp=t)
+        for x, dt in zip(x_list, dt_list, strict=True):
+            yd, y = self.step(x=x, time_difference=dt)
             y_array.append(y)
             yd_array.append(yd)
 

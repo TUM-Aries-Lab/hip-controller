@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from hip_controller.control.mid_level_controller.kalman import KalmanFilter
+from hip_controller.control.signal_processing.kalman_filter import KalmanFilter
 from hip_controller.utils.state_space import StateSpaceLinear
 
 

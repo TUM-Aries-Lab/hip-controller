@@ -7,8 +7,8 @@ from hip_controller.definitions import LAG_COMPENSATION, LookUpTable, PositionLi
 from hip_controller.utils.math_utils import transform_to_cyclic
 
 
-class MidLevelController:
-    """Mid-level controller."""
+class MotionReferenceController:
+    """Mid-level controller for motion reference."""
 
     def __init__(self) -> None:
         """Initialize the mid-level controller."""

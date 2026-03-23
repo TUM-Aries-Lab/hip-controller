@@ -1,7 +1,11 @@
 """A pid controller for the motor."""
 
+from numpy import clip
+
+from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+    SecondOrderLowPassFilter,
+)
 from hip_controller.definitions import FilterConfig, PIDConfig
-from hip_controller.utils.second_order_low_pass_filter import SecondOrderLowPassFilter
 
 
 class PIDController:
@@ -48,13 +52,14 @@ class PIDController:
         integral = self.config.integral_gain * self._integral
 
         _, filtered_velocity = self.low_pass_filter.step(
-            x=self._prev_velocity, timestamp=timestamp
+            x=self._prev_velocity, time_difference=time_difference
         )
 
         derivative = self.config.derivative_gain * filtered_velocity
         output = proportional + integral - derivative
-
-        output = self._clamp(output, self.config.output_limits)
+        if self.config.output_limits is not None:
+            low, high = self.config.output_limits
+            output = clip(a=output, a_min=low, a_max=high)
 
         # Store velocity for next cycle's D term
         self._prev_velocity = output
@@ -68,17 +73,3 @@ class PIDController:
         """
         self._integral = 0.0
         self._prev_velocity = 0.0
-
-    @staticmethod
-    def _clamp(value: float, limits: tuple[float, float] | None) -> float:
-        """Restricts a value so it can never go outside a defined range.
-
-        :param float value: Value.
-        :param tuple[float, float] limits: Limits.
-        :return: Restricted value.
-        :rtype: float
-        """
-        if limits is None:
-            return value
-        low, high = limits
-        return max(low, min(high, value))
