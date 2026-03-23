@@ -185,7 +185,7 @@ class SolverType(Enum):
     FORWARD_EULER = "forward_euler"
     BACKWARD_EULER = "backward_euler"
     TRAPEZOIDAL = "trapezoidal"
-    RK4 = "rk4"
+    RUNGE_KUTTA = "rk4"
 
 
 @dataclass
@@ -197,7 +197,7 @@ class FilterConfig:
     initial_condition: float = 0.0
     time_difference: float = 0.01  # TODO maybe delete this? in seconds. Usually not initialized if it is not fixed
     solver_type: SolverType = (
-        SolverType.RK4
+        SolverType.RUNGE_KUTTA
     )  # SolverType enum of numerical integration strategy
 
 

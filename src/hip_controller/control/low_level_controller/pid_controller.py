@@ -1,7 +1,7 @@
 """A pid controller for the motor."""
 
-from hip_controller.control.low_level_controller.low_pass_filter import SecondOrderLPF
 from hip_controller.definitions import FilterConfig, PIDConfig
+from hip_controller.utils.second_order_low_pass_filter import SecondOrderLowPassFilter
 
 
 class PIDController:
@@ -18,13 +18,16 @@ class PIDController:
         :return: None
         """
         self.config: PIDConfig = pid_config
-        self.low_pass_filter: SecondOrderLPF = SecondOrderLPF(config=filter_config)
+        self.low_pass_filter: SecondOrderLowPassFilter = SecondOrderLowPassFilter(
+            config=filter_config
+        )
 
         self._integral: float = 0.0
         self._prev_velocity: float = 0.0  # previous velocity output fed into LPF
+        self._prev_timestamp: float
 
     def pid_tuning(
-        self, time_difference: float, motor_reference: float, motor_position: float
+        self, timestamp: float, motor_reference: float, motor_position: float
     ) -> float:
         """Compute the velocity command for one control cycle using the PID controller.
 
@@ -40,11 +43,12 @@ class PIDController:
 
         proportional = self.config.proportional_gain * error
 
+        time_difference = timestamp - self._prev_timestamp
         self._integral += error * time_difference
         integral = self.config.integral_gain * self._integral
 
         _, filtered_velocity = self.low_pass_filter.step(
-            x=self._prev_velocity, time_difference=time_difference
+            x=self._prev_velocity, timestamp=timestamp
         )
 
         derivative = self.config.derivative_gain * filtered_velocity
@@ -54,7 +58,7 @@ class PIDController:
 
         # Store velocity for next cycle's D term
         self._prev_velocity = output
-
+        self._prev_timestamp = timestamp
         return output
 
     def reset(self) -> None:

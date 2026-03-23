@@ -88,7 +88,7 @@ class WalkOnController:
 
         # Low-level
 
-        # Plotting
+        # TODO Plotting
         if self.plot and curr_signal.timestamp is not None:
             steady = self.high_level_controller.get_signal_steady_state()
             self.plotter.update_plots(

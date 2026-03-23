@@ -10,12 +10,12 @@ import numpy as np
 from loguru import logger
 from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
-from hip_controller.control.low_level_controller.low_pass_filter import SecondOrderLPF
 from hip_controller.definitions import FilterConfig, SolverType
 
 # pragma: no cover
 from hip_controller.plotter.csv_player import CSVPlayer  # pragma: no cover
 from hip_controller.plotter.data_comparison_plot import TimePlotterComparisonWindow
+from hip_controller.utils.second_order_low_pass_filter import SecondOrderLowPassFilter
 
 
 def simulate_comparison_dynamic(
@@ -94,9 +94,9 @@ def demonstrate_random_lpf_static() -> None:  # pragma no cover
         damping_ratio=zt,
         initial_condition=x0,
         time_difference=dt,
-        solver_type=SolverType.RK4,
+        solver_type=SolverType.RUNGE_KUTTA,
     )
-    lpf = SecondOrderLPF(config=cfg)
+    lpf = SecondOrderLowPassFilter(config=cfg)
 
     # ── Test signal: step from 0 → 1 at t=0.1s, with added noise ──
     t = np.arange(0, 1.0, dt)
