@@ -77,20 +77,24 @@ The following tree shows the important permanent files. Run `make tree` to updat
 ├── src
 │   └── hip_controller
 │       ├── control
-│       │   ├── high_level_controller
+│       │   ├── assistance_control
+│       │   │   ├── amplitude_modulation.py
+│       │   │   ├── mid_level.py
+│       │   │   └── pid_controller.py
+│       │   ├── gait_phase_control
 │       │   │   ├── high_level.py
 │       │   │   ├── motion_state_machine.py
 │       │   │   ├── steady_state_tracker.py
 │       │   │   └── stride_event_detector.py
-│       │   ├── low_level_controller
-│       │   │   ├── low_level.py
-│       │   │   ├── low_pass_filter.py
-│       │   │   ├── low_pass_filter_solvers.py
-│       │   │   └── pid_controller.py
-│       │   ├── mid_level_controller
-│       │   │   ├── amplitude_modulation.py
-│       │   │   ├── kalman.py
-│       │   │   └── mid_level.py
+│       │   ├── signal_processing
+│       │   │   ├── discrete_derivative_filter.py
+│       │   │   ├── drift_removal.py
+│       │   │   ├── kalman_filter.py
+│       │   │   ├── notch_filter.py
+│       │   │   ├── second_order_low_pass_filter.py
+│       │   │   ├── sensor_preprocessor.py
+│       │   │   ├── sogi_fll_filter.py
+│       │   │   └── velocity_estimation.py
 │       │   ├── __init__.py
 │       │   └── app.py
 │       ├── plotter
@@ -130,6 +134,10 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │   ├── amplitude_test.py
 │   │   │   ├── kalman_test.py
 │   │   │   └── mid_level_test.py
+│   │   ├── pre_process_testing
+│   │   │   ├── drift_removal_test.py
+│   │   │   ├── filtering_2026_03_19.csv
+│   │   │   └── filtering_test.py
 │   │   ├── testing_data
 │   │   │   └── reference_motion_2026_03_06.csv
 │   │   └── app_test.py

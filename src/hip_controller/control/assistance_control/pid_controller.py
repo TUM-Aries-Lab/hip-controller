@@ -5,7 +5,7 @@ from numpy import clip
 from hip_controller.control.signal_processing.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
-from hip_controller.definitions import FilterConfig, PIDConfig
+from hip_controller.definitions import LowPassFilterConfig, PIDConfig
 
 
 class PIDController:
@@ -14,7 +14,9 @@ class PIDController:
     The derivative term is NOT the derivative of the error. The previous velocity motor command is filtered by a second-order low-pass filter and subtracted. This is velocity feedback damping smoothly resists fast changes in the output without differentiating noisy sensor data.
     """
 
-    def __init__(self, pid_config: PIDConfig, filter_config: FilterConfig) -> None:
+    def __init__(
+        self, pid_config: PIDConfig, filter_config: LowPassFilterConfig
+    ) -> None:
         """Initialize the pid controller.
 
         :param PIDConfig pid_config: Configurations of the pid controller, containing proportional gain kp, integral gain ki, derivative gain kd, and min, max clamp on the output.

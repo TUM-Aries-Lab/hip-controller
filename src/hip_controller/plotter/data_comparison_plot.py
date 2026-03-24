@@ -6,7 +6,7 @@ from collections import deque
 import pyqtgraph as pg
 from PyQt6 import QtWidgets
 
-from hip_controller.definitions import ConfigPlot
+from hip_controller.definitions import PlotConfig
 
 
 class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
@@ -68,14 +68,14 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
         # At runtime, ViewBox expects min and max. As a result, min and max are passed positionally here, instead of keywords.
         # This works for all the function calls setXRange, setYRange
         self.time_plot_up.setYRange(
-            ConfigPlot.time_plot_ymin, ConfigPlot.time_plot_ymax
+            PlotConfig.time_plot_ymin, PlotConfig.time_plot_ymax
         )
 
         # Create the curve that will be updated in real time
         self.input_curve = self.time_plot_up.plot(
             pen=pg.mkPen(
                 color="#E2E2E2",
-                width=ConfigPlot.time_plot_curve_width,
+                width=PlotConfig.time_plot_curve_width,
             ),
             name="input_" + input_name,
             antialias=False,
@@ -83,8 +83,8 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
 
         self.my_output_curve = self.time_plot_up.plot(
             pen=pg.mkPen(
-                color=ConfigPlot.time_plot_curve_color,
-                width=ConfigPlot.time_plot_curve_width,
+                color=PlotConfig.time_plot_curve_color,
+                width=PlotConfig.time_plot_curve_width,
             ),
             name="my_" + output_name,
             antialias=False,
@@ -104,14 +104,14 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
             # At runtime, ViewBox expects min and max. As a result, min and max are passed positionally here, instead of keywords.
             # This works for all the function calls setXRange, setYRange
             self.time_plot_down.setYRange(
-                ConfigPlot.time_plot_ymin, ConfigPlot.time_plot_ymax
+                PlotConfig.time_plot_ymin, PlotConfig.time_plot_ymax
             )
 
             # Create the curve that will be updated in real time
             self.expected_output_curve = self.time_plot_down.plot(
                 pen=pg.mkPen(
                     color="g",
-                    width=ConfigPlot.time_plot_curve_width,
+                    width=PlotConfig.time_plot_curve_width,
                 ),
                 name="expected_" + output_name,
                 antialias=False,
@@ -125,7 +125,7 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
             self.expected_output_curve = self.time_plot_up.plot(
                 pen=pg.mkPen(
                     color="g",
-                    width=ConfigPlot.time_plot_curve_width,
+                    width=PlotConfig.time_plot_curve_width,
                 ),
                 name="expected_" + output_name,
                 antialias=False,
@@ -134,7 +134,7 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
             self.resize(1000, 500)
 
         self._sample_counter = 0
-        self._draw_every = ConfigPlot.draw_sample_frequency
+        self._draw_every = PlotConfig.draw_sample_frequency
 
     def update_plots(
         self, timestamp: float, input: float, output: float, expected_output: float
@@ -174,12 +174,12 @@ class TimePlotterComparisonWindow(QtWidgets.QMainWindow):  # pragma: no cover
 
         # Automatically move the visible x-range to follow time
         self.time_plot_up.setXRange(
-            timestamp + ConfigPlot.time_plot_window_follow,
-            timestamp + ConfigPlot.time_plot_window_lead_sec,
+            timestamp + PlotConfig.time_plot_window_follow,
+            timestamp + PlotConfig.time_plot_window_lead_sec,
         )
 
         if self.separated:
             self.time_plot_down.setXRange(
-                timestamp + ConfigPlot.time_plot_window_follow,
-                timestamp + ConfigPlot.time_plot_window_lead_sec,
+                timestamp + PlotConfig.time_plot_window_follow,
+                timestamp + PlotConfig.time_plot_window_lead_sec,
             )

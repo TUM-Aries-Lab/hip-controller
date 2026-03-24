@@ -77,6 +77,7 @@ class WalkOnController:
         :return: Motor command for motion reference.
         :rtype: float
         """
+        #
         # High-level
         gait_phase = self.high_level_controller.update_and_compute(
             curr_signal=curr_signal

@@ -40,40 +40,29 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
-from hip_controller.definitions import FilterConfig, SolverType
+from hip_controller.definitions import LowPassFilterConfig, SolverType
 
 # Type alias: deriv_fn(q, y) -> (dq_dt, dy_dt)
 DerivFn = Callable[[float, float], tuple[float, float]]
-
-# ---------------------------------------------------------------------------
-# State container — only the two integrator outputs are stored
-# ---------------------------------------------------------------------------
 
 
 @dataclass
 class LowPassFilterState:
     """Internal states of the two Simulink integrators.
 
-    Attributes
-    ----------
-    q : float
+    :param float q :
         1st integrator output — INTERNAL, never exposed as an output port.
         Satisfies  dq/dt = wn * (x - y - 2*zt*q).
         Used to compute yd and as the bottom-multiplier feedback signal.
-    y : float
+    :param float y:
         2nd integrator output — Simulink output port 1.
         Satisfies  dy/dt = wn * q = yd.
         Also fed back to the 1st summer as the minus input.
 
     """
 
-    q: float = 0.0  # 1st integrator state  (init from x0)
-    y: float = 0.0  # 2nd integrator state  (init from x0)
-
-
-# ---------------------------------------------------------------------------
-# Filter class
-# ---------------------------------------------------------------------------
+    q: float = 0.0
+    y: float = 0.0
 
 
 class SecondOrderLowPassFilter:
@@ -107,7 +96,7 @@ class SecondOrderLowPassFilter:
         y_array, yd_array = lpf.run(x_array, dt_array=timestamps_diff)
     """
 
-    def __init__(self, config: FilterConfig) -> None:
+    def __init__(self, config: LowPassFilterConfig) -> None:
         """Initialize the second-order low-pass filter."""
         self._config = config
         self._state = LowPassFilterState(
@@ -504,11 +493,6 @@ class TrapezoidalSolver(SolverStrategy):
         y_next = y_out + (time_difference / 2.0) * dy_dt  # = y + dt * dy_dt
 
         return q_out, y_out, q_next, y_next
-
-
-# ---------------------------------------------------------------------------
-# Concrete Strategy 4 — RK4
-# ---------------------------------------------------------------------------
 
 
 class RK4Solver(SolverStrategy):

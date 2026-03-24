@@ -1,71 +1,17 @@
-"""Persistent-state SOGI-FLL.
+"""The function implements a SOGI-FLL oscillator that locks onto the dominant oscillation in the input angle signal.
 
-Compute surrogate angle and quadrature velocity. The FLL continuously
-adapts the internal resonant frequency to track cadence changes within the
-supplied bounds, while the lock signal gates adaptation so that frequency
-updates are suppressed when the input energy is too low (standing still) or
-too high (artefacts).
+It does three main things:
+    1.Filters the input angle into a clean sinusoidal component.
+    2. Creates a quadrature signal (90° shifted) -> velocity.
+    3. Adapts the internal frequency to match the cadence of the motion.
+So effectively it behaves like a self-tuning oscillator that synchronizes to the gait signal.
 """
 
-from dataclasses import dataclass
 from math import exp, pi
 
 from numpy import clip
 
-
-@dataclass(frozen=True)
-class SogiFllConfig:
-    """SOGI-FLL parameter set.
-
-    :param float lower_cadence_bound: f_min
-    :param float upper_cadence_bound: f_max
-    :param float sogi_adaptation_gain: k_sogi
-    :param float fll_adaptation_gain: k_fll
-    :param float lower_energy_threshold: E_lo
-    :param float upper_energy_threshold: E_hi
-    :param float frequency_estimate_smoother_bandwidth: fc_f_smooth
-    :param float lock_state_smoother_bandwidth: fc_lock
-    :param float initial_frequency_guess: f_init
-    :param float decay_not_walking: decay_notwalking
-    :param float numerical_safety_floor: epsSmall
-    """
-
-    # cadence bounds (walking/running range)
-    lower_cadence_bound: float = 0.2
-    upper_cadence_bound: float = 4.0
-
-    # FLL adaptation speed (sensor/noise dependent)
-    sogi_adaptation_gain: float = 1.0
-    fll_adaptation_gain: float = 1.0
-
-    # lock thresholds (amplitude/noise dependent)
-    lower_energy_threshold: float = 0.0001
-    upper_energy_threshold: float = 0.01
-
-    # Tune only if internal frequency becomes jittery or too laggy:
-    # - decrease to 0.2 for smoother (more lag)
-    # - increase to 0.5 for faster (more jitter)
-    frequency_estimate_smoother_bandwidth: float = 0.30
-
-    # Tune only if lock flickers or reacts too slowly:
-    # - decrease (0.3) to reduce flicker
-    # - increase (0.8-1.0) for faster start/stop response
-    lock_state_smoother_bandwidth: float = 0.50
-
-    # [Hz] initial guess (walking/running general default)
-    # Tune only if you want faster lock at startup:
-    # - set near typical cadence in your trials (walk ~1-2 Hz, run ~2-3 Hz)
-    initial_frequency_guess: float = 1.4
-
-    # % state decay when standing
-    # Tune only if oscillator rings too long after stopping:
-    # - faster decay: 0.995
-    # - slower decay: 0.9995
-    decay_not_walking: float = 0.999
-
-    # numerical safety
-    # Increase only if you see NaN/Inf in extreme low-motion segments (e.g., 1e-8)
-    numerical_safety_floor: float = 1e-9
+from hip_controller.definitions import SogiFllConfig
 
 
 class SogiFllFilter:
@@ -94,11 +40,11 @@ class SogiFllFilter:
         """
         self._walking = False
 
-    def filter(self, theta: float, dt: float) -> tuple[float, float]:
-        """Run one SOGI-FLL step and return the in-phase and quadrature signals.
+    def filter(self, theta: float, time_difference: float) -> tuple[float, float]:
+        """Filter the inpit angle of one step into a clean sinusoidal component and return the surrogate angle and quadrature angular velocity.
 
         :param float theta: Drift-removed joint angle.
-        :param dt: Sample period / elapsed time since last call [s].
+        :param time_difference: Sample period / elapsed time since last call [s].
 
         :return: Tuple of ``(theta, theta_quad)`` — in-phase filtered surrogate angle and 90°-shifted quadrature angular velocity.
         """
@@ -106,18 +52,25 @@ class SogiFllFilter:
         w_max = 2.0 * pi * self._config.upper_cadence_bound
 
         # Smoothing coefficients (recomputed each call so dt changes are safe)
-        a_f = exp(-2.0 * pi * self._config.frequency_estimate_smoother_bandwidth * dt)
-        a_lock = exp(-2.0 * pi * self._config.lock_state_smoother_bandwidth * dt)
+        a_f = exp(
+            -2.0
+            * pi
+            * self._config.frequency_estimate_smoother_bandwidth
+            * time_difference
+        )
+        a_lock = exp(
+            -2.0 * pi * self._config.lock_state_smoother_bandwidth * time_difference
+        )
 
         w0 = clip(a=self._w_est, a_min=w_min, a_max=w_max)
 
         # ---- SOGI --------------------------------------------------------
         if self._walking:
             e = theta - self._va
-            self._va += dt * (
+            self._va += time_difference * (
                 w0 * self._vb + self._config.sogi_adaptation_gain * w0 * e
             )
-            self._vb += dt * (-w0 * self._va)
+            self._vb += time_difference * (-w0 * self._va)
         else:
             self._va *= self._config.decay_not_walking
             self._vb *= self._config.decay_not_walking
@@ -143,7 +96,10 @@ class SogiFllFilter:
         # ---- FLL ---------------------------------------------------------
         if self._walking:
             mu = (e * theta_quad) / (E + self._config.numerical_safety_floor)
-            self._w_est = w0 + dt * (self._config.fll_adaptation_gain * w0 * mu) * lock
+            self._w_est = (
+                w0
+                + time_difference * (self._config.fll_adaptation_gain * w0 * mu) * lock
+            )
             self._w_est = clip(a=self._w_est, a_min=w_min, a_max=w_max)
 
             f_raw = self._w_est / (2.0 * pi)

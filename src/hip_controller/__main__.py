@@ -4,20 +4,14 @@ Reads data from a CSV file with CSV player with timestamp and compute the contro
 """
 
 import argparse  # pragma: no cover
-import signal  # pragma: no cover
 from pathlib import Path  # pragma: no cover
 
-from loguru import logger  # pragma: no cover
-from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
-
-from hip_controller.control.app import ExoController  # pragma: no cover
 from hip_controller.definitions import (
     DEFAULT_LOG_LEVEL,
     BasicConfig,
     LogLevel,
 )  # pragma: no cover
-from hip_controller.plotter.csv_player import CSVPlayer  # pragma: no cover
-from hip_controller.utils.utils import setup_logger  # pragma: no cover
+from hip_controller.utils.simulator import simulate_controller_with_data
 
 
 def main(
@@ -32,37 +26,11 @@ def main(
     :param str csv_path: Path to the CSV file used for simulated real-time playback. The user could pass in the path of a file as well.
     :return: None
     """
-    setup_logger(log_level=log_level, stderr_level=stderr_level)
-
-    app = QtWidgets.QApplication([])
-
-    csv_player = CSVPlayer(csv_path)
-    controller = ExoController()
-    timer = QtCore.QTimer()
-
-    def update() -> None:
-        """Update the controller with the next line of CSV data."""
-        if not csv_player.has_next_line():
-            timer.stop()
-            return
-
-        sensordata = csv_player.get_sensor_data_from_csv()
-
-        # setInterval in miliseconds. Update each 10ms
-        timer.setInterval(10)
-
-        controller.step(sensor_data=sensordata)
-
-    def sigint_handler(signal, frame) -> None:
-        """Handle SIGINT (Ctrl+C) gracefully."""
-        logger.success("Keyboard interrupted with ^C.")
-        timer.stop()
-        app.quit()
-
-    timer.timeout.connect(slot=update)
-    signal.signal(signal.SIGINT, sigint_handler)
-    timer.start(0)
-    app.exec()
+    simulate_controller_with_data(
+        log_level=log_level,
+        stderr_level=stderr_level,
+        csv_path=BasicConfig.read_data_from_path,
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover

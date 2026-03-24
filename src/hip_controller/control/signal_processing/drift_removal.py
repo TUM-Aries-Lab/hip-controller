@@ -23,7 +23,7 @@ class DriftRemovalStrategy(ABC):
     """
 
     @abstractmethod
-    def filter(self, raw_angle: float, timestamp: float) -> float:
+    def filter(self, raw_angle: float, time_difference: float) -> float:
         """Remove drift from :paramref:`raw_angle` and return the compensated angle.
 
         :param float raw_angle: Raw angle reading from the sensor [rad].
@@ -50,17 +50,19 @@ class LowPassDriftRemoval(DriftRemovalStrategy):
         :return: None
         :rtype: None
         """
-        self._lpf = lpf
+        self._low_pass_filter = lpf
 
-    def filter(self, raw_angle: float, timestamp: float) -> float:
+    def filter(self, raw_angle: float, time_difference: float) -> float:
         """Execute one drift-removal step.
 
         :param float raw_angle: Raw angle reading [rad].
-        :param float timestamp: Wall-clock or monotonic timestamp [s].
+        :param float time_difference: Difference dt between current timestamp and previous timestamp.
         :return: Drift-compensated angle [rad].
         :rtype: float
         """
-        drift_estimate, _ = self._lpf.step(raw_angle, timestamp)
+        drift_estimate, _ = self._low_pass_filter.step(
+            x=raw_angle, time_difference=time_difference
+        )
         angle_no_drift_low_pass = raw_angle - drift_estimate
         return angle_no_drift_low_pass
 
@@ -83,7 +85,7 @@ class NotchDriftRemoval(DriftRemovalStrategy):
         """
         self._notch = notch
 
-    def filter(self, raw_angle: float, timestamp: float) -> float:
+    def filter(self, raw_angle: float, time_difference: float) -> float:
         """Execute one drift-removal step.
 
         :param float raw_angle: Raw angle reading [rad].
@@ -91,5 +93,5 @@ class NotchDriftRemoval(DriftRemovalStrategy):
         :return: Drift-compensated angle [rad].
         :rtype: float
         """
-        angle_no_drift_notch = self._notch.filter(raw_angle)
+        angle_no_drift_notch = self._notch.filter(raw_value=raw_angle)
         return angle_no_drift_notch

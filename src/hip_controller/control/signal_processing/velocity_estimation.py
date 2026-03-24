@@ -10,9 +10,7 @@ from hip_controller.control.signal_processing.discrete_derivative_filter import 
 from hip_controller.control.signal_processing.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
-from hip_controller.control.signal_processing.sogi_fll_filter import (
-    SogiFllFilter,
-)
+from hip_controller.control.signal_processing.sogi_fll_filter import SogiFllFilter
 
 
 class VelocityEstimationStrategy(ABC):
@@ -27,15 +25,15 @@ class VelocityEstimationStrategy(ABC):
     def filter(
         self,
         angle: float,
-        dt: float,
+        time_difference: float,
         gyro_velocity: float = 0.0,
     ) -> tuple[float, float]:
         """Estimate velocity from the drift-compensated angle.
 
         :param float angle: Drift-compensated angle [rad].
-        :param float dt: Time elapsed since the previous sample [s].
+        :param float time_difference: Time elapsed since the previous sample [s].
         :param float gyro_velocity: Raw gyroscope angular rate [rad/s].
-        :return: Tuple of ``(angle_out [rad], velocity_out [rad/s])``.
+        :return: Tuple of filtered ``(angle_out [rad], velocity_out [rad/s])``.
         :rtype: tuple[float, float]
         """
 
@@ -47,13 +45,13 @@ class SogiVelocityEstimation(VelocityEstimationStrategy):
     (*angle_surrogate*) and an orthogonal quadrature velocity signal
     (*vel_quadrature*).
 
-    :param sogi_filter: A configured :class:`SogiFilter` instance.
+    :param sogi_filter: A configured :class:`SogiFllFilter` instance.
     """
 
     def __init__(self, sogi_filter: SogiFllFilter) -> None:
         """Create a SOGI velocity estimation strategy.
 
-        :param SogiFilter sogi_filter: SOGI filter instance.
+        :param SogiFllFilter sogi_filter: SOGI filter instance.
         :return: None
         :rtype: None
         """
@@ -62,18 +60,20 @@ class SogiVelocityEstimation(VelocityEstimationStrategy):
     def filter(
         self,
         angle: float,
-        dt: float,
+        time_difference: float,
         gyro_velocity: float = 0.0,
     ) -> tuple[float, float]:
         """Estimate velocity using SOGI phase-locked structure.
 
         :param float angle: Drift-compensated angle [rad].
-        :param float dt: Time elapsed since previous sample [s].
+        :param float time_difference: Time elapsed since previous sample [s].
         :param float gyro_velocity: Unused in this implementation.
         :return: (angle_surrogate, velocity_quadrature).
         :rtype: tuple[float, float]
         """
-        angle_surrogate, vel_quadrature = self._sogi_filter.filter(angle, dt)
+        angle_surrogate, vel_quadrature = self._sogi_filter.filter(
+            theta=angle, time_difference=time_difference
+        )
         return angle_surrogate, vel_quadrature
 
 
@@ -93,23 +93,25 @@ class DiscreteDerivativeVelocityEstimation(VelocityEstimationStrategy):
         :return: None
         :rtype: None
         """
-        self._discrete_filter = discrete_filter
+        self._discrete_filter: DiscreteDerivativeFilter = discrete_filter
 
     def filter(
         self,
         angle: float,
-        dt: float,
+        time_difference: float,
         gyro_velocity: float = 0.0,
     ) -> tuple[float, float]:
         """Estimate velocity via discrete backwards derivative.
 
         :param float angle: Drift-compensated angle [rad].
-        :param float dt: Time elapsed since previous sample [s].
+        :param float time_difference: Time elapsed since previous sample [s].
         :param float gyro_velocity: Unused in this implementation.
         :return: (angle, velocity_discrete_derivative).
         :rtype: tuple[float, float]
         """
-        velocity_discrete_derivative = self._discrete_filter.filter(angle, dt)
+        velocity_discrete_derivative = self._discrete_filter.filter(
+            theta=angle, time_difference=time_difference
+        )
         return angle, velocity_discrete_derivative
 
 
@@ -135,18 +137,20 @@ class LowPassVelocityEstimation(VelocityEstimationStrategy):
     def filter(
         self,
         angle: float,
-        dt: float,
+        time_difference: float,
         gyro_velocity: float = 0.0,
     ) -> tuple[float, float]:
         """Estimate velocity by filtering the angle signal.
 
         :param float angle: Drift-compensated angle [rad].
-        :param float dt: Time elapsed since previous sample [s].
+        :param float time_difference: Time elapsed since previous sample [s].
         :param float gyro_velocity: Unused in this implementation.
         :return: (angle_filtered, velocity_derivative_filtered).
         :rtype: tuple[float, float]
         """
-        angle_filtered, velocity_derivative_filtered = self._lpf.step(angle, dt)
+        angle_filtered, velocity_derivative_filtered = self._lpf.step(
+            x=angle, time_difference=time_difference
+        )
         return angle_filtered, velocity_derivative_filtered
 
 
@@ -161,13 +165,13 @@ class GyroscopeVelocityEstimation(VelocityEstimationStrategy):
     def filter(
         self,
         angle: float,
-        dt: float,
+        time_difference: float,
         gyro_velocity: float = 0.0,
     ) -> tuple[float, float]:
         """Return gyroscope angular velocity directly.
 
         :param float angle: Drift-compensated angle [rad] (passed through).
-        :param float dt: Time elapsed since previous sample [s] (unused).
+        :param float time_difference: Time elapsed since previous sample [s] (unused).
         :param float gyro_velocity: Raw gyroscope angular rate [rad/s].
         :return: (angle, gyro_velocity).
         :rtype: tuple[float, float]

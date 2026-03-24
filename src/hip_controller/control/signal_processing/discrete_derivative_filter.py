@@ -1,54 +1,55 @@
-"""Compute discrete derivative of angle.
-
-:param float angle: Input angle [rad].
-:param float dt: Time elapsed since last sample [s].
-:return: Angular velocity [rad/s].
-:rtype: float
-"""
+"""Discrete-time derivative of the input."""
 
 
 class DiscreteDerivativeFilter:
-    """Discrete derivative matching the Simulink 'Discrete Derivative' block.
+    """Discrete-time derivative filter.
 
     Implements the backward-difference formula::
 
         y[k] = K * (u[k] - u[k-1]) / Ts
-
-    which is the ``du/dt`` Simulink block with configurable gain *K*. The
-    output is zero on the first call (no prior sample available), mirroring
-    Simulink's default initial-condition behaviour.
-
-    :param K: Derivative gain (default 1.0, matching the Simulink block default).
     """
 
-    def __init__(self, K: float = 1.0) -> None:
-        self._K = K
-        self._u_prev: float | None = None  # None signals "first call"
+    def __init__(self) -> None:
+        """Initialize the discrete derivative filter."""
+        self._gain_value_k = 1.0
+        # Returns 0.0 on the very first call (no prior sample).
+        self._initial_condition = 0.0
 
-    def filter(self, u: float, dt: float) -> float:
+        self._theta_prev: float | None = None  # None signals first call
+        self._derivative_prev: float = 0.0
+
+    def filter(self, theta: float, time_difference: float) -> float:
         """Compute the derivative of *u* over the elapsed time *dt*.
 
-        :param u: Current input sample.
-        :param dt: Elapsed time since the previous sample [s]. Must be > 0.
-        :return: Estimated derivative ``K * (u - u_prev) / dt`` [unit/s].
-            Returns 0.0 on the very first call (no prior sample).
-        :raises ValueError: If *dt* is not strictly positive.
+        :param float theta: Current input angle theta.
+        :param time_difference: Elapsed time since the previous sample [s]. Must be > 0.
+        :return: Estimated derivative ``K * (u - u_prev) / Ts`` [unit/s].
+
+        :raises ValueError: If *time_difference* is not strictly positive.
         """
-        if dt <= 0.0:
-            raise ValueError(f"dt must be positive, got {dt!r}.")
+        if self._theta_prev is None:
+            # First call with no history yet; output initial condition.
+            self._theta_prev = theta
+            return self._initial_condition
 
-        if self._u_prev is None:
-            # First call — no history yet; output zero as Simulink does.
-            self._u_prev = u
-            return 0.0
+        if time_difference < 0.0:
+            raise ValueError(
+                f"Time difference must be positive, got {time_difference!r}."
+            )
 
-        derivative = self._K * (u - self._u_prev) / dt
-        self._u_prev = u
+        elif time_difference == 0.0:
+            return self._derivative_prev
+
+        derivative = self._gain_value_k * (theta - self._theta_prev) / time_difference
+
+        self._theta_prev = theta
+        self._derivative_prev = derivative
+
         return derivative
 
-    def reset(self, u_init: float = 0.0) -> None:
+    def reset(self, theta_init: float = 0.0) -> None:
         """Reset the filter to a known initial condition.
 
-        :param u_init: Value to treat as the previous sample after reset.
+        :param theta_init: Value to treat as the previous sample after reset.
         """
-        self._u_prev = u_init
+        self._theta_prev = theta_init

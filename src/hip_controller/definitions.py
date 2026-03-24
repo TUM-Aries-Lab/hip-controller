@@ -1,13 +1,14 @@
 """Common definitions for this module."""
 
 from dataclasses import asdict, dataclass
-from enum import Enum
+from enum import Enum, StrEnum, auto
 from math import pi
 from pathlib import Path
 
 import numpy as np
 
 np.set_printoptions(precision=3, floatmode="fixed", suppress=True)
+
 
 # --- Directories ---
 
@@ -42,33 +43,204 @@ class BasicConfig:
     )
 
 
-# Default encoding
-ENCODING: str = "utf-8"
+class SolverType(Enum):
+    """Selects the numerical integration strategy for the LPF.
 
-DATE_FORMAT = "%Y-%m-%d_%H-%M-%S"
+    FORWARD_EULER   -- Discrete, output = current state before update.
+                       Maps to Simulink discrete integrator (Forward Euler method).
+    BACKWARD_EULER  -- Discrete, output = state + dt*u (input feedthrough).
+                       Maps to Simulink discrete integrator (Backward Euler method).
+    TRAPEZOIDAL     -- Discrete, output = state + dt/2*u (average of current/next).
+                       Maps to Simulink discrete integrator (Trapezoidal method).
+    RK4             -- Continuous, four-stage Runge-Kutta.
+                       Maps to Simulink continuous integrator + ode4 solver.
+    """
+
+    FORWARD_EULER = "forward_euler"
+    BACKWARD_EULER = "backward_euler"
+    TRAPEZOIDAL = "trapezoidal"
+    RUNGE_KUTTA = "rk4"
 
 
 @dataclass
-class LogLevel:
-    """Log level."""
+class LowPassFilterConfig:
+    """Settings for the second-order low-pass filter containing cut_off_frequency, damping_ratio, initial_condition, time_difference, solver_type."""
 
-    trace: str = "TRACE"
-    debug: str = "DEBUG"
-    info: str = "INFO"
-    success: str = "SUCCESS"
-    warning: str = "WARNING"
-    error: str = "ERROR"
-    critical: str = "CRITICAL"
-
-    def __iter__(self):
-        """Iterate over log levels."""
-        return iter(asdict(self).values())
+    cut_off_frequency: float = 20.0  # in rad/s
+    damping_ratio: float = 1.0  # 1.0 = critically damped
+    initial_condition: float = 0.0
+    solver_type: SolverType = (
+        SolverType.RUNGE_KUTTA
+    )  # SolverType enum of numerical integration strategy
 
 
-DEFAULT_LOG_LEVEL: str = LogLevel.info
-DEFAULT_LOG_FILENAME = "log_file"
+# Pre processing
 
-# ---high level---
+
+@dataclass(frozen=True)
+class NotchConfig:
+    """Configurations for the notch function."""
+
+    center_freq_hz: float
+    bandwidth_3db_hz: float
+    sample_rate_hz: float
+
+
+@dataclass(frozen=True)
+class SogiFllConfig:
+    """SOGI-FLL parameter set.
+
+    :param float lower_cadence_bound: f_min Minimum expected cadence (Hz): lower if very slow walking is possible
+    :param float upper_cadence_bound: f_max Maximum expected cadence (Hz): increase if including fast walking/running
+    :param float sogi_adaptation_gain: k_sogi Tune k_sogi only if the portrait is ringy or too sluggish. Increase to 1.2-1.4 if theta/theta_quad look underdamped / not tracking
+    :param float fll_adaptation_gain: k_fll Frequency adaptation speed: increase to track speed changes faster, decrease if noisy/jittery
+    :param float lower_energy_threshold: E_lo Energy threshold to block adaptation during noise/standing: increase if false locking occurs
+    :param float upper_energy_threshold: E_hi  Energy threshold for full adaptation: decrease if it never locks during slow gait
+    :param float frequency_estimate_smoother_bandwidth: fc_f_smooth
+    :param float lock_state_smoother_bandwidth: fc_lock
+    :param float initial_frequency_guess: f_init
+    :param float decay_not_walking: decay_notwalking
+    :param float numerical_safety_floor: epsSmall
+    """
+
+    # cadence bounds (walking/running range)
+    lower_cadence_bound: float = 0.2
+    upper_cadence_bound: float = 4.0
+
+    # Tune only if the portrait is ringy or too sluggish:
+    #   - increase to 1.2-1.4 if theta/theta_quad look underdamped / not tracking well
+    #   - decrease to 0.8-0.9 if very noisy and jitter is observed
+    sogi_adaptation_gain: float = 1.0
+    # Frequency adaptation speed:
+    #   - increase to track speed changes faster
+    #   - decrease if noisy/jittery (sensor/noise dependent)
+    fll_adaptation_gain: float = 1.0
+
+    # lock thresholds (amplitude/noise dependent)
+    lower_energy_threshold: float = 1e-4
+    upper_energy_threshold: float = 1e-2
+
+    # Tune only if internal frequency becomes jittery or too laggy:
+    # - decrease to 0.2 for smoother (more lag)
+    # - increase to 0.5 for faster (more jitter)
+    frequency_estimate_smoother_bandwidth: float = 0.30
+
+    # Tune only if lock flickers or reacts too slowly:
+    # - decrease (0.3) to reduce flicker
+    # - increase (0.8-1.0) for faster start/stop response
+    lock_state_smoother_bandwidth: float = 0.50
+
+    # [Hz] initial guess (walking/running general default)
+    # Tune only if you want faster lock at startup:
+    # - set near typical cadence in your trials (walk ~1-2 Hz, run ~2-3 Hz)
+    initial_frequency_guess: float = 1.4
+
+    # % state decay when standing
+    # Tune only if oscillator rings too long after stopping:
+    # - faster decay: 0.995
+    # - slower decay: 0.9995
+    decay_not_walking: float = 0.999
+
+    # numerical safety
+    # Increase only if you see NaN/Inf in extreme low-motion segments (e.g., 1e-8)
+    numerical_safety_floor: float = 1e-9
+
+
+class DriftRemovalMethod(StrEnum):
+    """Drift removal strategy options."""
+
+    LOW_PASS = auto()
+    NOTCH = auto()
+
+
+class VelocityEstimationMethod(StrEnum):
+    """Velocity estimation strategy options."""
+
+    SOGI = auto()
+    DISCRETE_DERIVATIVE = auto()
+    LOW_PASS = auto()
+    GYROSCOPE = auto()
+
+
+class PreprocessorConfig:
+    """Configurations for the sensor preprocessor.
+
+    This class is intentionally lightweight and declares the chosen strategy
+    direction. Strategy objects are created lazily via properties to avoid
+    circular imports.
+    """
+
+    drift_removal_method: DriftRemovalMethod = DriftRemovalMethod.LOW_PASS
+    velocity_estimation_method: VelocityEstimationMethod = VelocityEstimationMethod.SOGI
+
+    drift_removal_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
+        cut_off_frequency=1.25, damping_ratio=1.0, initial_condition=0.0
+    )
+    drift_removal_notch_config: NotchConfig = NotchConfig(
+        center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=100
+    )
+    filtering_sogifll_config: SogiFllConfig = SogiFllConfig()
+    filtering_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
+        cut_off_frequency=20.0, damping_ratio=1.0, initial_condition=0.0
+    )
+
+    @property
+    def drift_removal_strategy(self):
+        """Get instance of different options of drift removal."""
+        from hip_controller.control.signal_processing.drift_removal import (
+            LowPassDriftRemoval,
+            NotchDriftRemoval,
+        )
+        from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+            SecondOrderLowPassFilter,
+        )
+
+        if self.drift_removal_method == DriftRemovalMethod.LOW_PASS:
+            lpf = SecondOrderLowPassFilter(self.drift_removal_second_order_lpf_config)
+            return LowPassDriftRemoval(lpf)
+        else:
+            from hip_controller.control.signal_processing.notch_filter import (
+                NotchFilter,
+            )
+
+            notch = NotchFilter(self.drift_removal_notch_config)
+            return NotchDriftRemoval(notch)
+
+    @property
+    def velocity_estimation_strategy(self):
+        """Get instance of different options of velocity estimation."""
+        from hip_controller.control.signal_processing.discrete_derivative_filter import (
+            DiscreteDerivativeFilter,
+        )
+        from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+            SecondOrderLowPassFilter,
+        )
+        from hip_controller.control.signal_processing.sogi_fll_filter import (
+            SogiFllFilter,
+        )
+        from hip_controller.control.signal_processing.velocity_estimation import (
+            DiscreteDerivativeVelocityEstimation,
+            GyroscopeVelocityEstimation,
+            LowPassVelocityEstimation,
+            SogiVelocityEstimation,
+        )
+
+        if self.velocity_estimation_method == VelocityEstimationMethod.SOGI:
+            sogi = SogiFllFilter(self.filtering_sogifll_config)
+            return SogiVelocityEstimation(sogi)
+        elif (
+            self.velocity_estimation_method
+            == VelocityEstimationMethod.DISCRETE_DERIVATIVE
+        ):
+            dd = DiscreteDerivativeFilter()
+            return DiscreteDerivativeVelocityEstimation(dd)
+        elif self.velocity_estimation_method == VelocityEstimationMethod.LOW_PASS:
+            lpf = SecondOrderLowPassFilter(self.filtering_second_order_lpf_config)
+            return LowPassVelocityEstimation(lpf)
+        else:
+            return GyroscopeVelocityEstimation()
+
+
 # centering & normalization
 VALUE_NEAR_ZERO = 1e-6
 
@@ -139,7 +311,7 @@ class SensorSignal:
     :velocity_rad_per_sec: hip angle velocity of the lower limb in radians per second.
     """
 
-    timestamp: float | None = None
+    timestamp: float | None
     angle_rad: float = 0.0
     velocity_rad_per_sec: float = 0.0
 
@@ -169,38 +341,6 @@ class RecordedSensorData:
     fake_frequency_hz: int = 100
 
 
-class SolverType(Enum):
-    """Selects the numerical integration strategy for the LPF.
-
-    FORWARD_EULER   -- Discrete, output = current state before update.
-                       Maps to Simulink discrete integrator (Forward Euler method).
-    BACKWARD_EULER  -- Discrete, output = state + dt*u (input feedthrough).
-                       Maps to Simulink discrete integrator (Backward Euler method).
-    TRAPEZOIDAL     -- Discrete, output = state + dt/2*u (average of current/next).
-                       Maps to Simulink discrete integrator (Trapezoidal method).
-    RK4             -- Continuous, four-stage Runge-Kutta.
-                       Maps to Simulink continuous integrator + ode4 solver.
-    """
-
-    FORWARD_EULER = "forward_euler"
-    BACKWARD_EULER = "backward_euler"
-    TRAPEZOIDAL = "trapezoidal"
-    RUNGE_KUTTA = "rk4"
-
-
-@dataclass
-class FilterConfig:
-    """Settings for the second-order low-pass filter containing cut_off_frequency, damping_ratio, initial_condition, time_difference, solver_type."""
-
-    cut_off_frequency: float = 20.0  # in rad/s
-    damping_ratio: float = 1.0  # 1.0 = critically damped
-    initial_condition: float = 0.0
-    time_difference: float = 0.01  # TODO maybe delete this? in seconds. Usually not initialized if it is not fixed
-    solver_type: SolverType = (
-        SolverType.RUNGE_KUTTA
-    )  # SolverType enum of numerical integration strategy
-
-
 @dataclass(frozen=True)
 class PIDConfig:
     """Configurations for PID controller."""
@@ -212,7 +352,7 @@ class PIDConfig:
 
 
 @dataclass(frozen=True)
-class ConfigPlot:
+class PlotConfig:
     """Plot Configurations for the hip controller."""
 
     graph_width = 1000
@@ -250,3 +390,30 @@ class ConfigPlot:
     phase_plot_scatter_color_b = 56
     phase_plot_line_width = 2
     phase_plot_line_color = "#36BB63"
+
+
+# Default encoding
+ENCODING: str = "utf-8"
+
+DATE_FORMAT = "%Y-%m-%d_%H-%M-%S"
+
+
+@dataclass
+class LogLevel:
+    """Log level."""
+
+    trace: str = "TRACE"
+    debug: str = "DEBUG"
+    info: str = "INFO"
+    success: str = "SUCCESS"
+    warning: str = "WARNING"
+    error: str = "ERROR"
+    critical: str = "CRITICAL"
+
+    def __iter__(self):
+        """Iterate over log levels."""
+        return iter(asdict(self).values())
+
+
+DEFAULT_LOG_LEVEL: str = LogLevel.info
+DEFAULT_LOG_FILENAME = "log_file"

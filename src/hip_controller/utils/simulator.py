@@ -10,14 +10,21 @@ import numpy as np
 from loguru import logger
 from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
+from hip_controller.control.app import ExoController  # pragma: no cover
 from hip_controller.control.signal_processing.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
-from hip_controller.definitions import FilterConfig, SolverType
+from hip_controller.definitions import (
+    DEFAULT_LOG_LEVEL,
+    BasicConfig,
+    LowPassFilterConfig,
+    SolverType,
+)  # pragma: no cover
 
 # pragma: no cover
 from hip_controller.plotter.csv_player import CSVPlayer  # pragma: no cover
 from hip_controller.plotter.data_comparison_plot import TimePlotterComparisonWindow
+from hip_controller.utils.utils import setup_logger  # pragma: no cover
 
 
 def simulate_comparison_dynamic(
@@ -83,6 +90,51 @@ def simulate_comparison_dynamic(
     app.exec()
 
 
+def simulate_controller_with_data(
+    log_level: str = DEFAULT_LOG_LEVEL,
+    stderr_level: str = DEFAULT_LOG_LEVEL,
+    csv_path: Path = BasicConfig.read_data_from_path,
+) -> None:  # pragma: no cover
+    """Run the main pipeline.
+
+    :param log_level: The log level to use.
+    :param stderr_level: The std err level to use.
+    :param str csv_path: Path to the CSV file used for simulated real-time playback. The user could pass in the path of a file as well.
+    :return: None
+    """
+    setup_logger(log_level=log_level, stderr_level=stderr_level)
+
+    app = QtWidgets.QApplication([])
+
+    csv_player = CSVPlayer(csv_path)
+    controller = ExoController()
+    timer = QtCore.QTimer()
+
+    def update() -> None:
+        """Update the controller with the next line of CSV data."""
+        if not csv_player.has_next_line():
+            timer.stop()
+            return
+
+        sensordata = csv_player.get_sensor_data_from_csv()
+
+        # setInterval in miliseconds. Update each 10ms
+        timer.setInterval(10)
+
+        controller.step(sensor_data=sensordata)
+
+    def sigint_handler(signal, frame) -> None:
+        """Handle SIGINT (Ctrl+C) gracefully."""
+        logger.success("Keyboard interrupted with ^C.")
+        timer.stop()
+        app.quit()
+
+    timer.timeout.connect(slot=update)
+    signal.signal(signal.SIGINT, sigint_handler)
+    timer.start(0)
+    app.exec()
+
+
 def demonstrate_random_lpf_static() -> None:  # pragma no cover
     """Demonstrate to test the 2nd order low pass filter with small random data and show the plot."""
     wn = 100.0
@@ -91,11 +143,10 @@ def demonstrate_random_lpf_static() -> None:  # pragma no cover
     dt = 0.01
 
     # Create filter instance
-    cfg = FilterConfig(
+    cfg = LowPassFilterConfig(
         cut_off_frequency=wn,
         damping_ratio=zt,
         initial_condition=x0,
-        time_difference=dt,
         solver_type=SolverType.RUNGE_KUTTA,
     )
     lpf = SecondOrderLowPassFilter(config=cfg)

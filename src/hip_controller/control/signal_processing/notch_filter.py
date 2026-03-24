@@ -3,48 +3,48 @@
 This module provides a configurable notch (or DC blocker) filter implementation.
 """
 
-from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy import signal
 
-
-@dataclass(frozen=True)
-class NotchConfig:
-    """Configurations for the notch function."""
-
-    center_freq_hz = 0
-    bandwidth_3db_hz = 0.1
-    sample_rate_hz = 100
+if TYPE_CHECKING:
+    from hip_controller.definitions import NotchConfig
 
 
 class NotchFilter:
-    """A step-by-step notch filter used for drift rejection."""
+    """A step-by-step notch filter used for drift rejection.
 
-    def make_notch_filter(self, notch_config: NotchConfig):
-        """Build notch filter coefficients and initial conditions.
+    Implements a configurable notch filter that can act as a DC blocker
+    (when center_freq_hz=0) or a standard notch filter.
+    """
 
-        :param NotchConfig notch_config: Notch filter configuration.
-        :return: Numerator, denominator, and initial state.
-        :rtype: tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]
+    def __init__(self, config: "NotchConfig") -> None:
+        """Initialize the notch filter with configuration.
+
+        :param NotchConfig config: Notch filter configuration.
+        :return: None
         """
-        if notch_config.center_freq_hz == 0:
+        self._config = config
+
+        # Precompute filter coefficients and initial state
+        if self._config.center_freq_hz == 0:
             # DC blocker: high-pass first-order IIR  y[n] = x[n] - x[n-1] + r*y[n-1]
             # r controls how close the pole is to the zero at DC.
             # r = 1 - (pi * BW / Fs) mirrors the same BW formula used by iirnotch.
             pole_radius = 1.0 - (
-                np.pi * notch_config.bandwidth_3db_hz / notch_config.sample_rate_hz
+                np.pi * self._config.bandwidth_3db_hz / self._config.sample_rate_hz
             )
-            numerator_coeffs_b = np.array([1.0, -1.0])
-            denominator_coeffs_a = np.array([1.0, -pole_radius])
+            self._b = np.array([1.0, -1.0])
+            self._a = np.array([1.0, -pole_radius])
         else:
-            quality_factor = notch_config.center_freq_hz / notch_config.bandwidth_3db_hz
-            numerator_coeffs_b, denominator_coeffs_a = signal.iirnotch(
-                notch_config.center_freq_hz, quality_factor, notch_config.sample_rate_hz
+            quality_factor = self._config.center_freq_hz / self._config.bandwidth_3db_hz
+            self._b, self._a = signal.iirnotch(
+                self._config.center_freq_hz, quality_factor, self._config.sample_rate_hz
             )
 
-        zi = signal.lfilter_zi(numerator_coeffs_b, denominator_coeffs_a)
-        return numerator_coeffs_b, denominator_coeffs_a, zi
+        # Initial filter state
+        self._zi = signal.lfilter_zi(self._b, self._a)
 
     def filter(self, raw_value: float) -> float:
         """Process one raw sample through the notch filter.
@@ -53,6 +53,9 @@ class NotchFilter:
         :return: Filtered sample.
         :rtype: float
         """
-        b, a, zi = self.make_notch_filter(notch_config=NotchConfig())
-        y, zi = signal.lfilter(b, a, [raw_value], zi=zi)
+        y, self._zi = signal.lfilter(self._b, self._a, [raw_value], zi=self._zi)
         return float(y[0])
+
+    def reset(self) -> None:
+        """Reset the filter state to initial conditions."""
+        self._zi = signal.lfilter_zi(self._b, self._a)
