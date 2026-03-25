@@ -163,16 +163,13 @@ class VelocityEstimationMethod(StrEnum):
 
 
 class PreprocessorConfig:
-    """Configurations for the sensor preprocessor.
+    """Configurations for the sensor preprocessor."""
 
-    This class is intentionally lightweight and declares the chosen strategy
-    direction. Strategy objects are created lazily via properties to avoid
-    circular imports.
-    """
-
+    # Select methods for drift removal and velocity estimation filtering
     drift_removal_method: DriftRemovalMethod = DriftRemovalMethod.LOW_PASS
     velocity_estimation_method: VelocityEstimationMethod = VelocityEstimationMethod.SOGI
 
+    # Configurations for the filters
     drift_removal_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
         cut_off_frequency=1.25, damping_ratio=1.0, initial_condition=0.0
     )
@@ -191,33 +188,15 @@ class PreprocessorConfig:
             LowPassDriftRemoval,
             NotchDriftRemoval,
         )
-        from hip_controller.control.signal_processing.second_order_low_pass_filter import (
-            SecondOrderLowPassFilter,
-        )
 
         if self.drift_removal_method == DriftRemovalMethod.LOW_PASS:
-            lpf = SecondOrderLowPassFilter(self.drift_removal_second_order_lpf_config)
-            return LowPassDriftRemoval(lpf)
+            return LowPassDriftRemoval(self.drift_removal_second_order_lpf_config)
         else:
-            from hip_controller.control.signal_processing.notch_filter import (
-                NotchFilter,
-            )
-
-            notch = NotchFilter(self.drift_removal_notch_config)
-            return NotchDriftRemoval(notch)
+            return NotchDriftRemoval(self.drift_removal_notch_config)
 
     @property
     def velocity_estimation_strategy(self):
         """Get instance of different options of velocity estimation."""
-        from hip_controller.control.signal_processing.discrete_derivative_filter import (
-            DiscreteDerivativeFilter,
-        )
-        from hip_controller.control.signal_processing.second_order_low_pass_filter import (
-            SecondOrderLowPassFilter,
-        )
-        from hip_controller.control.signal_processing.sogi_fll_filter import (
-            SogiFllFilter,
-        )
         from hip_controller.control.signal_processing.velocity_estimation import (
             DiscreteDerivativeVelocityEstimation,
             GyroscopeVelocityEstimation,
@@ -226,17 +205,14 @@ class PreprocessorConfig:
         )
 
         if self.velocity_estimation_method == VelocityEstimationMethod.SOGI:
-            sogi = SogiFllFilter(self.filtering_sogifll_config)
-            return SogiVelocityEstimation(sogi)
+            return SogiVelocityEstimation(self.filtering_sogifll_config)
         elif (
             self.velocity_estimation_method
             == VelocityEstimationMethod.DISCRETE_DERIVATIVE
         ):
-            dd = DiscreteDerivativeFilter()
-            return DiscreteDerivativeVelocityEstimation(dd)
+            return DiscreteDerivativeVelocityEstimation()
         elif self.velocity_estimation_method == VelocityEstimationMethod.LOW_PASS:
-            lpf = SecondOrderLowPassFilter(self.filtering_second_order_lpf_config)
-            return LowPassVelocityEstimation(lpf)
+            return LowPassVelocityEstimation(self.filtering_second_order_lpf_config)
         else:
             return GyroscopeVelocityEstimation()
 

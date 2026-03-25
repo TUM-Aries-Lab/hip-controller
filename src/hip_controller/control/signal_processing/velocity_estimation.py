@@ -11,6 +11,7 @@ from hip_controller.control.signal_processing.second_order_low_pass_filter impor
     SecondOrderLowPassFilter,
 )
 from hip_controller.control.signal_processing.sogi_fll_filter import SogiFllFilter
+from hip_controller.definitions import LowPassFilterConfig, SogiFllConfig
 
 
 class VelocityEstimationStrategy(ABC):
@@ -48,14 +49,14 @@ class SogiVelocityEstimation(VelocityEstimationStrategy):
     :param sogi_filter: A configured :class:`SogiFllFilter` instance.
     """
 
-    def __init__(self, sogi_filter: SogiFllFilter) -> None:
+    def __init__(self, config: SogiFllConfig) -> None:
         """Create a SOGI velocity estimation strategy.
 
-        :param SogiFllFilter sogi_filter: SOGI filter instance.
+        :param SogiFllConfig: SOGI filter instance.
         :return: None
         :rtype: None
         """
-        self._sogi_filter = sogi_filter
+        self._sogi_filter: SogiFllFilter = SogiFllFilter(config=config)
 
     def filter(
         self,
@@ -86,14 +87,12 @@ class DiscreteDerivativeVelocityEstimation(VelocityEstimationStrategy):
     :param discrete_filter: A configured :class:`DiscreteDerivativeFilter` instance.
     """
 
-    def __init__(self, discrete_filter: DiscreteDerivativeFilter) -> None:
+    def __init__(self) -> None:
         """Create a discrete derivative velocity estimation strategy.
 
-        :param DiscreteDerivativeFilter discrete_filter: Discrete derivative filter instance.
         :return: None
-        :rtype: None
         """
-        self._discrete_filter: DiscreteDerivativeFilter = discrete_filter
+        self._discrete_filter: DiscreteDerivativeFilter = DiscreteDerivativeFilter()
 
     def filter(
         self,
@@ -125,14 +124,14 @@ class LowPassVelocityEstimation(VelocityEstimationStrategy):
     :param lpf: A configured :class:`SecondOrderLowPassFilter` instance.
     """
 
-    def __init__(self, lpf: SecondOrderLowPassFilter) -> None:
+    def __init__(self, config: LowPassFilterConfig) -> None:
         """Create a low-pass velocity estimation strategy.
 
         :param SecondOrderLowPassFilter lpf: Low-pass filter instance.
         :return: None
         :rtype: None
         """
-        self._lpf = lpf
+        self._lpf: SecondOrderLowPassFilter = SecondOrderLowPassFilter(config=config)
 
     def filter(
         self,

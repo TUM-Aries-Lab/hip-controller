@@ -3,59 +3,59 @@
 This module provides a configurable notch (or DC blocker) filter implementation.
 """
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 from scipy import signal
 
-if TYPE_CHECKING:
-    from hip_controller.definitions import NotchConfig
+from hip_controller.definitions import NotchConfig
 
 
 class NotchFilter:
-    """A step-by-step notch filter used for drift rejection.
+    """A step-by-step notch filter used for drift rejection."""
 
-    Implements a configurable notch filter that can act as a DC blocker
-    (when center_freq_hz=0) or a standard notch filter.
-    """
-
-    def __init__(self, config: "NotchConfig") -> None:
+    def __init__(self, config: NotchConfig) -> None:
         """Initialize the notch filter with configuration.
 
         :param NotchConfig config: Notch filter configuration.
-        :return: None
         """
-        self._config = config
+        self._config: NotchConfig = config
 
-        # Precompute filter coefficients and initial state
-        if self._config.center_freq_hz == 0:
-            # DC blocker: high-pass first-order IIR  y[n] = x[n] - x[n-1] + r*y[n-1]
-            # r controls how close the pole is to the zero at DC.
-            # r = 1 - (pi * BW / Fs) mirrors the same BW formula used by iirnotch.
+        if config.center_freq_hz == 0:
             pole_radius = 1.0 - (
-                np.pi * self._config.bandwidth_3db_hz / self._config.sample_rate_hz
+                np.pi * config.bandwidth_3db_hz / config.sample_rate_hz
             )
             self._b = np.array([1.0, -1.0])
             self._a = np.array([1.0, -pole_radius])
         else:
-            quality_factor = self._config.center_freq_hz / self._config.bandwidth_3db_hz
+            quality_factor = config.center_freq_hz / config.bandwidth_3db_hz
             self._b, self._a = signal.iirnotch(
-                self._config.center_freq_hz, quality_factor, self._config.sample_rate_hz
+                w0=config.center_freq_hz, Q=quality_factor, fs=config.sample_rate_hz
             )
 
-        # Initial filter state
-        self._zi = signal.lfilter_zi(self._b, self._a)
+        self._zi_base = signal.lfilter_zi(
+            self._b, self._a
+        )  # unit-step zi — scaled on first call
+        self._zi: np.ndarray | None = None  # None = not yet initialised
 
     def filter(self, raw_value: float) -> float:
         """Process one raw sample through the notch filter.
+
+        .. note::
+            Filter coefficients are fixed at construction from ``sample_rate_hz``.
+            The method signature is stateless with respect to ``time_difference`` —
+            call at a consistent rate matching ``sample_rate_hz``.
 
         :param float raw_value: Raw sensor sample.
         :return: Filtered sample.
         :rtype: float
         """
-        y, self._zi = signal.lfilter(self._b, self._a, [raw_value], zi=self._zi)
+        if self._zi is None:
+            # Scale the unit-step zi by the first actual input so the filter
+            # starts in steady-state for that value, avoiding the initial transient.
+            self._zi = self._zi_base * raw_value
+
+        y, self._zi = signal.lfilter(b=self._b, a=self._a, x=[raw_value], zi=self._zi)
         return float(y[0])
 
     def reset(self) -> None:
-        """Reset the filter state to initial conditions."""
-        self._zi = signal.lfilter_zi(self._b, self._a)
+        """Reset the filter state — next call re-initialises from the first sample."""
+        self._zi = None

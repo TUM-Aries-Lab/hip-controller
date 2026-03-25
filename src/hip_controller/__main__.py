@@ -11,7 +11,6 @@ from hip_controller.definitions import (
     BasicConfig,
     LogLevel,
 )  # pragma: no cover
-from hip_controller.utils.simulator import simulate_controller_with_data
 
 
 def main(
@@ -25,12 +24,10 @@ def main(
     :param stderr_level: The std err level to use.
     :param str csv_path: Path to the CSV file used for simulated real-time playback. The user could pass in the path of a file as well.
     :return: None
+
+    # Example
+        -  simulate_controller_with_data(log_level=log_level, stderr_level=stderr_level, csv_path=BasicConfig.read_data_from_path)
     """
-    simulate_controller_with_data(
-        log_level=log_level,
-        stderr_level=stderr_level,
-        csv_path=BasicConfig.read_data_from_path,
-    )
 
 
 if __name__ == "__main__":  # pragma: no cover

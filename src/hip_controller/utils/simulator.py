@@ -7,7 +7,9 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from loguru import logger
+from matplotlib import ticker
 from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
 from hip_controller.control.app import ExoController  # pragma: no cover
@@ -188,3 +190,63 @@ def demonstrate_random_lpf_static() -> None:  # pragma no cover
     logger.info("\nFirst 10 filtered output values:")
     for i, y in enumerate(y_filtered[:10]):
         logger.info(f"  step {i:02d}  x={noisy[i]:+.4f}  →  y={y:.6f}")
+
+
+def plot_notch_filter_debug(
+    csv_path: Path,
+    timestamp_col: str,
+    raw_input_col: str,
+    expected_col: str,
+    actual_results: list[float],
+) -> None:
+    """Plot notch filter input, expected output, actual output, and their difference.
+
+        :param str csv_path: Path to the CSV file.
+        :param str timestamp_col: Column name for timestamps.
+        :param str raw_angle_col: Column name for raw angle (filter input).
+        :param str expected_col: Column name for expected filtered output.
+        :param list[float] actual_results: Actual filter outputs collected during the test.
+
+        # Example
+            - plot_notch_filter_debug(csv_path=DATA_PRE_PROCESSING, timestamp_col=KinematicsDataColumnName.TIMESTAMP, raw_angle_col=KinematicsDataColumnName.RAW_ANG_LEFT, expected_col=KinematicsDataColumnName.NO_DRIFT_ANG_NOTCH, actual_results=actual_results,
+    )
+    """
+    df = pd.read_csv(csv_path)
+
+    # Test skips row 0 (no dt), so align to same length
+    timestamps = df[timestamp_col].values[1:]
+    raw = df[raw_input_col].values[1:]
+    expected = df[expected_col].values[1:]
+    actual = np.array(actual_results)
+    diff = actual - expected
+
+    fig, (ax1, ax2) = plt.subplots(
+        nrows=2,
+        ncols=1,
+        figsize=(14, 7),
+        sharex=True,
+        gridspec_kw={"height_ratios": [3, 1]},
+    )
+    fig.suptitle("Notch Filter Debug", fontsize=13, fontweight="bold")
+
+    # ---- Top: signals -------------------------------------------------------
+    ax1.plot(timestamps, raw, label="Input (raw angle)", alpha=0.5, linewidth=0.8)
+    ax1.plot(timestamps, expected, label="Expected output", linewidth=1.2)
+    ax1.plot(timestamps, actual, label="Actual output", linestyle="--", linewidth=1.0)
+    ax1.set_ylabel("Angle [rad]")
+    ax1.legend(loc="upper right")
+    ax1.grid(True, linestyle=":", alpha=0.6)
+
+    # ---- Bottom: difference -------------------------------------------------
+    ax2.plot(
+        timestamps, diff, color="crimson", linewidth=0.8, label="Actual - Expected"
+    )
+    ax2.axhline(0, color="black", linewidth=0.6, linestyle="--")
+    ax2.set_ylabel("Error [rad]")
+    ax2.set_xlabel("Time [s]")
+    ax2.legend(loc="upper right")
+    ax2.grid(True, linestyle=":", alpha=0.6)
+    ax2.yaxis.set_major_formatter(ticker.FormatStrFormatter("%.4f"))
+
+    plt.tight_layout()
+    plt.show()

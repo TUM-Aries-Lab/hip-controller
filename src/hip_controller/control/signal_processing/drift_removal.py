@@ -13,6 +13,7 @@ from hip_controller.control.signal_processing.notch_filter import NotchFilter
 from hip_controller.control.signal_processing.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
+from hip_controller.definitions import LowPassFilterConfig, NotchConfig
 
 
 class DriftRemovalStrategy(ABC):
@@ -43,14 +44,14 @@ class LowPassDriftRemoval(DriftRemovalStrategy):
         cut-off frequency sits well below the motion band.
     """
 
-    def __init__(self, lpf: SecondOrderLowPassFilter) -> None:
+    def __init__(self, config: LowPassFilterConfig) -> None:
         """Create a low-pass drift removal strategy.
 
         :param SecondOrderLowPassFilter lpf: Low-pass filter for drift estimation.
         :return: None
         :rtype: None
         """
-        self._low_pass_filter = lpf
+        self._low_pass_filter = SecondOrderLowPassFilter(config=config)
 
     def filter(self, raw_angle: float, time_difference: float) -> float:
         """Execute one drift-removal step.
@@ -76,14 +77,14 @@ class NotchDriftRemoval(DriftRemovalStrategy):
     :param notch: A configured :class:`NotchFilter` instance.
     """
 
-    def __init__(self, notch: NotchFilter) -> None:
+    def __init__(self, config: NotchConfig) -> None:
         """Create a notch-based drift removal strategy.
 
         :param NotchFilter notch: Notch filter instance.
         :return: None
         :rtype: None
         """
-        self._notch = notch
+        self._notch = NotchFilter(config=config)
 
     def filter(self, raw_angle: float, time_difference: float) -> float:
         """Execute one drift-removal step.
