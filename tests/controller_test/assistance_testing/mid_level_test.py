@@ -6,7 +6,7 @@ from unittest.mock import patch
 import numpy as np
 from pandas import read_csv
 
-from hip_controller.control.assistance_control.mid_level import (
+from hip_controller.control.assistance_control.assistance_controller import (
     MotionMapping,
     MotionReferenceController,
     transform_to_cyclic,

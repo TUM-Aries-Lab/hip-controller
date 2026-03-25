@@ -25,7 +25,7 @@ from hip_controller.definitions import (
 
 # pragma: no cover
 from hip_controller.plotter.csv_player import CSVPlayer  # pragma: no cover
-from hip_controller.plotter.data_comparison_plot import TimePlotterComparisonWindow
+from hip_controller.plotter.live_comparison_plot import TimePlotterComparisonWindow
 from hip_controller.utils.utils import setup_logger  # pragma: no cover
 
 

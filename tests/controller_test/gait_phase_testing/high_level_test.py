@@ -20,8 +20,8 @@ from math import isclose
 
 from pandas import read_csv
 
-from hip_controller.control.gait_phase_control.high_level import (
-    HighLevelController,
+from hip_controller.control.gait_phase_control.gait_controller import (
+    GaitController,
     SensorSignal,
 )
 from tests.conftest import (
@@ -38,7 +38,7 @@ def test_extrema_values() -> None:
     :return: None
     """
     df = read_csv(filepath_or_buffer=DATA_EXTREMA_VALUES)
-    controller = HighLevelController()
+    controller = GaitController()
 
     for i in range(0, len(df)):
         curr = df.iloc[i]
@@ -75,7 +75,7 @@ def test_high_level() -> None:
     :return: None
     """
     df = read_csv(filepath_or_buffer=DATA_HIGH_LEVEL)
-    controller = HighLevelController()
+    controller = GaitController()
 
     for i in range(0, len(df)):
         curr = df.iloc[i]

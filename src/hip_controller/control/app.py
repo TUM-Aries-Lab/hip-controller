@@ -5,10 +5,10 @@ from loguru import logger
 from hip_controller.control.assistance_control.amplitude_modulation import (
     AmplitudeModulation,
 )
-from hip_controller.control.assistance_control.mid_level import (
+from hip_controller.control.assistance_control.assistance_controller import (
     MotionReferenceController,
 )
-from hip_controller.control.gait_phase_control.high_level import HighLevelController
+from hip_controller.control.gait_phase_control.gait_controller import GaitController
 from hip_controller.definitions import BasicConfig, ExosuitData, SensorSignal
 
 
@@ -56,13 +56,13 @@ class WalkOnController:
         """
         self.plot = plot
         if plot:
-            from hip_controller.plotter.phase_portrait import PortraitWindow
+            from hip_controller.plotter.live_phase_portrait import PortraitWindow
 
             self.plotter = PortraitWindow(left=reverse)
             self.plotter.show()
             # Execute the Qt plot application.
 
-        self.high_level_controller = HighLevelController()
+        self.high_level_controller = GaitController()
 
         # due to different wire settings one of them might need to be reversed - mirrored with -1
         self.amplitude_modulation = AmplitudeModulation(reverse=reverse)

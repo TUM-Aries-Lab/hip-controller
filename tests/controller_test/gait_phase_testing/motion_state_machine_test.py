@@ -2,7 +2,7 @@
 
 from pandas import read_csv
 
-from hip_controller.control.gait_phase_control.high_level import (
+from hip_controller.control.gait_phase_control.gait_controller import (
     MotionState,
     MotionStateMachine,
     SensorSignal,

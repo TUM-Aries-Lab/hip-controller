@@ -15,7 +15,7 @@ from hip_controller.control.gait_phase_control.stride_event_detector import (
 from hip_controller.definitions import SensorSignal
 
 
-class HighLevelController:
+class GaitController:
     """High-level motion controller for gait analysis and state tracking.
 
     Manages the overall control logic by tracking sensor measurements, detecting

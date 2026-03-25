@@ -11,6 +11,7 @@ from hip_controller.definitions import (
     BasicConfig,
     LogLevel,
 )  # pragma: no cover
+from hip_controller.plotter.simulator import simulate_controller_with_data
 
 
 def main(
@@ -28,6 +29,9 @@ def main(
     # Example
         -  simulate_controller_with_data(log_level=log_level, stderr_level=stderr_level, csv_path=BasicConfig.read_data_from_path)
     """
+    simulate_controller_with_data(
+        log_level=log_level, stderr_level=stderr_level, csv_path=csv_path
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover
