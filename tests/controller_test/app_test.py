@@ -35,12 +35,11 @@ def test_controller_right():
         motor_reference = controller.step(
             curr_signal=SensorSignal(
                 timestamp=timestamp, angle_rad=ang, velocity_rad_per_sec=vel
-            ),
+            )
         )
 
         # Assert
         expected_motor_reference = curr[KinematicsDataColumnName.REF_MOT_RIGHT]
-
         assert isclose(motor_reference, expected_motor_reference, abs_tol=0.08), (
             f"Row {i}"
         )

@@ -86,4 +86,4 @@ def test_notch_drift_removal() -> None:
         actual_results.append(actual_angle_no_drift)
         expected_results.append(expected_angle_no_drift)
 
-    np.testing.assert_array_almost_equal(actual_results, expected_results, decimal=1)
+    np.testing.assert_array_almost_equal(actual_results, expected_results, decimal=5)
