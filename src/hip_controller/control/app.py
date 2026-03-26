@@ -9,7 +9,15 @@ from hip_controller.control.assistance_control.assistance_controller import (
     MotionReferenceController,
 )
 from hip_controller.control.gait_phase_control.gait_controller import GaitController
-from hip_controller.definitions import BasicConfig, ExosuitData, SensorSignal
+from hip_controller.control.signal_processing.sensor_preprocessor import (
+    SensorPreprocessor,
+)
+from hip_controller.definitions import (
+    BasicConfig,
+    ExosuitData,
+    PreprocessorConfig,
+    SensorSignal,
+)
 
 
 class ExoController:
@@ -49,20 +57,22 @@ class ExoController:
 class WalkOnController:
     """Walk ON Controller for a single lower limb."""
 
-    def __init__(self, reverse: bool, plot: bool = False):
+    def __init__(self, reverse: bool, plot: bool = False, filtered=False):
         """Initialize the controller.
 
         :return: None
         """
         self.plot = plot
+        self.filtered = filtered
         if plot:
             from hip_controller.plotter.live_phase_portrait import PortraitWindow
 
+            # Execute the Qt plot application.
             self.plotter = PortraitWindow(left=reverse)
             self.plotter.show()
-            # Execute the Qt plot application.
 
         self.high_level_controller = GaitController()
+        self.pre_processor = SensorPreprocessor(PreprocessorConfig())
 
         # due to different wire settings one of them might need to be reversed - mirrored with -1
         self.amplitude_modulation = AmplitudeModulation(reverse=reverse)
@@ -71,27 +81,32 @@ class WalkOnController:
     def step(self, curr_signal: SensorSignal) -> float:
         """Step the controller ahead.
 
-        :param angle: hip angle in radians.
-        :param velocity: hip angle velocity in radians per second.
+        :param angle: raw hip angle in radians.
+        :param velocity: raw hip angle velocity in radians per second.
         :param timestamp: current timestamp.
         :return: Motor command for motion reference.
         :rtype: float
         """
-        #
-        # High-level
+        # Pre-processing
+        if self.filtered:
+            filtered_signal = curr_signal
+        else:
+            filtered_signal = self.pre_processor.filter(raw_signal=curr_signal)
+
+        # Gait phase calculation
         gait_phase = self.high_level_controller.update_and_compute(
-            curr_signal=curr_signal
+            curr_signal=filtered_signal
         )
 
-        # Mid-level
+        # Apply amplitude modulation
         amplitude = self.amplitude_modulation.compute_amplitude(signal=curr_signal)
+
+        # Compute motor command velocity
         motor_command = self.mid_level_controller.compute_motor_command(
             gait_phase=gait_phase, amplitude=amplitude
         )
 
-        # Low-level
-
-        # TODO Plotting
+        # Plotting
         if self.plot and curr_signal.timestamp is not None:
             steady = self.high_level_controller.get_signal_steady_state()
             self.plotter.update_plots(

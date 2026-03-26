@@ -56,109 +56,7 @@ if __name__ == "__main__":
 uv run python -m hip_controller
 ```
 
-## Structure
-The following tree shows the important permanent files. Run `make tree` to update.
-<!-- TREE-START -->
-```
-├── data
-│   ├── logs
-│   ├── recordings
-│   └── sensor_data
-│       ├── arduino.csv
-│       ├── arduino2.csv
-│       ├── data_input_2025_12_17.csv
-│       ├── data_input_filtered_2026_01_09.csv
-│       ├── data_kinematics_2026_02_16.csv
-│       ├── data_raw_2025_12_17.xlsx
-│       └── look_up_table_2026_02_25.csv
-├── docs
-│   ├── Notch_filter_debug.png
-│   ├── UML_hip_controller_2026_03_10.json
-│   └── paper.pdf
-├── src
-│   └── hip_controller
-│       ├── control
-│       │   ├── assistance_control
-│       │   │   ├── amplitude_modulation.py
-│       │   │   ├── mid_level.py
-│       │   │   └── pid_controller.py
-│       │   ├── gait_phase_control
-│       │   │   ├── high_level.py
-│       │   │   ├── motion_state_machine.py
-│       │   │   ├── steady_state_tracker.py
-│       │   │   └── stride_event_detector.py
-│       │   ├── signal_processing
-│       │   │   ├── discrete_derivative_filter.py
-│       │   │   ├── drift_removal.py
-│       │   │   ├── kalman_filter.py
-│       │   │   ├── notch_filter.py
-│       │   │   ├── second_order_low_pass_filter.py
-│       │   │   ├── sensor_preprocessor.py
-│       │   │   ├── sogi_fll_filter.py
-│       │   │   └── velocity_estimation.py
-│       │   ├── __init__.py
-│       │   └── app.py
-│       ├── plotter
-│       │   ├── csv_player.py
-│       │   ├── live_comparison_plot.py
-│       │   ├── live_phase_portrait.py
-│       │   └── simulator.py
-│       ├── utils
-│       │   ├── csv_converter.py
-│       │   ├── math_utils.py
-│       │   ├── state_space.py
-│       │   └── utils.py
-│       ├── __init__.py
-│       ├── __main__.py
-│       └── definitions.py
-├── tests
-│   ├── controller_test
-│   │   ├── assistance_testing
-│   │   │   ├── amplitude_test.py
-│   │   │   └── mid_level_test.py
-│   │   ├── gait_phase_testing
-│   │   │   ├── high_level_test.py
-│   │   │   ├── motion_state_machine_test.py
-│   │   │   └── stride_event_detector_test.py
-│   │   ├── pre_process_testing
-│   │   │   ├── drift_removal_test.py
-│   │   │   ├── filtering_test.py
-│   │   │   ├── kalman_test.py
-│   │   │   └── second_order_lpf_test.py
-│   │   ├── testing_data
-│   │   │   ├── amplitude_modulation_2026_03_03.csv
-│   │   │   ├── extrema_2026_01_26.csv
-│   │   │   ├── filtering_2026_03_19.csv
-│   │   │   ├── gait_phase_left_2026_03_03.csv
-│   │   │   ├── look_up_table_2026_02_25.csv
-│   │   │   ├── reference_motion_2026_03_05.csv
-│   │   │   ├── reference_motion_2026_03_06.csv
-│   │   │   ├── second_order_lpf_2026_03_06.csv
-│   │   │   ├── stride_event_detector_2026_02_26.csv
-│   │   │   ├── valid_trigger_left_2026_01_15.csv
-│   │   │   └── zero_crossing_left_2026_01_09.csv
-│   │   └── app_test.py
-│   ├── utils_test
-│   │   ├── csv_player_test.py
-│   │   ├── math_utils_test.py
-│   │   └── utils_test.py
-│   ├── __init__.py
-│   └── conftest.py
-├── .darglint
-├── .dockerignore
-├── .gitignore
-├── .pre-commit-config.yaml
-├── .python-version
-├── CONTRIBUTING.md
-├── Dockerfile
-├── LICENSE
-├── Makefile
-├── README.md
-├── pyproject.toml
-├── repo_tree.py
-└── uv.lock
-```
-<!-- TREE-END -->
+
 
 ## Introduction
 
@@ -220,9 +118,9 @@ from hip_controller.plotter.simulator import Simulator
 The hip-controller follows a modular architecture:
 
 1. **Data Input**: Sensor data (e.g., IMU angles, velocities) from CSV files or live sources.
-2. **Preprocessing**: Apply filters (drift removal, Kalman, notch) to clean the data.
+2. **Preprocessing**: Apply filters (second-order low pass, notch, sogi-fll) to clean the data.
 3. **Gait Phase Detection**: Use state machines and event detectors to identify phases (stance, swing).
-4. **Control Calculation**: Compute assistance torques using PID controllers and modulation.
+4. **Control Calculation**: Compute assistance motor command using PID controllers and modulation.
 5. **Output**: Generate control signals for the exosuit actuators.
 6. **Visualization**: Plot results in real-time or from recorded data.
 
@@ -283,7 +181,8 @@ signal1 = SensorSignal(timestamp=0.01, angle_rad=0.1, velocity_rad_per_sec=0.5)
 signal2 = SensorSignal(timestamp=0.02, angle_rad=0.15, velocity_rad_per_sec=0.8)
 
 # Update and compute gait phase
-gait_phase = gait_controller.update_and_compute(signal2)
+gait_phase1 = gait_controller.update_and_compute(signal1)
+gait_phase2 = gait_controller.update_and_compute(signal2)
 ```
 
 #### Computing Motor Command Velocity with Assistance Controller
@@ -380,6 +279,109 @@ signal = SensorSignal(timestamp=0.01, angle_rad=0.2, velocity_rad_per_sec=0.5)
 # Compute motor command
 motor_command = limb_controller.step(signal)
 ```
+## Structure
+The following tree shows the important permanent files. Run `make tree` to update.
+<!-- TREE-START -->
+```
+├── data
+│   ├── logs
+│   ├── recordings
+│   └── sensor_data
+│       ├── arduino.csv
+│       ├── arduino2.csv
+│       ├── data_input_2025_12_17.csv
+│       ├── data_input_filtered_2026_01_09.csv
+│       ├── data_kinematics_2026_02_16.csv
+│       ├── data_raw_2025_12_17.xlsx
+│       └── look_up_table_2026_02_25.csv
+├── docs
+│   ├── Notch_filter_debug.png
+│   ├── UML_hip_controller_2026_03_10.json
+│   └── paper.pdf
+├── src
+│   └── hip_controller
+│       ├── control
+│       │   ├── assistance_control
+│       │   │   ├── amplitude_modulation.py
+│       │   │   ├── assistance_controller.py
+│       │   │   └── pid_controller.py
+│       │   ├── gait_phase_control
+│       │   │   ├── gait_controller.py
+│       │   │   ├── motion_state_machine.py
+│       │   │   ├── steady_state_tracker.py
+│       │   │   └── stride_event_detector.py
+│       │   ├── signal_processing
+│       │   │   ├── discrete_derivative_filter.py
+│       │   │   ├── drift_removal.py
+│       │   │   ├── kalman_filter.py
+│       │   │   ├── notch_filter.py
+│       │   │   ├── second_order_low_pass_filter.py
+│       │   │   ├── sensor_preprocessor.py
+│       │   │   ├── sogi_fll_filter.py
+│       │   │   └── velocity_estimation.py
+│       │   ├── __init__.py
+│       │   └── app.py
+│       ├── plotter
+│       │   ├── csv_player.py
+│       │   ├── live_comparison_plot.py
+│       │   ├── live_phase_portrait.py
+│       │   └── simulator.py
+│       ├── utils
+│       │   ├── csv_converter.py
+│       │   ├── math_utils.py
+│       │   ├── state_space.py
+│       │   └── utils.py
+│       ├── __init__.py
+│       ├── __main__.py
+│       └── definitions.py
+├── tests
+│   ├── controller_test
+│   │   ├── assistance_testing
+│   │   │   ├── amplitude_test.py
+│   │   │   └── mid_level_test.py
+│   │   ├── gait_phase_testing
+│   │   │   ├── high_level_test.py
+│   │   │   ├── motion_state_machine_test.py
+│   │   │   └── stride_event_detector_test.py
+│   │   ├── pre_process_testing
+│   │   │   ├── drift_removal_test.py
+│   │   │   ├── filtering_test.py
+│   │   │   ├── kalman_test.py
+│   │   │   └── second_order_lpf_test.py
+│   │   ├── testing_data
+│   │   │   ├── amplitude_modulation_2026_03_03.csv
+│   │   │   ├── extrema_2026_01_26.csv
+│   │   │   ├── filtering_2026_03_19.csv
+│   │   │   ├── gait_phase_left_2026_03_03.csv
+│   │   │   ├── look_up_table_2026_02_25.csv
+│   │   │   ├── reference_motion_2026_03_05.csv
+│   │   │   ├── reference_motion_2026_03_06.csv
+│   │   │   ├── second_order_lpf_2026_03_06.csv
+│   │   │   ├── stride_event_detector_2026_02_26.csv
+│   │   │   ├── valid_trigger_left_2026_01_15.csv
+│   │   │   └── zero_crossing_left_2026_01_09.csv
+│   │   └── app_test.py
+│   ├── utils_test
+│   │   ├── csv_player_test.py
+│   │   ├── math_utils_test.py
+│   │   └── utils_test.py
+│   ├── __init__.py
+│   └── conftest.py
+├── .darglint
+├── .dockerignore
+├── .gitignore
+├── .pre-commit-config.yaml
+├── .python-version
+├── CONTRIBUTING.md
+├── Dockerfile
+├── LICENSE
+├── Makefile
+├── README.md
+├── pyproject.toml
+├── repo_tree.py
+└── uv.lock
+```
+<!-- TREE-END -->
 
 ## Contributing
 

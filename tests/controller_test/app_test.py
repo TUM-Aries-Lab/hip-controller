@@ -18,7 +18,7 @@ from tests.conftest import (
 
 def test_controller_right():
     """Test the main function with the right lower limb data."""
-    controller = WalkOnController(reverse=True, plot=False)
+    controller = WalkOnController(reverse=True, plot=False, filtered=True)
 
     df = read_csv(filepath_or_buffer=DATA_REFERENCE_MOTION_RIGHT)
 
