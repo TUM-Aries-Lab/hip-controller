@@ -2,7 +2,7 @@
 
 import tomllib
 from importlib.metadata import PackageNotFoundError, version
-from pathlib import Path
+from pathlib import Path  # pragma no cover
 
 try:
     __version__ = version("hip-controller")

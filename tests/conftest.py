@@ -11,42 +11,46 @@ from hip_controller.definitions import TESTING_DIR
 my_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(my_path, "../src"))
 
+
 REL_TOL = 1e-9
 
 
-# Offers path and column strings for testing.
+# File folder path for testing
 TESTING_CONTROLLER_DIR = TESTING_DIR / "controller_test" / "testing_data"
 
+
+# General testing files
 DATA_REFERENCE_MOTION_RIGHT: Path = (
     TESTING_CONTROLLER_DIR / "reference_motion_2026_03_06.csv"
 )
-TESTING_HIGH_LEVEL_DIR: Path = (
-    TESTING_DIR / "controller_test" / "high_level_testing" / "high_level_testing_data"
-)
-DATA_ZERO_CROSSING: Path = TESTING_HIGH_LEVEL_DIR / "zero_crossing_left_2026_01_09.csv"
+# Preprocessing testing files
+DATA_PRE_PROCESSING: Path = TESTING_CONTROLLER_DIR / "filtering_2026_03_19.csv"
+# High level controller testing files
+DATA_ZERO_CROSSING: Path = TESTING_CONTROLLER_DIR / "zero_crossing_left_2026_01_09.csv"
 
-DATA_VALID_TRIGGER: Path = TESTING_HIGH_LEVEL_DIR / "valid_trigger_left_2026_01_15.csv"
+DATA_VALID_TRIGGER: Path = TESTING_CONTROLLER_DIR / "valid_trigger_left_2026_01_15.csv"
 
-DATA_EXTREMA_VALUES: Path = TESTING_HIGH_LEVEL_DIR / "extrema_2026_01_26.csv"
+DATA_EXTREMA_VALUES: Path = TESTING_CONTROLLER_DIR / "extrema_2026_01_26.csv"
 
 DATA_STRIDE_EVENT_DETECTOR: Path = (
-    TESTING_HIGH_LEVEL_DIR / "stride_event_detector_2026_02_26.csv"
+    TESTING_CONTROLLER_DIR / "stride_event_detector_2026_02_26.csv"
 )
+DATA_HIGH_LEVEL: Path = TESTING_CONTROLLER_DIR / "gait_phase_left_2026_03_03.csv"
 
-DATA_HIGH_LEVEL: Path = TESTING_HIGH_LEVEL_DIR / "gait_phase_left_2026_03_03.csv"
-
-TESTING_MID_LEVEL_DIR: Path = (
-    TESTING_DIR / "controller_test" / "mid_level_testing" / "mid_level_testing_data"
-)
-
-DATA_MOTION_MAPPING: Path = TESTING_MID_LEVEL_DIR / "look_up_table_2026_02_25.csv"
+# Mid level controller testing files
+DATA_MOTION_MAPPING: Path = TESTING_CONTROLLER_DIR / "look_up_table_2026_02_25.csv"
 
 DATA_AMPLITUDE_MODULATION: Path = (
-    TESTING_MID_LEVEL_DIR / "amplitude_modulation_2026_03_03.csv"
+    TESTING_CONTROLLER_DIR / "amplitude_modulation_2026_03_03.csv"
 )
 
 DATA_REFERENCE_MOTION_LEFT: Path = (
-    TESTING_MID_LEVEL_DIR / "reference_motion_2026_03_05.csv"
+    TESTING_CONTROLLER_DIR / "reference_motion_2026_03_05.csv"
+)
+
+# Low level controller testing files
+DATA_SECOND_ORDER_LOW_PASS_FILTER: Path = (
+    TESTING_CONTROLLER_DIR / "second_order_lpf_2026_03_06.csv"
 )
 
 
@@ -110,3 +114,17 @@ class KinematicsDataColumnName(StrEnum):
     AMPLITUDE_RIGHT = "amplitude_right"
 
     REF_MOT_RIGHT = "motor_reference_right (rad)"
+
+    # Signal pre-processing with raw left angle
+    RAW_ANG_LEFT = "angle_left_raw (rad)"
+
+    NO_DRIFT_ANG_LPF = "angle_no_drift_lpf"
+    NO_DRIFT_ANG_NOTCH = "angle_no_drift_notch"
+
+    FILTERED_ANG_SOGIFLL = "angle_surrogate_sogifll"
+    FILTERED_VEL_SOGIFLL = "vel_quadrature_sogifll"
+
+    FILTERED_VEL_DISCRETE = "vel_discrete_derivative"
+
+    FILTERED_ANG_LPF = "angle_filtered_lpf"
+    FILTERED_VEL_LPF = "vel_derivative_lpf"

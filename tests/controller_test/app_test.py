@@ -18,7 +18,7 @@ from tests.conftest import (
 
 def test_controller_right():
     """Test the main function with the right lower limb data."""
-    controller = WalkOnController(reverse=True, plot=False)
+    controller = WalkOnController(reverse=True, plot=False, filtered=True)
 
     df = read_csv(filepath_or_buffer=DATA_REFERENCE_MOTION_RIGHT)
 
@@ -33,13 +33,13 @@ def test_controller_right():
 
         # Act
         motor_reference = controller.step(
-            curr_signal=SensorSignal(angle_rad=ang, velocity_rad_per_sec=vel),
-            timestamp=timestamp,
+            curr_signal=SensorSignal(
+                timestamp=timestamp, angle_rad=ang, velocity_rad_per_sec=vel
+            )
         )
 
         # Assert
         expected_motor_reference = curr[KinematicsDataColumnName.REF_MOT_RIGHT]
-
         assert isclose(motor_reference, expected_motor_reference, abs_tol=0.08), (
             f"Row {i}"
         )
@@ -55,10 +55,13 @@ def test_amplitude_reverse():
         curr = df.iloc[i]
 
         # Arrange
+        timestamp = curr[KinematicsDataColumnName.TIMESTAMP]
         vel = curr[KinematicsDataColumnName.VEL_RIGHT]
         ang = curr[KinematicsDataColumnName.ANG_RIGHT]
 
-        signal = SensorSignal(angle_rad=ang, velocity_rad_per_sec=vel)
+        signal = SensorSignal(
+            timestamp=timestamp, angle_rad=ang, velocity_rad_per_sec=vel
+        )
         # Act
 
         amplitude = modulation.compute_amplitude(signal=signal)
