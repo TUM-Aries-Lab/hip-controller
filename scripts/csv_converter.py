@@ -3,23 +3,6 @@
 Walking data CSV processing utilities.
 Handles stair concatenation, file combining, and column filtering.
 
-
----------------------------------------------------------------------------
-Example usage
----------------------------------------------------------------------------
-
-    # 1. Concatenate all stair trials per participant
-    concatenate_stairs(
-        stairs_root="data/stairs",
-        output_dir="output/stairs",
-    )
-
-    # 2. Combine incline walk up + down at slope 5 for participant AB01
-    combine_two_files(
-        file_a="data/AB01_incline_walk_up_5.csv",
-        file_b="data/AB01_incline_walk_down_5.csv",
-        output_path="output/AB01_incline_walk_slope5_combined.csv",
-    )
 """
 
 from pathlib import Path
@@ -50,10 +33,10 @@ def concatenate_stairs(
     AB##_stairs_1_*_(up|down)_angle.csv and merges them in
     numeric order into <output_dir>/<participant>_stairs_combined.csv.
 
-    Args:
-        stairs_root:  Path to the 'stairs' folder containing AB01-AB13 subdirs.
-        output_dir:   Destination folder for the combined per-participant files.
-        participants: Optional list of participant IDs (e.g. ['AB01', 'AB03']).
+
+    :param str | Path stairs_root:  Path to the 'stairs' folder containing AB01-AB13 subdirs.
+    :param str | Path output_dir:   Destination folder for the combined per-participant files.
+    :param list[str] | None = None participants: Optional list of participant IDs (e.g. ['AB01', 'AB03']).
                       Defaults to all subdirectories found in stairs_root.
 
     """
