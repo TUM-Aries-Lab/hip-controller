@@ -51,7 +51,7 @@ class PIDController:
 
         time_difference = timestamp - self._prev_timestamp
         self._integral += error * time_difference
-        integral = self.config.integral_gain * self._integral
+        integral = clip(self.config.integral_gain * self._integral)
 
         _, filtered_velocity = self.low_pass_filter.step(
             x=self._prev_velocity, time_difference=time_difference
