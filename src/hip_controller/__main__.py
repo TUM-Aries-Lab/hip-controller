@@ -11,7 +11,7 @@ from hip_controller.definitions import (
     BasicConfig,
     LogLevel,
 )  # pragma: no cover
-from hip_controller.plotter.simulator import simulate_controller_with_data
+from scripts.simulator import simulate_controller_with_data
 
 
 def main(

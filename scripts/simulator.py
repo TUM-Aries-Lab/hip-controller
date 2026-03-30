@@ -21,12 +21,14 @@ from hip_controller.definitions import (
     BasicConfig,
     LowPassFilterConfig,
     SolverType,
-)  # pragma: no cover
+)
 
-# pragma: no cover
-from hip_controller.plotter.csv_player import CSVPlayer  # pragma: no cover
-from hip_controller.plotter.live_comparison_plot import TimePlotterComparisonWindow
-from hip_controller.utils.utils import setup_logger  # pragma: no cover
+from src.hip_controller.plotter.csv_player import CSVPlayer
+from dataclasses import dataclass
+from scripts.script import ScriptPlayer, ComparisonData
+from scripts.live_comparison_plot import TimePlotterComparisonWindow
+from hip_controller.utils.utils import setup_logger
+
 
 
 def simulate_comparison_dynamic(
@@ -34,11 +36,12 @@ def simulate_comparison_dynamic(
     expected_output_name: str,
     func: Callable[[float], tuple[float, Any]],
     path: Path,
-) -> None:  # pragma: no cover
+) -> None:
     """Simulate the comparison of the output and the expected output.
 
     :param str input_name: The column name of the input variable.
-    :param str output_name: The column name of the output variable.
+    :param str expected_output_name: The column name of the output variable.
+    :param Callable[[float], tuple[float, Any]] func: Function to call and compare.
     :param str csv_path: Path to the CSV file used for simulated real-time playback. The user could pass in the path of a file as well.
     :return: None
 
@@ -53,7 +56,7 @@ def simulate_comparison_dynamic(
     """
     app = QtWidgets.QApplication([])
 
-    player = CSVPlayer(csv_path=path)
+    player = ScriptPlayer(csv_path=path)
 
     timer = QtCore.QTimer()
     plotter = TimePlotterComparisonWindow(
@@ -67,18 +70,18 @@ def simulate_comparison_dynamic(
             timer.stop()
             return
 
-        timestamp, input, expected_output = player.get_data_from_csv(
+        data_to_compare: ComparisonData = player.get_data_from_csv(
             input_name=input_name, expected_output_name=expected_output_name
         )
 
         # Function to simulate. Takes the first output if there were multiple
-        output, _ = func(input)
+        output, _ = func(data_to_compare.given_input)
 
         plotter.update_plots(
-            timestamp=timestamp,
-            input=input,
+            timestamp=data_to_compare.timestamp,
+            input=data_to_compare.given_input,
             output=output,
-            expected_output=expected_output,
+            expected_output=data_to_compare.expected_output,
         )
 
     def sigint_handler(signal, frame) -> None:
@@ -108,17 +111,17 @@ def simulate_controller_with_data(
 
     app = QtWidgets.QApplication([])
 
-    csv_player = CSVPlayer(csv_path)
+    player = CSVPlayer(csv_path)
     controller = ExoController()
     timer = QtCore.QTimer()
 
     def update() -> None:
         """Update the controller with the next line of CSV data."""
-        if not csv_player.has_next_line():
+        if not player.has_next_line():
             timer.stop()
             return
 
-        sensordata = csv_player.get_sensor_data_from_csv()
+        sensordata = player.get_sensor_data_from_csv()
 
         # setInterval in miliseconds. Update each 10ms
         timer.setInterval(10)

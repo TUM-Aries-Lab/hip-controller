@@ -1,7 +1,7 @@
 """Common definitions for this module."""
 
 from dataclasses import asdict, dataclass
-from enum import Enum, StrEnum, auto
+from enum import StrEnum, auto
 from math import pi
 from pathlib import Path
 
@@ -43,7 +43,7 @@ class BasicConfig:
     )
 
 
-class SolverType(Enum):
+class SolverType(StrEnum):
     """Selects the numerical integration strategy for the LPF.
 
     FORWARD_EULER   -- Discrete, output = current state before update.

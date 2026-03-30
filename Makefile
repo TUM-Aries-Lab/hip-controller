@@ -11,7 +11,7 @@ test:
 
 lint:
 	uv run ruff format src/ tests/
-	uv run ruff check src/ tests/ --fix
+	uv run ruff check src/ tests/ --fix --exclude scripts/
 
 doc-lint:
 	darglint src/

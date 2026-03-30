@@ -108,13 +108,12 @@ def combine_two_files(
     Useful for pairing complementary conditions, e.g. incline_walk up + down
     at the same slope, or turn_left + turn_right.
 
-    Args:
-        file_a:      Path to the first CSV file.
-        file_b:      Path to the second CSV file.
-        output_path: Destination path for the merged CSV.
 
-    Returns:
-        The merged DataFrame.
+    :param str | Path file_a:      Path to the first CSV file.
+    :param str | Path file_b:      Path to the second CSV file.
+    :param str | Path output_path: Destination path for the merged CSV.
+
+    :return: The merged DataFrame.
 
     """
     file_a, file_b = Path(file_a), Path(file_b)
@@ -145,7 +144,9 @@ def convert_xlsx_to_csv(
     This is useful for converting test data and measurement recordings to a
     more portable and scriptable format.
 
-    :param Path path: Absolute path to the Excel file.
+    :param Path input_xlsx_path: Absolute path to the input Excel file.
+    :param Path output_xlsx_path: Absolute path to the output CSV file.
+
     :return: Path to the newly created CSV file with the same name as the input file but with .csv extension.
     :rtype: Path
     """

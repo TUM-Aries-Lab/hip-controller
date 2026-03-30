@@ -37,9 +37,9 @@ class PIDController:
     ) -> float:
         """Compute the velocity command for one control cycle using the PID controller.
 
-        :param float motor_reference: Desired target position motor command of reference motion.
+        :param float timestamp: Current timestamp of the controller.
+        :param float motor_reference: Desired target velocity motor command of reference motion.
         :param float motor_position: Current measured motor position of actual motion.
-        :param float dt:
 
         :return: Commanded velocity, clamped to output_limits if set.
         :rtype: float

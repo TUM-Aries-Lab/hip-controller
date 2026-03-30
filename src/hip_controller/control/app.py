@@ -81,10 +81,9 @@ class WalkOnController:
     def step(self, curr_signal: SensorSignal) -> float:
         """Step the controller ahead.
 
-        :param angle: raw hip angle in radians.
-        :param velocity: raw hip angle velocity in radians per second.
-        :param timestamp: current timestamp.
-        :return: Motor command for motion reference.
+        :param SensorSignal curr_signal: Current timestamp, raw hip angle in radians, raw hip angle velocity in radians per second.
+
+        :return: Motor velocity command for motion reference.
         :rtype: float
         """
         # Pre-processing

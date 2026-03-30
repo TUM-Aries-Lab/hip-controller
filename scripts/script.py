@@ -4,11 +4,19 @@ from pathlib import Path
 
 from loguru import logger
 from pandas import read_csv
-
+from dataclasses import dataclass
 from hip_controller.definitions import ExosuitData, RecordedSensorData, SensorSignal
 
 
-class CSVPlayer:
+@dataclass
+class ComparisonData:
+    """Data class for comparison of a function's actual outputs and expected outputs with given inputs."""
+    timestamp: float
+    given_input: float
+    expected_output: float
+    actual_output:float| None = None
+
+class ScriptPlayer:
     """The CSV file is loaded fully once using pandas.
 
     Each call to `next()` returns exactly one row, mimicking a single real-time sensor update.
@@ -40,11 +48,17 @@ class CSVPlayer:
         """
         return self.counter < len(self.dataframe)
 
-    def get_sensor_data_from_csv(self) -> ExosuitData:
-        """Get the recorded data from csv line by line.
 
-        :return: timestamp, angle_left, velocity_left, angle_right, velocity_right packed together as an Exosuit dataclass
-        :rtype: ExosuitData
+    def get_data_from_csv(
+        self, input_name: str, expected_output_name: str
+    ) -> ComparisonData:
+        """Get the data input and expected output from csv line by line to compare output executed from input and expected output.
+
+        :param str input_name: Name of the input column.
+        :param str expected_output_name: Name of the output column.
+
+        :return: timestamp, float value of given input, float value of given output
+        :rtype: tuple[float, float, float]
         """
         row = self.dataframe.iloc[self.counter]
         self.counter += 1
@@ -53,15 +67,4 @@ class CSVPlayer:
         else:
             timestamp = self.counter / RecordedSensorData.fake_frequency_hz
 
-        return ExosuitData(
-            left=SensorSignal(
-                timestamp=timestamp,
-                angle_rad=float(row[RecordedSensorData.ang_left]),
-                velocity_rad_per_sec=float(row[RecordedSensorData.vel_left]),
-            ),
-            right=SensorSignal(
-                timestamp=timestamp,
-                angle_rad=float(row[RecordedSensorData.ang_right]),
-                velocity_rad_per_sec=float(row[RecordedSensorData.vel_right]),
-            ),
-        )
+        return ComparisonData(timestamp=timestamp, given_input=float(row[input_name]), expected_output=float(row[expected_output_name]))

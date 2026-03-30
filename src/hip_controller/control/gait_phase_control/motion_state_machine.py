@@ -177,7 +177,7 @@ class MotionStateMachine:
 
         """
         self.state: MotionState = MotionState.INITIAL
-        self.timestamp_sec: float | None = None
+        self.last_time_state_change_sec: float | None = None
         self.triggers: ExtremaTrigger = ExtremaTrigger(False, False, False, False)
 
     def _handle_initial_state(self) -> MotionState | None:
@@ -256,10 +256,10 @@ class MotionStateMachine:
         if self.state == MotionState.INITIAL:
             return False
 
-        if self.timestamp_sec is None or timestamp is None:
+        if self.last_time_state_change_sec is None or timestamp is None:
             return False
 
-        dt = timestamp - self.timestamp_sec
+        dt = timestamp - self.last_time_state_change_sec
 
         # before: inclusive, after: exclusive
         if dt < StateChangeTimeThreshold.tmin:
@@ -267,7 +267,7 @@ class MotionStateMachine:
 
         elif dt >= StateChangeTimeThreshold.tmax:
             self.state = MotionState.INITIAL
-            self.timestamp_sec = None
+            self.last_time_state_change_sec = None
             return True
 
         return False
@@ -297,6 +297,6 @@ class MotionStateMachine:
             new_state = self._detect_state()
             if new_state is not None:
                 self.state = new_state
-                self.timestamp_sec = curr.timestamp
+                self.last_time_state_change_sec = curr.timestamp
                 return new_state
         return None

@@ -1,19 +1,19 @@
-"""Second-order low-pass filter — Strategy pattern for integration.
+"""Second-order low-pass filter with strategy pattern for integration.
 
-Simulink signal flow (from the labelled block diagram):
+Signal flow:
 ───────────────────────────────────────────────────────
-  1. e1       = x - y                    (1st summer, y fed back from port 1)
-  2. feedback = 2 * zt * q               (bottom multiplier, q = 1st integrator output)
-  3. e2       = e1 - feedback            (2nd summer)
-  4. wn_e2    = wn * e2                  (multiply block)
-  5. q        = integral(wn_e2), IC=x0   [INTERNAL STATE — 1st integrator]
-  6. yd       = wn * q                   [BETWEEN-STEP WIRE — port 2, NOT a stored state]
-  7. y        = integral(yd),    IC=x0   [port 1 — 2nd integrator]
-  8. y fed back to 1st summer (minus input)
+  1. input_error       = input - filtered_output (calculate difference)
+  2. damping_fb        = 2 * damping_ratio * feedback_state
+  3. corrected_error   = input_error - damping_fb (apply damping correction)
+  4. wn_corrected_err  = natural_freq * corrected_error
+  5. feedback_state    = integral(wn_corrected_err) [INTERNAL INTERMEDIATE STATE]
+  6. output_derivative = natural_freq * feedback_state [RATE OF CHANGE]
+  7. filtered_output   = integral(output_derivative) [MAIN OUTPUT]
+  8. filtered_output fed back to step 1 (minus input)
 
 State equations (continuous):
   dq/dt = wn * (x - y - 2*zt*q)
-  dy/dt = wn * q  =  yd
+  dy/dt = wn * q  =  y_dot
 
 Transfer function:
   H(s) = wn^2 / (s^2 + 2*zt*wn*s + wn^2)
@@ -48,21 +48,21 @@ DerivFn = Callable[[float, float], tuple[float, float]]
 
 @dataclass
 class LowPassFilterState:
-    """Internal states of the two Simulink integrators.
+    """Internal state tracking for the filter's two integration stages.
 
-    :param float q :
-        1st integrator output — INTERNAL, never exposed as an output port.
-        Satisfies  dq/dt = wn * (x - y - 2*zt*q).
-        Used to compute yd and as the bottom-multiplier feedback signal.
-    :param float y:
-        2nd integrator output — Simulink output port 1.
-        Satisfies  dy/dt = wn * q = yd.
-        Also fed back to the 1st summer as the minus input.
+    :param float feedback_state:
+        Intermediate state from the feedback stage.
+        Satisfies d(feedback_state)/dt = wn * (input - filtered_output - 2*damping*feedback_state).
+        Used to compute the output derivative and damping feedback signal.
+    :param float filtered_output:
+        Main filter output (the smoothed signal).
+        Satisfies d(filtered_output)/dt = wn * feedback_state.
+        Also fed back as negative feedback in the error calculation.
 
     """
 
-    q: float = 0.0
-    y: float = 0.0
+    feedback_state: float = 0.0
+    filtered_output: float = 0.0
 
 
 class SecondOrderLowPassFilter:
@@ -81,147 +81,143 @@ class SecondOrderLowPassFilter:
         cfg = FilterDefinitions(wn=20.0, zt=1.0, dt=0.01, solver_type=SolverType.RK4)
         lpf = SecondOrderLPF(cfg)
 
-        yd, y = lpf.step(x)           # uses cfg.dt
+        y_dot, y = lpf.step(x)           # uses cfg.dt
 
     Usage — variable timestep (real-time loop)
     ------------------------------------------
-        yd, y = lpf.step(x, dt=0.013)  # override dt for this step only
+        y_dot, y = lpf.step(x, dt=0.013)  # override dt for this step only
 
     Usage — whole sequence, fixed dt
     ---------------------------------
-        y_array, yd_array = lpf.run(x_array)
+        y_array, y_dot_array = lpf.run(x_array)
 
     Usage — whole sequence, variable dt
     ------------------------------------
-        y_array, yd_array = lpf.run(x_array, dt_array=timestamps_diff)
+        y_array, y_dot_array = lpf.run(x_array, dt_array=timestamps_diff)
     """
 
     def __init__(self, config: LowPassFilterConfig) -> None:
-        """Initialize the second-order low-pass filter."""
+        """Initialize the second-order low-pass filter.
+
+        :param LowPassFilterConfig config: Configuration containing natural frequency, damping ratio, initial condition, timestep, and solver method.
+        :rtype: None
+        """
         self._config = config
         self._state = LowPassFilterState(
-            q=config.initial_condition, y=config.initial_condition
+            feedback_state=config.initial_condition,
+            filtered_output=config.initial_condition,
         )
         self._solver: SolverStrategy = make_solver(config.solver_type)
-        self._x = 0.0  # current input, stored so _deriv_fn can access it
+        self._current_input = (
+            0.0  # current input, stored so derivative function can access it
+        )
         self._prev_timestamp: float | None = None
 
-    # ------------------------------------------------------------------
-    # Signal path helpers — each mirrors one Simulink block / wire
-    # ------------------------------------------------------------------
+    def _compute_input_error(
+        self, current_input: float, filtered_output: float
+    ) -> float:
+        """Calculate the error between the raw input and the filtered output.
 
-    def _compute_e1(self, x: float, y: float) -> float:
-        """1st summer: e1 = x - y."""
-        return x - y
-
-    def _compute_feedback(self, q: float) -> float:
-        """Bottom multiplier: feedback = 2 * zt * q."""
-        return 2.0 * self._config.damping_ratio * q
-
-    def _compute_e2(self, e1: float, feedback: float) -> float:
-        """2nd summer: e2 = e1 - feedback."""
-        return e1 - feedback
-
-    def _compute_yd(self, q: float) -> float:
-        """Multiply yd = wn * q.
-
-        Between-step wire labelled 'yd' (port 2) in the diagram.
-        Direct input to the 2nd integrator (= dy/dt).
-        NOT a stored state — recomputed each step from q.
+        :param float current_input: Raw filter input signal.
+        :param float filtered_output: Current smoothed output from the filter.
+        :return: Error signal (difference between input and output).
+        :rtype: float
         """
-        return self._config.cut_off_frequency * q
+        return current_input - filtered_output
 
-    def _deriv_fn(self, q: float, y: float) -> tuple[float, float]:
-        """Compute derivative function (dq/dt, dy/dt) from trial states (q, y) passed to the solver.
+    def _compute_damping_feedback(self, feedback_state: float) -> float:
+        """Calculate the damping feedback signal proportional to the feedback state.
+
+        :param float feedback_state: Intermediate feedback state value.
+        :return: Damping feedback signal.
+        :rtype: float
+        """
+        return 2.0 * self._config.damping_ratio * feedback_state
+
+    def _compute_corrected_error(
+        self, input_error: float, damping_feedback: float
+    ) -> float:
+        """Calculate the error after applying damping correction.
+
+        :param float input_error: Error between input and output.
+        :param float damping_feedback: Damping feedback signal.
+        :return: Corrected error used to drive the feedback state.
+        :rtype: float
+        """
+        return input_error - damping_feedback
+
+    def _compute_output_derivative(self, feedback_state: float) -> float:
+        """Calculate the rate of change of the filter output.
+
+        This is proportional to the feedback state and defines how fast
+        the smoothed output changes. NOT a stored state—recomputed each step.
+
+        :param float feedback_state: Intermediate feedback state value.
+        :return: Derivative of the filtered output (rate of change).
+        :rtype: float
+        """
+        return self._config.cut_off_frequency * feedback_state
+
+    def _deriv_fn(
+        self, feedback_state: float, filtered_output: float
+    ) -> tuple[float, float]:
+        """Calculate the two time derivatives needed for numerical integration.
 
         The solver may call this multiple times per step (RK4 calls it 4x),
-        each time with different trial values of q and y.
-        self._x holds the current filter input, set once per step() call.
+        each time with different trial values. The current filter input is
+        stored in self._current_input, set once per step() call.
+
+        :param float feedback_state: Trial value for intermediate feedback state.
+        :param float filtered_output: Trial value for the main filter output.
+        :return: Tuple of (d_feedback_state/dt, d_filtered_output/dt).
+        :rtype: tuple[float, float]
         """
-        e1 = self._compute_e1(self._x, y)
-        feedback = self._compute_feedback(q)
-        e2 = self._compute_e2(e1, feedback)
-        dq_dt = self._config.cut_off_frequency * e2  # input to 1st integrator
-        dy_dt = self._compute_yd(q)  # yd = wn*q = input to 2nd integrator
-        return dq_dt, dy_dt
+        input_error = self._compute_input_error(self._current_input, filtered_output)
+        damping_fb = self._compute_damping_feedback(feedback_state)
+        corrected_err = self._compute_corrected_error(input_error, damping_fb)
+        d_feedback_dt = self._config.cut_off_frequency * corrected_err
+        d_output_dt = self._compute_output_derivative(feedback_state)
+        return d_feedback_dt, d_output_dt
 
     def step(self, x: float, time_difference: float) -> tuple[float, float]:
-        """Advance the filter by one timestep.
+        """Process one input sample and return the filtered output and its rate of change.
 
-        :param float x: Filter input at the current timestep.
-        :param float timestamp:
-            Current timestamp [s]. Used to calculate the time difference
-            from the previous step. For the first step, uses cfg.time_difference.
-
-        :return: [y, yd]. Filtered value y and its derivative yd.
-        :rtype: tuple [float, float]
-
-
-        Examples
-        --------
-        # First step — uses cfg.time_difference:
-        y, yd = lpf.step(sensor_value, timestamp=0.0)
-
-        # Subsequent steps — calculates dt from timestamps:
-        y, yd = lpf.step(sensor_value, timestamp=0.013)
-
+        :param float x: Raw input signal at the current timestep.
+        :param float time_difference: Time elapsed since the previous step [s].
+        :return: Tuple of (filtered_output, output_derivative)—the smoothed value and its rate of change.
+        :rtype: tuple[float, float]
         """
-        self._x = x
+        self._current_input = x
 
-        q_out, y_out, q_next, y_next = self._solver.step(
+        fb_out, output_out, fb_next, output_next = self._solver.step(
             deriv_fn=self._deriv_fn,
-            q=self._state.q,
-            y=self._state.y,
+            feedback_state=self._state.feedback_state,
+            filtered_output=self._state.filtered_output,
             time_difference=time_difference,
         )
 
-        self._state.q = q_next
-        self._state.y = y_next
+        self._state.feedback_state = fb_next
+        self._state.filtered_output = output_next
 
-        # yd is a computed wire from q_out (output-side q, not next-state q)
-        yd = self._compute_yd(q_out)
+        # output_derivative is computed from the output-side feedback state value
+        output_derivative = self._compute_output_derivative(fb_out)
 
-        return y_out, yd
+        return output_out, output_derivative
 
     def run(
         self,
         x_array: Iterable[float],
         timestamp_array: Iterable[float] | None = None,
     ) -> tuple[list[float], list[float]]:
-        """Filter an entire input sequence in one call.
+        """Process an entire input sequence and return the filtered outputs.
 
-        Resets both integrator states to x0 before processing, so each
-        call to run() is independent and reproducible regardless of any
-        prior step() calls.
+        Resets the filter state to the initial condition before starting, so each
+        call to run() is independent and reproducible regardless of prior step() calls.
 
-        Parameters
-        ----------
-        x_array : iterable of float  (list, numpy array, or any sequence)
-            Input signal samples, one value per timestep.
-        timestamp_array : optional
-            Timestamps [s]. Two accepted forms:
-              None          — use fixed time difference of 0.01 s for all steps
-              iterable      — per-sample timestamps, must be same length as x_array
-
-        Returns
-        -------
-        y_array  : list of float
-            Port 1 output — the filtered signal.
-        yd_array : list of float
-            Port 2 output — derivative of the filtered signal (= dy/dt).
-
-        Examples
-        --------
-        # Use fixed 0.01 s time difference:
-        y_array, yd_array = lpf.run(x_array)
-
-        # Variable timestamps:
-        timestamps = [0.0, 0.010, 0.023, 0.031, ...]
-        y_array, yd_array = lpf.run(x_array, timestamp_array=timestamps)
-
-        # Only need the filtered output (ignore yd):
-        y_array, _ = lpf.run(x_array)
-
+        :param Iterable[float] x_array: Input signal samples (list, numpy array, or any sequence).
+        :param Iterable[float] | None timestamp_array: Optional timestamps [s]. If None, uses fixed 0.01 s intervals.
+        :return: Tuple of (filtered_signal, output_derivative)—the smoothed signal and its rate of change.
+        :rtype: tuple[list[float], list[float]]
         """
         self.reset()
 
@@ -249,59 +245,65 @@ class SecondOrderLowPassFilter:
                 dt_list.append(dt)
 
         y_array: list[float] = []
-        yd_array: list[float] = []
+        y_dot_array: list[float] = []
 
         for x, dt in zip(x_list, dt_list, strict=True):
-            yd, y = self.step(x=x, time_difference=dt)
+            y_dot, y = self.step(x=x, time_difference=dt)
             y_array.append(y)
-            yd_array.append(yd)
+            y_dot_array.append(y_dot)
 
-        return y_array, yd_array
+        return y_array, y_dot_array
 
     def reset(self) -> None:
-        """Reset both integrator states to x0."""
-        self._state.q = self._config.initial_condition
-        self._state.y = self._config.initial_condition
+        """Reset the filter state to its initial condition.
+
+        :rtype: None
+        """
+        self._state.feedback_state = self._config.initial_condition
+        self._state.filtered_output = self._config.initial_condition
 
     @property
     def solver_name(self) -> str:
-        """Return the name of the solver strategy for logging and debugging."""
+        """Get the name of the integration method being used.
+
+        :return: Name of the active solver strategy.
+        :rtype: str
+        """
         return repr(self._solver)
 
 
-"""Solver strategies for the second-order low-pass filter.
+"""Numerical integration strategies for the low-pass filter.
 
 Design pattern: Strategy
 ────────────────────────
-  - SolverStrategy (ABC) defines the shared interface.
-  - Each concrete solver implements step(), which advances the two filter
-    states (q, y) by one timestep given a derivative function.
-  - The filter owns state; the solver only defines HOW states are advanced.
-  - Solvers are interchangeable without changing any filter logic.
+- SolverStrategy (abstract) defines the common interface.
+- Each solver implements step() to advance the filter
+  states over one timestep using a specific numerical method.
+- The filter owns the state values; solvers only define HOW to update them.
+- Solvers are interchangeable by changing the solver_type configuration.
 
 Interface contract
 ──────────────────
-  Every solver implements:
+Every solver implements:
 
-    step(deriv_fn, q, y, dt) -> (q_out, y_out, q_next, y_next)
+  step(deriv_fn, feedback_state, filtered_output, dt)
+    -> (fb_out, output_out, fb_next, output_next)
 
-  Where:
-    deriv_fn(q, y) -> (dq_dt, dy_dt)
-        Pure derivative function provided by the filter.
-        Solvers never know about wn, zt, x, or what the filter represents.
+Where:
+  deriv_fn(fb, out) -> (d_fb/dt, d_out/dt)
+      Pure derivative function from the filter.
+  fb_out, output_out   : current values for this step's output
+  fb_next, output_next : new state values for the next step
 
-    q_out, y_out   : values to RETURN as outputs this step
-    q_next, y_next : values to STORE as states for the next step
-
-  NOTE: For continuous solvers (RK4),  q_out == q_next  (no feedthrough).
-        For discrete solvers, q_out may differ from q_next (feedthrough).
+NOTE: RK4 has no feedthrough (out == next).
+      Discrete methods may have feedthrough (out may differ from next).
 
 Solver summary
 ──────────────
-  Forward Euler  : output = state BEFORE update         → no feedthrough,  O(dt¹)
-  Backward Euler : output = state + dt·u                → feedthrough,     O(dt¹)
-  Trapezoidal    : output = state + dt/2·u              → feedthrough,     O(dt²)
-  RK4            : output = state after 4-stage update  → no feedthrough,  O(dt⁴)
+Forward Euler   : Simple, unstable for large timesteps
+Backward Euler  : More stable than Forward Euler
+Trapezoidal     : Better accuracy than backward, still stable
+RK4             : High accuracy, best for accurate simulation
 """
 
 
@@ -316,127 +318,115 @@ class SolverStrategy(ABC):
     def step(
         self,
         deriv_fn: DerivFn,
-        q: float,
-        y: float,
+        feedback_state: float,
+        filtered_output: float,
         time_difference: float,
     ) -> tuple[float, float, float, float]:
-        """Advance states (q, y) by one timestep of the abstract method.
+        """Advance the two filter states by one timestep using this solver's method.
 
-        :param DerivFn deriv_fn : callable(q, y) -> (dq_dt, dy_dt)
-            Derivative function provided by the filter.
-        :param float q: current 1st integrator state  (internal)
-        :param float y : current 2nd integrator state  (output port 1)
-        :param float dt : timestep [s]
-
-        :return:
-        q_out  : 1st state to use as output this step
-        y_out  : 2nd state to use as output this step  (port 1)
-        q_next : 1st state to store for the next step
-        y_next : 2nd state to store for the next step
-
+        :param DerivFn deriv_fn: Derivative function (feedback_state, filtered_output) -> (derivatives).
+        :param float feedback_state: Current intermediate feedback state.
+        :param float filtered_output: Current filtered output state.
+        :param float time_difference: Timestep duration [s].
+        :return: Tuple (q_out, y_out, q_next, y_next) with output values and next state values.
         :rtype: tuple[float, float, float, float]
-
         """
         ...
 
     def __repr__(self) -> str:
-        """Return the class name for easy identification in logs and debugging."""
+        """Get the solver name for logging and debugging.
+
+        :return: Class name representing the solver method.
+        :rtype: str
+        """
         return self.__class__.__name__
 
 
 class ForwardEulerSolver(SolverStrategy):
-    """Forward Euler (Forward Rectangular) integration.
+    """Simple forward Euler numerical integration method.
 
-    Maps to: Simulink discrete integrator — 'Forward Euler' method.
-    Approximation: 1/s ≈ T/(z-1)
-
-    Rule per integrator block:
-        y(k)   = x(k)               ← output is the state BEFORE the update
-        x(k+1) = x(k) + dt * u(k)  ← state advances AFTER output is read
+    Updates: new_state = old_state + dt * derivative
+    Output is the old state (before update), so no feedthrough.
 
     Properties:
-        - No feedthrough: output does not depend on current input u(k).
-        - 1st-order accurate: error ~ O(dt).
-        - 1 derivative evaluation per step — simplest and cheapest.
-        - Can become unstable if dt is too large relative to system bandwidth.
+        - Simplest method, one derivative evaluation per step.
+        - 1st-order accurate: error proportional to dt.
+        - Can be unstable if timestep is too large.
+        - Good for prototyping and simple systems.
     """
 
     def step(
         self,
         deriv_fn: DerivFn,
-        q: float,
-        y: float,
+        feedback_state: float,
+        filtered_output: float,
         time_difference: float,
     ) -> tuple[float, float, float, float]:
-        """Advance states (q, y) by one timestep of the forward euler method.
+        """Advance states by one timestep using Forward Euler method.
 
-        :param DerivFn deriv_fn : callable(q, y) -> (dq_dt, dy_dt)
-            Derivative function provided by the filter.
-        :param float q: current 1st integrator state  (internal)
-        :param float y : current 2nd integrator state  (output port 1)
-        :param float dt : timestep [s]
+        Output uses old state values; new states are computed for next step.
 
-        :return:
-        q_out  : 1st state to use as output this step
-        y_out  : 2nd state to use as output this step  (port 1)
-        q_next : 1st state to store for the next step
-        y_next : 2nd state to store for the next step
-
+        :param DerivFn deriv_fn: Derivative function for the filter.
+        :param float feedback_state: Current feedback state.
+        :param float filtered_output: Current filtered output state.
+        :param float time_difference: Timestep [s].
+        :return: Tuple (q_out, y_out, q_next, y_next).
+        :rtype: tuple[float, float, float, float]
         """
-        dq_dt, dy_dt = deriv_fn(q, y)  # slope at current states
+        dq_dt, dy_dt = deriv_fn(
+            feedback_state, filtered_output
+        )  # slope at current states
 
-        q_out = q  # output = state BEFORE update
-        y_out = y
+        q_out = feedback_state  # output = state BEFORE update
+        y_out = filtered_output
 
-        q_next = q + time_difference * dq_dt  # state advances after output is read
-        y_next = y + time_difference * dy_dt
+        q_next = (
+            feedback_state + time_difference * dq_dt
+        )  # state advances after output is read
+        y_next = filtered_output + time_difference * dy_dt
 
         return q_out, y_out, q_next, y_next
 
 
 class BackwardEulerSolver(SolverStrategy):
-    """Backward Euler (Backward Rectangular) integration.
+    """Backward Euler numerical integration method.
 
-    Maps to: Simulink discrete integrator — 'Backward Euler' method.
-    Approximation: 1/s ≈ T*z/(z-1)
-
-    Rule per integrator block:
-        y(k)   = x(k) + dt * u(k)  ← output INCLUDES current input (feedthrough)
-        x(k+1) = y(k)              ← next state equals the output
+    Updates: new_state = old_state + dt * derivative
+    Output is the new state (after update), so there is feedthrough.
 
     Properties:
-        - Feedthrough: current input u(k) directly affects output y(k).
-        - 1st-order accurate: error ~ O(dt), same order as Forward Euler.
-        - A-stable: more stable than Forward Euler for stiff systems.
-        - 1 derivative evaluation per step.
+        - More stable than Forward Euler for stiff systems.
+        - 1st-order accurate: error proportional to dt.
+        - One derivative evaluation per step.
+        - Better stability for larger timesteps.
     """
 
     def step(
         self,
         deriv_fn: DerivFn,
-        q: float,
-        y: float,
+        feedback_state: float,
+        filtered_output: float,
         time_difference: float,
     ) -> tuple[float, float, float, float]:
-        """Advance states (q, y) by one timestep of the backward euler method.
+        """Advance states by one timestep using Backward Euler method.
 
-        :param DerivFn deriv_fn : callable(q, y) -> (dq_dt, dy_dt)
-            Derivative function provided by the filter.
-        :param float q: current 1st integrator state
-        :param float y : current 2nd integrator state
-        :param float dt : timestep [s]
+        Output uses new state values (computed for this step).
 
-        :return:
-        q_out  : 1st state to use as output this step
-        y_out  : 2nd state to use as output this step  (port 1)
-        q_next : 1st state to store for the next step
-        y_next : 2nd state to store for the next step
-
+        :param DerivFn deriv_fn: Derivative function for the filter.
+        :param float feedback_state: Current feedback state.
+        :param float filtered_output: Current filtered output state.
+        :param float time_difference: Timestep [s].
+        :return: Tuple (q_out, y_out, q_next, y_next).
+        :rtype: tuple[float, float, float, float]
         """
-        dq_dt, dy_dt = deriv_fn(q, y)  # slope at current states
+        dq_dt, dy_dt = deriv_fn(
+            feedback_state, filtered_output
+        )  # slope at current states
 
-        q_out = q + time_difference * dq_dt  # output = state + dt*u (feedthrough)
-        y_out = y + time_difference * dy_dt
+        q_out = (
+            feedback_state + time_difference * dq_dt
+        )  # output = state + dt*u (feedthrough)
+        y_out = filtered_output + time_difference * dy_dt
 
         q_next = q_out  # next state carries the updated value
         y_next = y_out
@@ -445,9 +435,8 @@ class BackwardEulerSolver(SolverStrategy):
 
 
 class TrapezoidalSolver(SolverStrategy):
-    """Trapezoidal (Tustin / Bilinear) integration.
+    """Trapezoidal (Tustin / Bilinear) discrete integration.
 
-    Maps to: Simulink discrete integrator — 'Trapezoidal' method.
     Approximation: 1/s ≈ T/2 * (z+1)/(z-1)
 
     Rule per integrator block:
@@ -456,38 +445,36 @@ class TrapezoidalSolver(SolverStrategy):
                = x(k) + dt  * u(k)     ← equivalent to a full Forward Euler state step
 
     Properties:
-        - Feedthrough: current input affects output.
-        - 2nd-order accurate: error ~ O(dt²) — best of the three discrete methods.
-        - A-stable: suitable for stiff systems.
-        - 1 derivative evaluation per step.
+        - 2nd-order accurate: better than Forward or Backward Euler.
+        - Stable for larger timesteps.
+        - One derivative evaluation per step.
+        - Good balance between accuracy and simplicity.
     """
 
     def step(
         self,
         deriv_fn: DerivFn,
-        q: float,
-        y: float,
+        feedback_state: float,
+        filtered_output: float,
         time_difference: float,
     ) -> tuple[float, float, float, float]:
-        """Advance states (q, y) by one timestep of the trapezoidal method.
+        """Advance states by one timestep using Trapezoidal method.
 
-        :param DerivFn deriv_fn : callable(q, y) -> (dq_dt, dy_dt)
-            Derivative function provided by the filter.
-        :param float q: current 1st integrator state
-        :param float y : current 2nd integrator state
-        :param float dt : timestep [s]
+        Output and next states are computed for better accuracy.
 
-        :return:
-        q_out  : 1st state to use as output this step
-        y_out  : 2nd state to use as output this step
-        q_next : 1st state to store for the next step
-        y_next : 2nd state to store for the next step
-
+        :param DerivFn deriv_fn: Derivative function for the filter.
+        :param float feedback_state: Current feedback state.
+        :param float filtered_output: Current filtered output state.
+        :param float time_difference: Timestep [s].
+        :return: Tuple (q_out, y_out, q_next, y_next).
+        :rtype: tuple[float, float, float, float]
         """
-        dq_dt, dy_dt = deriv_fn(q, y)  # slope at current states
+        dq_dt, dy_dt = deriv_fn(
+            feedback_state, filtered_output
+        )  # slope at current states
 
-        q_out = q + (time_difference / 2.0) * dq_dt  # output = midpoint
-        y_out = y + (time_difference / 2.0) * dy_dt
+        q_out = feedback_state + (time_difference / 2.0) * dq_dt  # output = midpoint
+        y_out = filtered_output + (time_difference / 2.0) * dy_dt
 
         q_next = q_out + (time_difference / 2.0) * dq_dt  # = q + dt * dq_dt
         y_next = y_out + (time_difference / 2.0) * dy_dt  # = y + dt * dy_dt
@@ -496,84 +483,77 @@ class TrapezoidalSolver(SolverStrategy):
 
 
 class RK4Solver(SolverStrategy):
-    """Runge-Kutta 4th Order integration.
+    """Runge-Kutta 4th order integration method.
 
-    Maps to: Simulink continuous integrator blocks + ode4 fixed-step solver.
-    Use this when the Simulink integrator dialog reads:
-        'Continuous-time integration of the input signal.'
-
-    Algorithm — 4 slope evaluations, then a weighted average:
-        k1 = deriv(q,              y             )        slope at start
-        k2 = deriv(q + dt/2*k1_q, y + dt/2*k1_y )        midpoint via k1
-        k3 = deriv(q + dt/2*k2_q, y + dt/2*k2_y )        midpoint via k2 (better)
-        k4 = deriv(q + dt  *k3_q, y + dt  *k3_y )        endpoint via k3
-
-        q_next = q + dt/6 * (k1_q + 2*k2_q + 2*k3_q + k4_q)
-        y_next = y + dt/6 * (k1_y + 2*k2_y + 2*k3_y + k4_y)
-
-    Midpoint stages are weighted x2 because they capture more of the curve's
-    shape across the full interval than the single endpoint stage.
+    Uses 4 derivative samples per step for high accuracy.
+    Approximates the solution curve by evaluating the derivative at
+    multiple points and taking a weighted average.
 
     Properties:
-        - No feedthrough: output = updated state.
-        - 4th-order accurate: error ~ O(dt⁴).
-        - 4 derivative evaluations per step (negligible cost in practice).
-        - Faithful representation of a Simulink continuous-time model.
+        - Highest accuracy: error proportional to dt⁴.
+        - Best for accurate continuous-time simulation.
+        - Four derivative evaluations per step.
+        - Very stable across a wide range of timesteps.
+        - Matches Simulink's continuous-time integrators.
     """
 
     def step(
         self,
         deriv_fn: DerivFn,
-        q: float,
-        y: float,
+        feedback_state: float,
+        filtered_output: float,
         time_difference: float,
     ) -> tuple[float, float, float, float]:
-        """Advance states (q, y) by one timestep of the RK4 method.
+        """Advance states by one timestep using RK4 method.
 
-        :param DerivFn deriv_fn : callable(q, y) -> (dq_dt, dy_dt)
-            Derivative function provided by the filter.
-        :param float q: current 1st integrator state  (internal)
-        :param float y : current 2nd integrator state  (output port 1)
-        :param float dt : timestep [s]
+        Uses four derivative evaluations at different points for high accuracy.
 
-        :return:
-        q_out  : 1st state to use as output this step
-        y_out  : 2nd state to use as output this step  (port 1)
-        q_next : 1st state to store for the next step
-        y_next : 2nd state to store for the next step
-
+        :param DerivFn deriv_fn: Derivative function for the filter.
+        :param float feedback_state: Current feedback state.
+        :param float filtered_output: Current filtered output state.
+        :param float time_difference: Timestep [s].
+        :return: Tuple (q_out, y_out, q_next, y_next).
+        :rtype: tuple[float, float, float, float]
         """
-        # Stage 1 — slope at start
-        k1_q, k1_y = deriv_fn(q, y)
+        # Stage 1: derivative at current state
+        k1_q, k1_y = deriv_fn(feedback_state, filtered_output)
 
-        # Stage 2 — slope at midpoint using k1
+        # Stage 2: derivative at midpoint using k1
         k2_q, k2_y = deriv_fn(
-            q + 0.5 * time_difference * k1_q, y + 0.5 * time_difference * k1_y
+            feedback_state + 0.5 * time_difference * k1_q,
+            filtered_output + 0.5 * time_difference * k1_y,
         )
 
-        # Stage 3 — slope at midpoint using k2 (refined estimate)
+        # Stage 3: derivative at midpoint using k2 (refined)
         k3_q, k3_y = deriv_fn(
-            q + 0.5 * time_difference * k2_q, y + 0.5 * time_difference * k2_y
+            feedback_state + 0.5 * time_difference * k2_q,
+            filtered_output + 0.5 * time_difference * k2_y,
         )
 
-        # Stage 4 — slope at endpoint using k3
-        k4_q, k4_y = deriv_fn(q + time_difference * k3_q, y + time_difference * k3_y)
+        # Stage 4: derivative at estimated next state
+        k4_q, k4_y = deriv_fn(
+            feedback_state + time_difference * k3_q,
+            filtered_output + time_difference * k3_y,
+        )
 
-        # Weighted average — midpoint stages count double
-        q_next = q + (time_difference / 6.0) * (k1_q + 2 * k2_q + 2 * k3_q + k4_q)
-        y_next = y + (time_difference / 6.0) * (k1_y + 2 * k2_y + 2 * k3_y + k4_y)
+        # Weighted combination: midpoint estimates weighted twice
+        q_next = feedback_state + (time_difference / 6.0) * (
+            k1_q + 2 * k2_q + 2 * k3_q + k4_q
+        )
+        y_next = filtered_output + (time_difference / 6.0) * (
+            k1_y + 2 * k2_y + 2 * k3_y + k4_y
+        )
 
-        # No feedthrough: output = updated state
         return q_next, y_next, q_next, y_next
 
 
 def make_solver(solver_type: SolverType) -> SolverStrategy:
-    """Return the correct SolverStrategy for a given SolverType enum value.
+    """Create a solver instance for the specified integration method.
 
-    Example:
-        from definitions import SolverType
-        solver = make_solver(SolverType.RK4)
-
+    :param SolverType solver_type: The desired numerical integration method.
+    :return: An instance of the corresponding solver strategy.
+    :rtype: SolverStrategy
+    :raises ValueError: If an unknown solver type is requested.
     """
     _map = {
         SolverType.FORWARD_EULER: ForwardEulerSolver,

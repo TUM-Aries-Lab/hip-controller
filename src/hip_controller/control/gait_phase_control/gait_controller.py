@@ -50,8 +50,7 @@ class GaitController:
     def update_and_compute(self, curr_signal: SensorSignal) -> float:
         """Update controller state with latest sensor data.
 
-        :param SensorSignal curr_signal: Current hip joint angle in radians and current hip joint angular velocity in radians per second.
-        :param float timestamp:  Current timestamp in seconds.
+        :param SensorSignal curr_signal: Current timestamp in seconds, current hip joint angle in radians and current hip joint angular velocity in radians per second.
 
         :return: Gait phase of the hip joint in the sagittal plane.
         :rtype: float
@@ -61,7 +60,7 @@ class GaitController:
         self.curr_signal = curr_signal
 
         if self.prev_signal.timestamp is None or self.curr_signal.timestamp is None:
-            return 0
+            return 0.0
 
         # Updates the motion state machine to detect extrema transitions
         state = self.state_machine.update_motion_state(
@@ -94,7 +93,7 @@ class GaitController:
             self.controller_initialized = True
 
         if not self.controller_initialized:
-            return 0
+            return 0.0
         else:
             return self.calculate_gait_phase()
 
