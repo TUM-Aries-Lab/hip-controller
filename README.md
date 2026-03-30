@@ -27,12 +27,11 @@ uv add git+https://github.com/TUM-Aries-Lab/hip-controller.git@<specific-tag>  #
 
 
 ## Publishing
-It's super easy to publish your own packages on PyPI. To build and publish this package run:
+It's super easy to publish your own packages on PyPI. To build and publish this package, run:
+1. Update the version number in pyproject.toml and imu_module/__init__.py
+2. Commit your changes and add a `git tag <new.version.number>`
+3. Push the tag `git push --tag`
 
-```bash
-uv build
-uv publish  # make sure your version in pyproject.toml is updated
-```
 The package can then be found at: https://pypi.org/project/hip-controller
 
 ## Module Usage
