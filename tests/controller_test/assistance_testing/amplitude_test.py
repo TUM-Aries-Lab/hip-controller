@@ -4,7 +4,7 @@ from math import isclose
 
 from pandas import read_csv
 
-from hip_controller.control.assistance_control.amplitude_modulation import (
+from hip_controller.control.motor_reference_control.amplitude_modulation import (
     AmplitudeModulation,
 )
 from hip_controller.definitions import SIGMOID_POWER, SensorSignal

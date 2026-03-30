@@ -2,13 +2,13 @@
 
 from loguru import logger
 
-from hip_controller.control.assistance_control.amplitude_modulation import (
+from hip_controller.control.gait_phase_control.gait_controller import GaitController
+from hip_controller.control.motor_reference_control.amplitude_modulation import (
     AmplitudeModulation,
 )
-from hip_controller.control.assistance_control.assistance_controller import (
+from hip_controller.control.motor_reference_control.motor_reference_controller import (
     MotionReferenceController,
 )
-from hip_controller.control.gait_phase_control.gait_controller import GaitController
 from hip_controller.control.signal_processing.sensor_preprocessor import (
     SensorPreprocessor,
 )
