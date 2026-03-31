@@ -67,3 +67,10 @@ class SensorPreprocessor:
             angle_rad=angle_out,
             velocity_rad_per_sec=velocity_out,
         )
+
+    def reset(self) -> None:
+        """Reset the Signal Preprocessor if exosuit is disconnected or timeout occured.
+
+        :return: None
+        """
+        self._prev_timestamp = None

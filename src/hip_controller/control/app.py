@@ -71,12 +71,12 @@ class WalkOnController:
             self.plotter = PortraitWindow(left=reverse)
             self.plotter.show()
 
-        self.high_level_controller = GaitController()
         self.pre_processor = SensorPreprocessor(PreprocessorConfig())
+        self.gait_controller = GaitController()
 
         # due to different wire settings one of them might need to be reversed - mirrored with -1
         self.amplitude_modulation = AmplitudeModulation(reverse=reverse)
-        self.mid_level_controller = MotionReferenceController()
+        self.motor_reference_controller = MotionReferenceController()
 
     def step(self, curr_signal: SensorSignal) -> float:
         """Step the controller ahead.
@@ -93,7 +93,7 @@ class WalkOnController:
             filtered_signal = self.pre_processor.filter(raw_signal=curr_signal)
 
         # Gait phase calculation
-        gait_phase = self.high_level_controller.update_and_compute(
+        gait_phase = self.gait_controller.update_and_compute(
             curr_signal=filtered_signal
         )
 
@@ -101,13 +101,13 @@ class WalkOnController:
         amplitude = self.amplitude_modulation.compute_amplitude(signal=curr_signal)
 
         # Compute motor command velocity
-        motor_command = self.mid_level_controller.compute_motor_command(
+        motor_command = self.motor_reference_controller.compute_motor_command(
             gait_phase=gait_phase, amplitude=amplitude
         )
 
         # Plotting
         if self.plot and curr_signal.timestamp is not None:
-            steady = self.high_level_controller.get_signal_steady_state()
+            steady = self.gait_controller.get_signal_steady_state()
             self.plotter.update_plots(
                 timestamp=curr_signal.timestamp,
                 reference_motor=motor_command,
@@ -115,3 +115,10 @@ class WalkOnController:
             )
 
         return motor_command
+
+    def reset(self) -> None:
+        """Reset the WalkOnController if exosuit is disconnected or timeout occured.
+
+        :return: None
+        """
+        self.pre_processor.reset()
