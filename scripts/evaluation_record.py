@@ -19,9 +19,10 @@ from hip_controller.definitions import SensorSignal
 from loguru import logger
 # ───────────────────────────────────────────────────────────────────────────
 
-RAW_INPUT_ROOT  = Path("/home/minz/thesisproject/hip-controller/data/evaluation_raw_data")
-ZWISCHEN_ROOT = Path("/home/minz/thesisproject/hip-controller/scripts/evaluation_input_angles")
-OUTPUT_ROOT = Path("/home/minz/thesisproject/hip-controller/scripts/evaluation_output")
+CONTROLLER_ROOT = Path(__file__).resolve().parents[1]
+RAW_INPUT_ROOT  = CONTROLLER_ROOT / Path("data/evaluation_raw_data")
+ZWISCHEN_ROOT = CONTROLLER_ROOT / Path("scripts/evaluation_input_angles")
+OUTPUT_ROOT = CONTROLLER_ROOT / Path("scripts/evaluation_output")
 
 KEEP_COLS   = ["time", "hip_flexion_r", "hip_flexion_l"]  # degrees
 RAW_HZ      = 200
