@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from hip_controller.control.signal_processing.notch_filter import NotchFilter
-from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+from hip_controller.definitions import LowPassFilterConfig, NotchConfig
+from hip_controller.filters.notch_filter import NotchFilter
+from hip_controller.filters.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
-from hip_controller.definitions import LowPassFilterConfig, NotchConfig
 
 
 class DriftRemovalStrategy(ABC):

@@ -293,11 +293,262 @@ The following tree shows the important permanent files. Run `make tree` to updat
 <!-- TREE-START -->
 ```
 ├── data
+│   ├── evaluation_data
+│   │   ├── incline_walk
+│   │   │   ├── incline_walk_10
+│   │   │   │   ├── AB01_incline_walk_2_down10_angle.csv
+│   │   │   │   ├── AB01_incline_walk_2_up10_angle.csv
+│   │   │   │   ├── AB02_incline_walk_2_down10_angle.csv
+│   │   │   │   ├── AB02_incline_walk_2_up10_angle.csv
+│   │   │   │   ├── AB03_incline_walk_2_down10_angle.csv
+│   │   │   │   ├── AB03_incline_walk_2_up10_angle.csv
+│   │   │   │   ├── AB05_incline_walk_2_down10_angle.csv
+│   │   │   │   ├── AB05_incline_walk_2_up10_angle.csv
+│   │   │   │   ├── AB06_incline_walk_2_down10_angle.csv
+│   │   │   │   ├── AB06_incline_walk_2_up10_angle.csv
+│   │   │   │   ├── AB07_incline_walk_2_angle.csv
+│   │   │   │   ├── AB08_incline_walk_2_down10_angle.csv
+│   │   │   │   ├── AB08_incline_walk_2_up10_angle.csv
+│   │   │   │   ├── AB09_incline_walk_2_down10_angle.csv
+│   │   │   │   ├── AB09_incline_walk_2_up10_angle.csv
+│   │   │   │   ├── AB10_incline_walk_2_down10_angle.csv
+│   │   │   │   ├── AB10_incline_walk_2_up10_angle.csv
+│   │   │   │   ├── AB11_incline_walk_2_down10_angle.csv
+│   │   │   │   ├── AB11_incline_walk_2_up10_angle.csv
+│   │   │   │   ├── AB12_incline_walk_2_down10_angle.csv
+│   │   │   │   ├── AB12_incline_walk_2_up10_angle.csv
+│   │   │   │   ├── AB13_incline_walk_2_down10_angle.csv
+│   │   │   │   └── AB13_incline_walk_2_up10_angle.csv
+│   │   │   └── incline_walk_5
+│   │   │       ├── AB01_incline_walk_1_down5_angle.csv
+│   │   │       ├── AB01_incline_walk_1_up5_angle.csv
+│   │   │       ├── AB02_incline_walk_1_down5_angle.csv
+│   │   │       ├── AB02_incline_walk_1_up5_angle.csv
+│   │   │       ├── AB03_incline_walk_1_down5_angle.csv
+│   │   │       ├── AB03_incline_walk_1_up5_angle.csv
+│   │   │       ├── AB05_incline_walk_1_down5_angle.csv
+│   │   │       ├── AB05_incline_walk_1_up5_angle.csv
+│   │   │       ├── AB06_incline_walk_1_down5_angle.csv
+│   │   │       ├── AB06_incline_walk_1_up5_angle.csv
+│   │   │       ├── AB07_incline_walk_1_angle.csv
+│   │   │       ├── AB08_incline_walk_1_down5_angle.csv
+│   │   │       ├── AB08_incline_walk_1_up5_angle.csv
+│   │   │       ├── AB09_incline_walk_1_down5_angle.csv
+│   │   │       ├── AB09_incline_walk_1_up5_angle.csv
+│   │   │       ├── AB10_incline_walk_1_down5_angle.csv
+│   │   │       ├── AB10_incline_walk_1_up5_angle.csv
+│   │   │       ├── AB11_incline_walk_1_down5_angle.csv
+│   │   │       ├── AB11_incline_walk_1_up5_angle.csv
+│   │   │       ├── AB12_incline_walk_1_down5_angle.csv
+│   │   │       ├── AB12_incline_walk_1_up5_angle.csv
+│   │   │       ├── AB13_incline_walk_1_down5_angle.csv
+│   │   │       └── AB13_incline_walk_1_up5_angle.csv
+│   │   ├── normal_walk
+│   │   │   ├── normal_walk_0_6
+│   │   │   │   ├── AB01_normal_walk_1_0-6_angle.csv
+│   │   │   │   ├── AB02_normal_walk_1_0-6_angle.csv
+│   │   │   │   ├── AB03_normal_walk_1_0-6_angle.csv
+│   │   │   │   ├── AB05_normal_walk_1_0-6_angle.csv
+│   │   │   │   ├── AB06_normal_walk_1_0-6_angle.csv
+│   │   │   │   ├── AB08_normal_walk_1_0-6_angle.csv
+│   │   │   │   ├── AB09_normal_walk_1_0-6_angle.csv
+│   │   │   │   ├── AB10_normal_walk_1_0-6_angle.csv
+│   │   │   │   ├── AB11_normal_walk_1_0-6_angle.csv
+│   │   │   │   ├── AB12_normal_walk_1_0-6_angle.csv
+│   │   │   │   └── AB13_normal_walk_1_0-6_angle.csv
+│   │   │   ├── normal_walk_1_2
+│   │   │   │   ├── AB01_normal_walk_1_1-2_angle.csv
+│   │   │   │   ├── AB02_normal_walk_1_1-2_angle.csv
+│   │   │   │   ├── AB03_normal_walk_1_1-2_angle.csv
+│   │   │   │   ├── AB05_normal_walk_1_1-2_angle.csv
+│   │   │   │   ├── AB06_normal_walk_1_1-2_angle.csv
+│   │   │   │   ├── AB08_normal_walk_1_1-2_angle.csv
+│   │   │   │   ├── AB09_normal_walk_1_1-2_angle.csv
+│   │   │   │   ├── AB10_normal_walk_1_1-2_angle.csv
+│   │   │   │   ├── AB11_normal_walk_1_1-2_angle.csv
+│   │   │   │   ├── AB12_normal_walk_1_1-2_angle.csv
+│   │   │   │   └── AB13_normal_walk_1_1-2_angle.csv
+│   │   │   └── normal_walk_1_8
+│   │   │       ├── AB01_normal_walk_1_1-8_angle.csv
+│   │   │       ├── AB02_normal_walk_1_1-8_angle.csv
+│   │   │       ├── AB03_normal_walk_1_1-8_angle.csv
+│   │   │       ├── AB05_normal_walk_1_1-8_angle.csv
+│   │   │       ├── AB06_normal_walk_1_1-8_angle.csv
+│   │   │       ├── AB08_normal_walk_1_1-8_angle.csv
+│   │   │       ├── AB09_normal_walk_1_1-8_angle.csv
+│   │   │       ├── AB10_normal_walk_1_1-8_angle.csv
+│   │   │       ├── AB11_normal_walk_1_1-8_angle.csv
+│   │   │       ├── AB12_normal_walk_1_1-8_angle.csv
+│   │   │       └── AB13_normal_walk_1_1-8_angle.csv
+│   │   ├── stairs
+│   │   │   ├── AB01
+│   │   │   │   ├── AB01_stairs_1_10_down_angle.csv
+│   │   │   │   ├── AB01_stairs_1_1_up_angle.csv
+│   │   │   │   ├── AB01_stairs_1_2_down_angle.csv
+│   │   │   │   ├── AB01_stairs_1_3_up_angle.csv
+│   │   │   │   ├── AB01_stairs_1_4_down_angle.csv
+│   │   │   │   ├── AB01_stairs_1_5_up_angle.csv
+│   │   │   │   ├── AB01_stairs_1_6_down_angle.csv
+│   │   │   │   ├── AB01_stairs_1_7_up_angle.csv
+│   │   │   │   ├── AB01_stairs_1_8_down_angle.csv
+│   │   │   │   └── AB01_stairs_1_9_up_angle.csv
+│   │   │   ├── AB02
+│   │   │   │   ├── AB02_stairs_1_10_down_angle.csv
+│   │   │   │   ├── AB02_stairs_1_11_up_angle.csv
+│   │   │   │   ├── AB02_stairs_1_12_down_angle.csv
+│   │   │   │   ├── AB02_stairs_1_1_up_angle.csv
+│   │   │   │   ├── AB02_stairs_1_2_down_angle.csv
+│   │   │   │   ├── AB02_stairs_1_3_up_angle.csv
+│   │   │   │   ├── AB02_stairs_1_4_down_angle.csv
+│   │   │   │   ├── AB02_stairs_1_5_up_angle.csv
+│   │   │   │   ├── AB02_stairs_1_6_down_angle.csv
+│   │   │   │   ├── AB02_stairs_1_7_up_angle.csv
+│   │   │   │   ├── AB02_stairs_1_8_down_angle.csv
+│   │   │   │   └── AB02_stairs_1_9_up_angle.csv
+│   │   │   ├── AB03
+│   │   │   │   ├── AB03_stairs_1_10_down_angle.csv
+│   │   │   │   ├── AB03_stairs_1_1_up_angle.csv
+│   │   │   │   ├── AB03_stairs_1_2_down_angle.csv
+│   │   │   │   ├── AB03_stairs_1_3_up_angle.csv
+│   │   │   │   ├── AB03_stairs_1_4_down_angle.csv
+│   │   │   │   ├── AB03_stairs_1_5_up_angle.csv
+│   │   │   │   ├── AB03_stairs_1_6_down_angle.csv
+│   │   │   │   ├── AB03_stairs_1_7_up_angle.csv
+│   │   │   │   ├── AB03_stairs_1_8_down_angle.csv
+│   │   │   │   └── AB03_stairs_1_9_up_angle.csv
+│   │   │   ├── AB05
+│   │   │   │   ├── AB05_stairs_1_10_down_angle.csv
+│   │   │   │   ├── AB05_stairs_1_1_up_angle.csv
+│   │   │   │   ├── AB05_stairs_1_2_down_angle.csv
+│   │   │   │   ├── AB05_stairs_1_3_up_angle.csv
+│   │   │   │   ├── AB05_stairs_1_4_down_angle.csv
+│   │   │   │   ├── AB05_stairs_1_5_up_angle.csv
+│   │   │   │   ├── AB05_stairs_1_6_down_angle.csv
+│   │   │   │   ├── AB05_stairs_1_7_up_angle.csv
+│   │   │   │   ├── AB05_stairs_1_8_down_angle.csv
+│   │   │   │   └── AB05_stairs_1_9_up_angle.csv
+│   │   │   ├── AB06
+│   │   │   │   ├── AB06_stairs_1_10_down_angle.csv
+│   │   │   │   ├── AB06_stairs_1_1_up_angle.csv
+│   │   │   │   ├── AB06_stairs_1_2_down_angle.csv
+│   │   │   │   ├── AB06_stairs_1_3_up_angle.csv
+│   │   │   │   ├── AB06_stairs_1_4_down_angle.csv
+│   │   │   │   ├── AB06_stairs_1_5_up_angle.csv
+│   │   │   │   ├── AB06_stairs_1_6_down_angle.csv
+│   │   │   │   ├── AB06_stairs_1_7_up_angle.csv
+│   │   │   │   ├── AB06_stairs_1_8_down_angle.csv
+│   │   │   │   └── AB06_stairs_1_9_up_angle.csv
+│   │   │   ├── AB07
+│   │   │   │   ├── AB07_stairs_1_10_down_angle.csv
+│   │   │   │   ├── AB07_stairs_1_1_up_angle.csv
+│   │   │   │   ├── AB07_stairs_1_2_down_angle.csv
+│   │   │   │   ├── AB07_stairs_1_3_up_angle.csv
+│   │   │   │   ├── AB07_stairs_1_4_down_angle.csv
+│   │   │   │   ├── AB07_stairs_1_5_up_angle.csv
+│   │   │   │   ├── AB07_stairs_1_6_down_angle.csv
+│   │   │   │   ├── AB07_stairs_1_7_up_angle.csv
+│   │   │   │   ├── AB07_stairs_1_8_down_angle.csv
+│   │   │   │   └── AB07_stairs_1_9_up_angle.csv
+│   │   │   ├── AB08
+│   │   │   │   ├── AB08_stairs_1_10_down_angle.csv
+│   │   │   │   ├── AB08_stairs_1_1_up_angle.csv
+│   │   │   │   ├── AB08_stairs_1_2_down_angle.csv
+│   │   │   │   ├── AB08_stairs_1_3_up_angle.csv
+│   │   │   │   ├── AB08_stairs_1_4_down_angle.csv
+│   │   │   │   ├── AB08_stairs_1_5_up_angle.csv
+│   │   │   │   ├── AB08_stairs_1_6_down_angle.csv
+│   │   │   │   ├── AB08_stairs_1_7_up_angle.csv
+│   │   │   │   ├── AB08_stairs_1_8_down_angle.csv
+│   │   │   │   └── AB08_stairs_1_9_up_angle.csv
+│   │   │   ├── AB09
+│   │   │   │   ├── AB09_stairs_1_10_down_angle.csv
+│   │   │   │   ├── AB09_stairs_1_1_up_angle.csv
+│   │   │   │   ├── AB09_stairs_1_2_down_angle.csv
+│   │   │   │   ├── AB09_stairs_1_3_up_angle.csv
+│   │   │   │   ├── AB09_stairs_1_4_down_angle.csv
+│   │   │   │   ├── AB09_stairs_1_5_up_angle.csv
+│   │   │   │   ├── AB09_stairs_1_6_down_angle.csv
+│   │   │   │   ├── AB09_stairs_1_7_up_angle.csv
+│   │   │   │   ├── AB09_stairs_1_8_down_angle.csv
+│   │   │   │   └── AB09_stairs_1_9_up_angle.csv
+│   │   │   ├── AB10
+│   │   │   │   ├── AB10_stairs_1_10_down_angle.csv
+│   │   │   │   ├── AB10_stairs_1_1_up_angle.csv
+│   │   │   │   ├── AB10_stairs_1_2_down_angle.csv
+│   │   │   │   ├── AB10_stairs_1_3_up_angle.csv
+│   │   │   │   ├── AB10_stairs_1_4_down_angle.csv
+│   │   │   │   ├── AB10_stairs_1_5_up_angle.csv
+│   │   │   │   ├── AB10_stairs_1_6_down_angle.csv
+│   │   │   │   ├── AB10_stairs_1_7_up_angle.csv
+│   │   │   │   ├── AB10_stairs_1_8_down_angle.csv
+│   │   │   │   └── AB10_stairs_1_9_up_angle.csv
+│   │   │   ├── AB11
+│   │   │   │   ├── AB11_stairs_1_10_down_angle.csv
+│   │   │   │   ├── AB11_stairs_1_1_up_angle.csv
+│   │   │   │   ├── AB11_stairs_1_2_down_angle.csv
+│   │   │   │   ├── AB11_stairs_1_3_up_angle.csv
+│   │   │   │   ├── AB11_stairs_1_4_down_angle.csv
+│   │   │   │   ├── AB11_stairs_1_5_up_angle.csv
+│   │   │   │   ├── AB11_stairs_1_6_down_angle.csv
+│   │   │   │   ├── AB11_stairs_1_7_up_angle.csv
+│   │   │   │   ├── AB11_stairs_1_8_down_angle.csv
+│   │   │   │   └── AB11_stairs_1_9_up_angle.csv
+│   │   │   ├── AB12
+│   │   │   │   ├── AB12_stairs_1_10_down_angle.csv
+│   │   │   │   ├── AB12_stairs_1_11_up_angle.csv
+│   │   │   │   ├── AB12_stairs_1_12_down_angle.csv
+│   │   │   │   ├── AB12_stairs_1_1_up_angle.csv
+│   │   │   │   ├── AB12_stairs_1_2_down_angle.csv
+│   │   │   │   ├── AB12_stairs_1_3_up_angle.csv
+│   │   │   │   ├── AB12_stairs_1_4_down_angle.csv
+│   │   │   │   ├── AB12_stairs_1_5_up_angle.csv
+│   │   │   │   ├── AB12_stairs_1_6_down_angle.csv
+│   │   │   │   ├── AB12_stairs_1_7_up_angle.csv
+│   │   │   │   ├── AB12_stairs_1_8_down_angle.csv
+│   │   │   │   └── AB12_stairs_1_9_up_angle.csv
+│   │   │   └── AB13
+│   │   │       ├── AB13_stairs_1_10_down_angle.csv
+│   │   │       ├── AB13_stairs_1_1_up_angle.csv
+│   │   │       ├── AB13_stairs_1_2_down_angle.csv
+│   │   │       ├── AB13_stairs_1_3_up_angle.csv
+│   │   │       ├── AB13_stairs_1_4_down_angle.csv
+│   │   │       ├── AB13_stairs_1_5_up_angle.csv
+│   │   │       ├── AB13_stairs_1_6_down_angle.csv
+│   │   │       ├── AB13_stairs_1_7_up_angle.csv
+│   │   │       ├── AB13_stairs_1_8_down_angle.csv
+│   │   │       └── AB13_stairs_1_9_up_angle.csv
+│   │   └── turn_and_step
+│   │       ├── turn_left
+│   │       │   ├── AB01_turn_and_step_1_left-turn_angle.csv
+│   │       │   ├── AB02_turn_and_step_1_left-turn_angle.csv
+│   │       │   ├── AB03_turn_and_step_1_left-turn_angle.csv
+│   │       │   ├── AB05_turn_and_step_1_left-turn_angle.csv
+│   │       │   ├── AB06_turn_and_step_1_left-turn_angle.csv
+│   │       │   ├── AB07_turn_and_step_1_left-turn_angle.csv
+│   │       │   ├── AB08_turn_and_step_1_left-turn_angle.csv
+│   │       │   ├── AB09_turn_and_step_1_left-turn_angle.csv
+│   │       │   ├── AB10_turn_and_step_1_left-turn_angle.csv
+│   │       │   ├── AB11_turn_and_step_1_left-turn_angle.csv
+│   │       │   ├── AB12_turn_and_step_1_left-turn_angle.csv
+│   │       │   └── AB13_turn_and_step_1_left-turn_angle.csv
+│   │       └── turn_right
+│   │           ├── AB01_turn_and_step_1_right-turn_angle.csv
+│   │           ├── AB02_turn_and_step_1_right-turn_angle.csv
+│   │           ├── AB03_turn_and_step_1_right-turn_angle.csv
+│   │           ├── AB05_turn_and_step_1_right-turn_angle.csv
+│   │           ├── AB06_turn_and_step_1_right-turn_angle.csv
+│   │           ├── AB07_turn_and_step_1_right-turn_angle.csv
+│   │           ├── AB08_turn_and_step_1_right-turn_angle.csv
+│   │           ├── AB09_turn_and_step_1_right-turn_angle.csv
+│   │           ├── AB10_turn_and_step_1_right-turn_angle.csv
+│   │           ├── AB11_turn_and_step_1_right-turn_angle.csv
+│   │           ├── AB12_turn_and_step_1_right-turn_angle.csv
+│   │           └── AB13_turn_and_step_1_right-turn_angle.csv
 │   ├── logs
 │   ├── recordings
 │   └── sensor_data
-│       ├── arduino.csv
-│       ├── arduino2.csv
+│       ├── arduino2_2026_03_23.csv
+│       ├── arduino_2026_03_23.csv
 │       ├── data_input_2025_12_17.csv
 │       ├── data_input_filtered_2026_01_09.csv
 │       ├── data_kinematics_2026_02_16.csv
@@ -307,18 +558,23 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   ├── Notch_filter_debug.png
 │   ├── UML_hip_controller_2026_03_10.json
 │   └── paper.pdf
+├── scripts
+│   ├── csv_converter.py
+│   ├── live_comparison_plot.py
+│   ├── script.py
+│   └── simulator.py
 ├── src
 │   └── hip_controller
 │       ├── control
-│       │   ├── assistance_control
-│       │   │   ├── amplitude_modulation.py
-│       │   │   ├── assistance_controller.py
-│       │   │   └── pid_controller.py
 │       │   ├── gait_phase_control
 │       │   │   ├── gait_controller.py
 │       │   │   ├── motion_state_machine.py
 │       │   │   ├── steady_state_tracker.py
 │       │   │   └── stride_event_detector.py
+│       │   ├── motor_reference_control
+│       │   │   ├── amplitude_modulation.py
+│       │   │   ├── motor_reference_controller.py
+│       │   │   └── pid_controller.py
 │       │   ├── signal_processing
 │       │   │   ├── discrete_derivative_filter.py
 │       │   │   ├── drift_removal.py
@@ -332,11 +588,8 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   └── app.py
 │       ├── plotter
 │       │   ├── csv_player.py
-│       │   ├── live_comparison_plot.py
-│       │   ├── live_phase_portrait.py
-│       │   └── simulator.py
+│       │   └── live_phase_portrait.py
 │       ├── utils
-│       │   ├── csv_converter.py
 │       │   ├── math_utils.py
 │       │   ├── state_space.py
 │       │   └── utils.py

@@ -4,10 +4,10 @@ from math import isclose
 
 from pandas import read_csv
 
-from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+from hip_controller.definitions import LowPassFilterConfig
+from hip_controller.filters.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
-from hip_controller.definitions import LowPassFilterConfig
 from tests.conftest import (
     DATA_SECOND_ORDER_LOW_PASS_FILTER,
     KinematicsDataColumnName,

@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from hip_controller.control.signal_processing.discrete_derivative_filter import (
+from hip_controller.definitions import LowPassFilterConfig, SogiFllConfig
+from hip_controller.filters.discrete_derivative_filter import (
     DiscreteDerivativeFilter,
 )
-from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+from hip_controller.filters.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
-from hip_controller.control.signal_processing.sogi_fll_filter import SogiFllFilter
-from hip_controller.definitions import LowPassFilterConfig, SogiFllConfig
+from hip_controller.filters.sogi_fll_filter import SogiFllFilter
 
 
 class VelocityEstimationStrategy(ABC):

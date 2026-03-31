@@ -2,10 +2,10 @@
 
 from numpy import clip
 
-from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+from hip_controller.definitions import LowPassFilterConfig, PIDConfig
+from hip_controller.filters.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
-from hip_controller.definitions import LowPassFilterConfig, PIDConfig
 
 
 class PIDController:
