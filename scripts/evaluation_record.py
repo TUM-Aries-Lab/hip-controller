@@ -19,8 +19,9 @@ from hip_controller.definitions import SensorSignal
 from loguru import logger
 # ───────────────────────────────────────────────────────────────────────────
 
-INPUT_ROOT  = Path("/home/minz/thesisproject/hip-controller/data/evaluation_raw_data")
-OUTPUT_ROOT = Path("/home/minz/thesisproject/hip-controller/scripts/evaluation_data")
+RAW_INPUT_ROOT  = Path("/home/minz/thesisproject/hip-controller/data/evaluation_raw_data")
+ZWISCHEN_ROOT = Path("/home/minz/thesisproject/hip-controller/scripts/evaluation_input_angles")
+OUTPUT_ROOT = Path("/home/minz/thesisproject/hip-controller/scripts/evaluation_output")
 
 KEEP_COLS   = ["time", "hip_flexion_r", "hip_flexion_l"]  # degrees
 RAW_HZ      = 200
@@ -47,7 +48,41 @@ def prepare(df: pd.DataFrame) -> pd.DataFrame:
     df = df.iloc[::DOWNSAMPLE].reset_index(drop=True)   # 200 Hz → 100 Hz
     return df
 
+# ---------------------------------------------------------------------------
+# Step 4 – process a single CSV
+# ---------------------------------------------------------------------------
+def process_file(input_path: Path,
+                 output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    df_raw  = load_and_filter(input_path)
+    df_prep = prepare(df_raw)
+
+
+    df_prep.to_csv(output_path, index=False)
+    logger.info(f"  ✓ {input_path.relative_to(RAW_INPUT_ROOT)}  →  {output_path.relative_to(OUTPUT_ROOT)}  ({len(df_prep)} rows)")
+
+# ---------------------------------------------------------------------------
+# Step 5 – discover all CSVs and batch-process
+# ---------------------------------------------------------------------------
+def run_evaluation() -> None:
+    csv_files = sorted(RAW_INPUT_ROOT.rglob("*.csv"))
+    if not csv_files:
+        logger.warning(f"No CSV files found under {RAW_INPUT_ROOT}/")
+        return
+
+    logger.info(f"Found {len(csv_files)} CSV files — processing…\n")
+
+    for input_path in csv_files:
+        # Mirror subfolder structure: evaluation_raw_data/a/b.csv → evaluation_data/a/b.csv
+        relative   = input_path.relative_to(RAW_INPUT_ROOT)
+        output_path = OUTPUT_ROOT / relative
+        try:
+            process_file(input_path, output_path)
+        except Exception as exc:
+            logger.warning(f"  ✗ {input_path.name}: {exc}")
+
+    logger.info(f"\nDone. Results written to {OUTPUT_ROOT}/")
 
 # Step 3 – run controllers row-by-row
 
@@ -97,55 +132,29 @@ def run_controllers(df: pd.DataFrame,
     return pd.DataFrame(records)
 
 
-# ---------------------------------------------------------------------------
-# Step 4 – process a single CSV
-# ---------------------------------------------------------------------------
-def process_file(input_path: Path,
-                 output_path: Path,
-                 ctrl_left: WalkOnController,
-                 ctrl_right: WalkOnController) -> None:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    df_raw  = load_and_filter(input_path)
-    df_prep = prepare(df_raw)
-
-    #df_out  = run_controllers(df_prep, ctrl_left, ctrl_right)
-
-    df_prep.to_csv(output_path, index=False)
-    logger.info(f"  ✓ {input_path.relative_to(INPUT_ROOT)}  →  {output_path.relative_to(OUTPUT_ROOT)}  ({len(df_prep)} rows)")
 
 
-# ---------------------------------------------------------------------------
-# Step 5 – discover all CSVs and batch-process
-# ---------------------------------------------------------------------------
-def run_evaluation(ctrl_left: WalkOnController,
-                   ctrl_right: WalkOnController) -> None:
-    csv_files = sorted(INPUT_ROOT.rglob("*.csv"))
+if __name__ == "__main__":
+
+
+    csv_files = sorted(ZWISCHEN_ROOT.rglob("*.csv"))
     if not csv_files:
-        logger.warning(f"No CSV files found under {INPUT_ROOT}/")
-        return
+        logger.warning(f"No CSV files found under {ZWISCHEN_ROOT}/")
 
     logger.info(f"Found {len(csv_files)} CSV files — processing…\n")
 
     for input_path in csv_files:
+        ctrl_left  = WalkOnController(reverse=True, filtered=False)   # add constructor args as needed
+        ctrl_right = WalkOnController(reverse=True, filtered=False)
         # Mirror subfolder structure: evaluation_raw_data/a/b.csv → evaluation_data/a/b.csv
-        relative   = input_path.relative_to(INPUT_ROOT)
+        relative   = input_path.relative_to(ZWISCHEN_ROOT)
         output_path = OUTPUT_ROOT / relative
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            process_file(input_path, output_path, ctrl_left, ctrl_right)
+            df_out  = run_controllers(pd.read_csv(input_path), ctrl_left, ctrl_right)
+            df_out.to_csv(output_path, index=False)
+
         except Exception as exc:
             logger.warning(f"  ✗ {input_path.name}: {exc}")
 
     logger.info(f"\nDone. Results written to {OUTPUT_ROOT}/")
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    # ── Instantiate your controllers here ───────────────────────────────────
-    controller_left  = WalkOnController(reverse=True, filtered=False)   # add constructor args as needed
-    controller_right = WalkOnController(reverse=True, filtered=False)
-    # ────────────────────────────────────────────────────────────────────────
-
-    run_evaluation(controller_left, controller_right)

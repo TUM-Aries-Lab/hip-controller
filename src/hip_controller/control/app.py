@@ -78,6 +78,8 @@ class WalkOnController:
         self.amplitude_modulation = AmplitudeModulation(reverse=reverse)
         self.motor_reference_controller = MotionReferenceController()
 
+        self._prev_timestamp: float | None = None
+
     def step(self, curr_signal: SensorSignal) -> float:
         """Step the controller ahead.
 
@@ -121,4 +123,5 @@ class WalkOnController:
 
         :return: None
         """
+        # TODO add reset functions for gait controller, motor controller and so on..
         self.pre_processor.reset()

@@ -47,6 +47,7 @@ class SensorPreprocessor:
             return raw_signal
 
         time_difference = raw_signal.timestamp - self._prev_timestamp
+
         if time_difference <= 0.0:
             raise ValueError(f"Non-positive time_difference: {time_difference}")
 
