@@ -380,143 +380,19 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │       ├── AB11_normal_walk_1_1-8_angle.csv
 │   │   │       ├── AB12_normal_walk_1_1-8_angle.csv
 │   │   │       └── AB13_normal_walk_1_1-8_angle.csv
-│   │   ├── stairs
-│   │   │   ├── AB01
-│   │   │   │   ├── AB01_stairs_1_10_down_angle.csv
-│   │   │   │   ├── AB01_stairs_1_1_up_angle.csv
-│   │   │   │   ├── AB01_stairs_1_2_down_angle.csv
-│   │   │   │   ├── AB01_stairs_1_3_up_angle.csv
-│   │   │   │   ├── AB01_stairs_1_4_down_angle.csv
-│   │   │   │   ├── AB01_stairs_1_5_up_angle.csv
-│   │   │   │   ├── AB01_stairs_1_6_down_angle.csv
-│   │   │   │   ├── AB01_stairs_1_7_up_angle.csv
-│   │   │   │   ├── AB01_stairs_1_8_down_angle.csv
-│   │   │   │   └── AB01_stairs_1_9_up_angle.csv
-│   │   │   ├── AB02
-│   │   │   │   ├── AB02_stairs_1_10_down_angle.csv
-│   │   │   │   ├── AB02_stairs_1_11_up_angle.csv
-│   │   │   │   ├── AB02_stairs_1_12_down_angle.csv
-│   │   │   │   ├── AB02_stairs_1_1_up_angle.csv
-│   │   │   │   ├── AB02_stairs_1_2_down_angle.csv
-│   │   │   │   ├── AB02_stairs_1_3_up_angle.csv
-│   │   │   │   ├── AB02_stairs_1_4_down_angle.csv
-│   │   │   │   ├── AB02_stairs_1_5_up_angle.csv
-│   │   │   │   ├── AB02_stairs_1_6_down_angle.csv
-│   │   │   │   ├── AB02_stairs_1_7_up_angle.csv
-│   │   │   │   ├── AB02_stairs_1_8_down_angle.csv
-│   │   │   │   └── AB02_stairs_1_9_up_angle.csv
-│   │   │   ├── AB03
-│   │   │   │   ├── AB03_stairs_1_10_down_angle.csv
-│   │   │   │   ├── AB03_stairs_1_1_up_angle.csv
-│   │   │   │   ├── AB03_stairs_1_2_down_angle.csv
-│   │   │   │   ├── AB03_stairs_1_3_up_angle.csv
-│   │   │   │   ├── AB03_stairs_1_4_down_angle.csv
-│   │   │   │   ├── AB03_stairs_1_5_up_angle.csv
-│   │   │   │   ├── AB03_stairs_1_6_down_angle.csv
-│   │   │   │   ├── AB03_stairs_1_7_up_angle.csv
-│   │   │   │   ├── AB03_stairs_1_8_down_angle.csv
-│   │   │   │   └── AB03_stairs_1_9_up_angle.csv
-│   │   │   ├── AB05
-│   │   │   │   ├── AB05_stairs_1_10_down_angle.csv
-│   │   │   │   ├── AB05_stairs_1_1_up_angle.csv
-│   │   │   │   ├── AB05_stairs_1_2_down_angle.csv
-│   │   │   │   ├── AB05_stairs_1_3_up_angle.csv
-│   │   │   │   ├── AB05_stairs_1_4_down_angle.csv
-│   │   │   │   ├── AB05_stairs_1_5_up_angle.csv
-│   │   │   │   ├── AB05_stairs_1_6_down_angle.csv
-│   │   │   │   ├── AB05_stairs_1_7_up_angle.csv
-│   │   │   │   ├── AB05_stairs_1_8_down_angle.csv
-│   │   │   │   └── AB05_stairs_1_9_up_angle.csv
-│   │   │   ├── AB06
-│   │   │   │   ├── AB06_stairs_1_10_down_angle.csv
-│   │   │   │   ├── AB06_stairs_1_1_up_angle.csv
-│   │   │   │   ├── AB06_stairs_1_2_down_angle.csv
-│   │   │   │   ├── AB06_stairs_1_3_up_angle.csv
-│   │   │   │   ├── AB06_stairs_1_4_down_angle.csv
-│   │   │   │   ├── AB06_stairs_1_5_up_angle.csv
-│   │   │   │   ├── AB06_stairs_1_6_down_angle.csv
-│   │   │   │   ├── AB06_stairs_1_7_up_angle.csv
-│   │   │   │   ├── AB06_stairs_1_8_down_angle.csv
-│   │   │   │   └── AB06_stairs_1_9_up_angle.csv
-│   │   │   ├── AB07
-│   │   │   │   ├── AB07_stairs_1_10_down_angle.csv
-│   │   │   │   ├── AB07_stairs_1_1_up_angle.csv
-│   │   │   │   ├── AB07_stairs_1_2_down_angle.csv
-│   │   │   │   ├── AB07_stairs_1_3_up_angle.csv
-│   │   │   │   ├── AB07_stairs_1_4_down_angle.csv
-│   │   │   │   ├── AB07_stairs_1_5_up_angle.csv
-│   │   │   │   ├── AB07_stairs_1_6_down_angle.csv
-│   │   │   │   ├── AB07_stairs_1_7_up_angle.csv
-│   │   │   │   ├── AB07_stairs_1_8_down_angle.csv
-│   │   │   │   └── AB07_stairs_1_9_up_angle.csv
-│   │   │   ├── AB08
-│   │   │   │   ├── AB08_stairs_1_10_down_angle.csv
-│   │   │   │   ├── AB08_stairs_1_1_up_angle.csv
-│   │   │   │   ├── AB08_stairs_1_2_down_angle.csv
-│   │   │   │   ├── AB08_stairs_1_3_up_angle.csv
-│   │   │   │   ├── AB08_stairs_1_4_down_angle.csv
-│   │   │   │   ├── AB08_stairs_1_5_up_angle.csv
-│   │   │   │   ├── AB08_stairs_1_6_down_angle.csv
-│   │   │   │   ├── AB08_stairs_1_7_up_angle.csv
-│   │   │   │   ├── AB08_stairs_1_8_down_angle.csv
-│   │   │   │   └── AB08_stairs_1_9_up_angle.csv
-│   │   │   ├── AB09
-│   │   │   │   ├── AB09_stairs_1_10_down_angle.csv
-│   │   │   │   ├── AB09_stairs_1_1_up_angle.csv
-│   │   │   │   ├── AB09_stairs_1_2_down_angle.csv
-│   │   │   │   ├── AB09_stairs_1_3_up_angle.csv
-│   │   │   │   ├── AB09_stairs_1_4_down_angle.csv
-│   │   │   │   ├── AB09_stairs_1_5_up_angle.csv
-│   │   │   │   ├── AB09_stairs_1_6_down_angle.csv
-│   │   │   │   ├── AB09_stairs_1_7_up_angle.csv
-│   │   │   │   ├── AB09_stairs_1_8_down_angle.csv
-│   │   │   │   └── AB09_stairs_1_9_up_angle.csv
-│   │   │   ├── AB10
-│   │   │   │   ├── AB10_stairs_1_10_down_angle.csv
-│   │   │   │   ├── AB10_stairs_1_1_up_angle.csv
-│   │   │   │   ├── AB10_stairs_1_2_down_angle.csv
-│   │   │   │   ├── AB10_stairs_1_3_up_angle.csv
-│   │   │   │   ├── AB10_stairs_1_4_down_angle.csv
-│   │   │   │   ├── AB10_stairs_1_5_up_angle.csv
-│   │   │   │   ├── AB10_stairs_1_6_down_angle.csv
-│   │   │   │   ├── AB10_stairs_1_7_up_angle.csv
-│   │   │   │   ├── AB10_stairs_1_8_down_angle.csv
-│   │   │   │   └── AB10_stairs_1_9_up_angle.csv
-│   │   │   ├── AB11
-│   │   │   │   ├── AB11_stairs_1_10_down_angle.csv
-│   │   │   │   ├── AB11_stairs_1_1_up_angle.csv
-│   │   │   │   ├── AB11_stairs_1_2_down_angle.csv
-│   │   │   │   ├── AB11_stairs_1_3_up_angle.csv
-│   │   │   │   ├── AB11_stairs_1_4_down_angle.csv
-│   │   │   │   ├── AB11_stairs_1_5_up_angle.csv
-│   │   │   │   ├── AB11_stairs_1_6_down_angle.csv
-│   │   │   │   ├── AB11_stairs_1_7_up_angle.csv
-│   │   │   │   ├── AB11_stairs_1_8_down_angle.csv
-│   │   │   │   └── AB11_stairs_1_9_up_angle.csv
-│   │   │   ├── AB12
-│   │   │   │   ├── AB12_stairs_1_10_down_angle.csv
-│   │   │   │   ├── AB12_stairs_1_11_up_angle.csv
-│   │   │   │   ├── AB12_stairs_1_12_down_angle.csv
-│   │   │   │   ├── AB12_stairs_1_1_up_angle.csv
-│   │   │   │   ├── AB12_stairs_1_2_down_angle.csv
-│   │   │   │   ├── AB12_stairs_1_3_up_angle.csv
-│   │   │   │   ├── AB12_stairs_1_4_down_angle.csv
-│   │   │   │   ├── AB12_stairs_1_5_up_angle.csv
-│   │   │   │   ├── AB12_stairs_1_6_down_angle.csv
-│   │   │   │   ├── AB12_stairs_1_7_up_angle.csv
-│   │   │   │   ├── AB12_stairs_1_8_down_angle.csv
-│   │   │   │   └── AB12_stairs_1_9_up_angle.csv
-│   │   │   └── AB13
-│   │   │       ├── AB13_stairs_1_10_down_angle.csv
-│   │   │       ├── AB13_stairs_1_1_up_angle.csv
-│   │   │       ├── AB13_stairs_1_2_down_angle.csv
-│   │   │       ├── AB13_stairs_1_3_up_angle.csv
-│   │   │       ├── AB13_stairs_1_4_down_angle.csv
-│   │   │       ├── AB13_stairs_1_5_up_angle.csv
-│   │   │       ├── AB13_stairs_1_6_down_angle.csv
-│   │   │       ├── AB13_stairs_1_7_up_angle.csv
-│   │   │       ├── AB13_stairs_1_8_down_angle.csv
-│   │   │       └── AB13_stairs_1_9_up_angle.csv
+│   │   ├── stairs_combined
+│   │   │   ├── AB01_stairs_combined.csv
+│   │   │   ├── AB02_stairs_combined.csv
+│   │   │   ├── AB03_stairs_combined.csv
+│   │   │   ├── AB05_stairs_combined.csv
+│   │   │   ├── AB06_stairs_combined.csv
+│   │   │   ├── AB07_stairs_combined.csv
+│   │   │   ├── AB08_stairs_combined.csv
+│   │   │   ├── AB09_stairs_combined.csv
+│   │   │   ├── AB10_stairs_combined.csv
+│   │   │   ├── AB11_stairs_combined.csv
+│   │   │   ├── AB12_stairs_combined.csv
+│   │   │   └── AB13_stairs_combined.csv
 │   │   └── turn_and_step
 │   │       ├── turn_left
 │   │       │   ├── AB01_turn_and_step_1_left-turn_angle.csv
@@ -560,6 +436,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   └── paper.pdf
 ├── scripts
 │   ├── csv_converter.py
+│   ├── evaluation_matplotlib.py
 │   ├── live_comparison_plot.py
 │   ├── script.py
 │   └── simulator.py
@@ -576,16 +453,17 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   │   ├── motor_reference_controller.py
 │       │   │   └── pid_controller.py
 │       │   ├── signal_processing
-│       │   │   ├── discrete_derivative_filter.py
 │       │   │   ├── drift_removal.py
-│       │   │   ├── kalman_filter.py
-│       │   │   ├── notch_filter.py
-│       │   │   ├── second_order_low_pass_filter.py
 │       │   │   ├── sensor_preprocessor.py
-│       │   │   ├── sogi_fll_filter.py
 │       │   │   └── velocity_estimation.py
 │       │   ├── __init__.py
 │       │   └── app.py
+│       ├── filters
+│       │   ├── discrete_derivative_filter.py
+│       │   ├── kalman_filter.py
+│       │   ├── notch_filter.py
+│       │   ├── second_order_low_pass_filter.py
+│       │   └── sogi_fll_filter.py
 │       ├── plotter
 │       │   ├── csv_player.py
 │       │   └── live_phase_portrait.py

@@ -13,7 +13,7 @@ from matplotlib import ticker
 from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
 from hip_controller.control.app import ExoController  # pragma: no cover
-from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+from hip_controller.filters.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
 from hip_controller.definitions import (

@@ -8,7 +8,7 @@ from pytest import raises
 
 from hip_controller.definitions import ExosuitData, RecordedSensorData, SensorSignal
 from hip_controller.plotter.csv_player import CSVPlayer
-from scripts.csv_converter import convert_xlsx_to_csv
+from scripts.csv_utils import convert_xlsx_to_csv
 
 
 def create_test_csv(path: Path):
