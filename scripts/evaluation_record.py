@@ -132,11 +132,8 @@ def run_controllers(df: pd.DataFrame,
     return pd.DataFrame(records)
 
 
-
-
-if __name__ == "__main__":
-
-
+def process_evaluation()->None:
+    """Run the data of ZWISCHEN ROOT and output in evaluation output folder."""
     csv_files = sorted(ZWISCHEN_ROOT.rglob("*.csv"))
     if not csv_files:
         logger.warning(f"No CSV files found under {ZWISCHEN_ROOT}/")
