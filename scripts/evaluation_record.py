@@ -103,14 +103,14 @@ def run_controllers(df: pd.DataFrame,
         # ── right side ──
         filt_r   = ctrl_right.pre_processor.filter(raw_signal=signal_r)
         phase_r  = ctrl_right.gait_controller.update_and_compute(curr_signal=filt_r)
-        amplitude_r    = ctrl_right.amplitude_modulation.compute_amplitude(signal=signal_r)
+        amplitude_r    = ctrl_right.amplitude_modulation.compute_amplitude(signal=filt_r)
         command_r    = ctrl_right.motor_reference_controller.compute_motor_command(
                        gait_phase=phase_r, amplitude=amplitude_r)
 
         # ── left side ──
         filt_l   = ctrl_left.pre_processor.filter(raw_signal=signal_l)
         phase_l  = ctrl_left.gait_controller.update_and_compute(curr_signal=filt_l)
-        amplitude_l    = ctrl_left.amplitude_modulation.compute_amplitude(signal=signal_l)
+        amplitude_l    = ctrl_left.amplitude_modulation.compute_amplitude(signal=filt_l)
         command_l    = ctrl_left.motor_reference_controller.compute_motor_command(
                        gait_phase=phase_l, amplitude=amplitude_l)
 
@@ -156,3 +156,7 @@ def process_evaluation()->None:
             logger.warning(f"  ✗ {input_path.name}: {exc}")
 
     logger.info(f"\nDone. Results written to {OUTPUT_ROOT}/")
+
+if __name__ == "__main__":
+    # Generate all 4 plot types for every CSV
+    process_evaluation()

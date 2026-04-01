@@ -100,7 +100,7 @@ class WalkOnController:
         )
 
         # Apply amplitude modulation
-        amplitude = self.amplitude_modulation.compute_amplitude(signal=curr_signal)
+        amplitude = self.amplitude_modulation.compute_amplitude(signal=filtered_signal)
 
         # Compute motor command velocity
         motor_command = self.motor_reference_controller.compute_motor_command(
