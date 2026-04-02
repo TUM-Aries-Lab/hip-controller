@@ -126,6 +126,8 @@ def run_controllers(df: pd.DataFrame,
             "filtered_velocity_left (rad/s)":  filt_l.velocity_rad_per_sec,
             "gait_phase_right (rad)":       phase_r,
             "gait_phase_left (rad)":        phase_l,
+            "amplitude_right": amplitude_r,
+            "amplitude_left": amplitude_l,
             "motor_command_right (rad/s)":  command_r,
             "motor_command_left (rad/s)":   command_l,
         })
@@ -158,5 +160,5 @@ def process_evaluation()->None:
     logger.info(f"\nDone. Results written to {OUTPUT_ROOT}/")
 
 if __name__ == "__main__":
-    # Generate all 4 plot types for every CSV
+
     process_evaluation()

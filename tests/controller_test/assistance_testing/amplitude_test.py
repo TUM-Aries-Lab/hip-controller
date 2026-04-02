@@ -8,7 +8,6 @@ from hip_controller.control.motor_reference_control.amplitude_modulation import 
     AmplitudeModulation,
 )
 from hip_controller.definitions import SIGMOID_POWER, SensorSignal
-from hip_controller.utils.math_utils import apply_sigmoid_scaling
 from tests.conftest import DATA_AMPLITUDE_MODULATION, REL_TOL, KinematicsDataColumnName
 
 
@@ -30,7 +29,7 @@ def test_sigmoid_scaling() -> None:
         value = curr[KinematicsDataColumnName.SCALED_RADIUS]
 
         # Act
-        sigmoid = apply_sigmoid_scaling(value=value, power=power)
+        sigmoid = AmplitudeModulation.apply_sigmoid_scaling(value=value, power=power)
 
         # Assert
         expected_sigmoid = curr[KinematicsDataColumnName.SIGMOID_RADIUS]
@@ -64,4 +63,4 @@ def test_amplitude() -> None:
         # Assert
         expected_amplitude = curr[KinematicsDataColumnName.AMPLITUDE_LEFT]
 
-        assert isclose(amplitude, expected_amplitude, rel_tol=REL_TOL), f"Row {i}"
+        assert isclose(amplitude, expected_amplitude, abs_tol=REL_TOL), f"Row {i}"

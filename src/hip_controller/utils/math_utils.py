@@ -92,35 +92,3 @@ def transform_to_cyclic(val: float) -> float:
     :rtype: float
     """
     return -sin(val)
-
-
-def apply_sigmoid_scaling(value: float, power: float) -> float:
-    """Apply sigmoid scaling a^n / (a^n + 1) so that the higher n is, the lower amplitudes are scaled down.
-
-    Numerically stable implementation that handles overflow by clamping large exponents.
-
-    :param float value: Variable a. Clamped to [-100, 100] for numerical stability.
-    :param float power: Variable n. Clamped to [0, 100] for numerical stability.
-
-    :return: Amplitude in range [0, 1].
-    :rtype: float
-    """
-    import math
-
-    # Clamp inputs to prevent overflow
-    value = max(-100, min(100, value))
-    power = max(0, min(100, power))
-
-    try:
-        exponent = value**power
-        # If exponent is too large, return value close to 1 (saturated sigmoid)
-        if math.isinf(exponent):
-            return 1.0
-        if math.isnan(exponent):
-            return 0.0
-
-        result = exponent / (exponent + 1)
-        return result
-    except (OverflowError, ValueError):
-        # Fallback for edge cases
-        return 1.0

@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from math import isinf, isnan
 
 import numpy as np
 
@@ -11,7 +12,6 @@ from hip_controller.definitions import (
     SIGMOID_POWER,
     SensorSignal,
 )
-from hip_controller.utils.math_utils import apply_sigmoid_scaling
 
 
 @dataclass
@@ -19,7 +19,7 @@ class ModeParameters:
     """Dataclass for mode parameters."""
 
     scale: float
-    sigmoid_power: float
+    sigmoid_power: int
     gain: float
 
 
@@ -76,9 +76,9 @@ class AmplitudeModulation:
 
         # The amplitude could be reversed due to different wiring settings
         if reverse:
-            self.reverse_amplitude = -1
+            self.reverse_amplitude: int = -1
         else:
-            self.reverse_amplitude = 1
+            self.reverse_amplitude: int = 1
 
     def set_mode(self, mode: ModeStrategy):
         """Switch mode at runtime."""
@@ -108,6 +108,42 @@ class AmplitudeModulation:
             self._compute_portrait_radius(signal=signal) * params.scale
         )
 
-        amplitude = apply_sigmoid_scaling(scaled_portrait_radius, params.sigmoid_power)
-
+        amplitude = self.apply_sigmoid_scaling(
+            value=scaled_portrait_radius, power=params.sigmoid_power
+        )
         return (amplitude * params.gain) * self.reverse_amplitude
+
+    @staticmethod
+    def apply_sigmoid_scaling(value: float, power: int) -> float:
+        """Apply sigmoid scaling a^n / (a^n + 1) so that the higher n is, the lower amplitudes are scaled down.
+
+        Numerically stable implementation that handles overflow by clamping large exponents.
+
+        :param float value: Variable a.
+        :param float power: Variable n.
+
+        :return: Amplitude in range [0, 1].
+        :rtype: float
+        """
+        try:
+            exponent = value**power
+            # If exponent is too large, return value close to 1 (saturated sigmoid)
+            if isinf(exponent):
+                return 1.0
+            elif isnan(exponent):
+                return 1.0
+            else:
+                result = exponent / (exponent + 1.0)
+                return result
+        except (OverflowError, ValueError):
+            # Fallback for edge cases
+            return 1.0
+
+    def fake_sigmoid_scaling(self, value: float) -> float:
+        """Substitute for apply_sigmoid_scaling, value=scaled_portrait_radius, power=params.sigmoid_power."""
+        if value > 1.2:
+            return 1.0
+        elif value < 0.8:
+            return 0.0
+        else:
+            return (value**50.0) / (value**50.0 + 1.0)

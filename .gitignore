@@ -181,3 +181,7 @@ src/matlab-files/slprj
 
 # vscode
 .vscode
+
+# evaluation files
+scripts/evaluation_plots/*
+scripts/evaluation_output/*
