@@ -156,7 +156,7 @@ class SecondOrderLowPassFilter:
         :return: Derivative of the filtered output (rate of change).
         :rtype: float
         """
-        return self._config.cut_off_frequency * feedback_state
+        return self._config.cut_off_frequency_rad_per_sec * feedback_state
 
     def _deriv_fn(
         self, feedback_state: float, filtered_output: float
@@ -175,7 +175,7 @@ class SecondOrderLowPassFilter:
         input_error = self._compute_input_error(self._current_input, filtered_output)
         damping_fb = self._compute_damping_feedback(feedback_state)
         corrected_err = self._compute_corrected_error(input_error, damping_fb)
-        d_feedback_dt = self._config.cut_off_frequency * corrected_err
+        d_feedback_dt = self._config.cut_off_frequency_rad_per_sec * corrected_err
         d_output_dt = self._compute_output_derivative(feedback_state)
         return d_feedback_dt, d_output_dt
 

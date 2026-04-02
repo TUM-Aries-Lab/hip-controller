@@ -5,7 +5,7 @@ from pandas import read_csv
 
 from hip_controller.control.signal_processing.velocity_estimation import (
     DiscreteDerivativeVelocityEstimation,
-    SogiVelocityEstimation,
+    SogifllVelocityEstimation,
 )
 from hip_controller.definitions import PreprocessorConfig
 from tests.conftest import DATA_PRE_PROCESSING, KinematicsDataColumnName
@@ -17,7 +17,7 @@ def test_filtering_sogifll() -> None:
     df = read_csv(DATA_PRE_PROCESSING)
 
     # Configure the notch filter for drift removal
-    velocity_estimation = SogiVelocityEstimation(
+    velocity_estimation = SogifllVelocityEstimation(
         PreprocessorConfig.filtering_sogifll_config
     )
 
@@ -46,7 +46,7 @@ def test_filtering_sogifll() -> None:
 
         # Filter
         actual_angle, actual_velocity = velocity_estimation.filter(
-            angle=raw_angle, time_difference=dt
+            angle_rad=raw_angle, time_difference=dt
         )
 
         actual_angles.append(actual_angle)
@@ -89,7 +89,7 @@ def test_filtering_discrete_derivative() -> None:
 
         # Filter
         _, actual_velocity = velocity_estimation.filter(
-            angle=raw_angle, time_difference=dt
+            angle_rad=raw_angle, time_difference=dt
         )
 
         actual_velocitys.append(actual_velocity)

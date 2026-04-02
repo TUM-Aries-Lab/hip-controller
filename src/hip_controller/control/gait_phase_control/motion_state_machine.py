@@ -57,7 +57,10 @@ class ExtremaTrigger:
 
         :param curr_velocity: Current velocity value.
         :param prev_velocity: Previous velocity value.
+        :param curr_angle: Current angle value.
+
         :return: True if angle maximum is detected, False otherwise.
+        :rtype: bool
         """
         return (
             hit_crossing_falling(curr=curr_velocity, prev=prev_velocity)
@@ -71,7 +74,10 @@ class ExtremaTrigger:
 
         :param curr_velocity: Current velocity value.
         :param prev_velocity: Previous velocity value.
+        :param curr_angle: Current angle value.
+
         :return: True if angle minimum is detected, False otherwise.
+        :rtype: bool
         """
         return (
             hit_crossing_rising(curr=curr_velocity, prev=prev_velocity)
@@ -85,7 +91,10 @@ class ExtremaTrigger:
 
         :param curr_angle: Current angle value.
         :param prev_angle: Previous angle value.
+        :param curr_velocity: Current velocity value.
+
         :return: True if velocity maximum is detected, False otherwise.
+        :rtype: bool
         """
         return (
             hit_crossing_rising(curr=curr_angle, prev=prev_angle) and curr_velocity > 0
@@ -98,7 +107,10 @@ class ExtremaTrigger:
 
         :param curr_angle: Current angle value.
         :param prev_angle: Previous angle value.
+        :param curr_velocity: Current velocity value.
+
         :return: True if velocity minimum is detected, False otherwise.
+        :rtype: bool
         """
         return (
             hit_crossing_falling(curr=curr_angle, prev=prev_angle) and curr_velocity < 0
@@ -159,25 +171,17 @@ class MotionStateMachine:
         all extrema trigger flags to False. The machine is ready to receive sensor
         data and detect state transitions.
 
-        Attributes
-        ----------
-        state : MotionState
-            Current motion state.
-
-        timestamp_sec : float or None
-            Timestamp (in seconds) when the current non-initial state was entered.
-
-            * ``float`` — A valid timestamp is stored when the state is not ``MotionState.INITIAL``.
-            * ``None`` — No timestamp is tracked when the state is ``MotionState.INITIAL``.
-
-        triggers : ExtremaTrigger
-            Stores the results of extrema trigger detection for a single control cycle.
-
         :return: None
-
         """
+        # Current motion state
         self.state: MotionState = MotionState.INITIAL
+
+        # Timestamp (in seconds) when the current non-initial state was entered.
+        # A valid timestamp is stored when the state is not ``MotionState.INITIAL``
+        # ``None`` — No timestamp is tracked when the state is ``MotionState.INITIAL``.
         self.last_time_state_change_sec: float | None = None
+
+        #  Stores the results of extrema trigger detection for a single control cycle
         self.triggers: ExtremaTrigger = ExtremaTrigger(False, False, False, False)
 
     def _handle_initial_state(self) -> MotionState | None:
@@ -188,9 +192,7 @@ class MotionStateMachine:
         encountered determines the next state. Typically, the first motion detection
         (vel_max, ang_max, vel_min, or ang_min) will drive the first transition.
 
-        :return:
-            Next MotionState to transition to (VELOCITY_MAX, ANGLE_MAX, VELOCITY_MIN,
-            or ANGLE_MIN), or None if no valid trigger is active.
+        :return: Next MotionState to transition to (VELOCITY_MAX, ANGLE_MAX, VELOCITY_MIN, or ANGLE_MIN), or None if no valid trigger is active.
         :rtype: MotionState | None
         """
         # The order is not important

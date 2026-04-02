@@ -1,4 +1,11 @@
-"""Preprocessor of the controller."""
+"""Two-stage sensor preprocessing pipeline: drift removal followed by velocity estimation.
+
+There are two strategies for drift removal and four strategies for velocity estimation implemented in the control module, which can be selected and configured in the :class:`PreprocessorConfig` when initializing the :class:`WalkOnController`.
+
+The drift removal strategies include: ``LowPassDriftRemoval`` and ``NotchDriftRemoval``.
+
+The velocity estimation strategies include: ``SogifllVelocityEstimation``, ``LowPassVelocityEstimation``, ``DiscreteDerivativeVelocityEstimation``, and ``GyroscopeVelocityEstimation``.
+"""
 
 from __future__ import annotations
 
@@ -26,6 +33,7 @@ class SensorPreprocessor:
         :param PreprocessorConfig config: Preprocessor configuration.
         :return: None
         """
+        self.config = config
         self._drift_removal: DriftRemovalStrategy = config.drift_removal_strategy
         self._velocity_estimation: VelocityEstimationStrategy = (
             config.velocity_estimation_strategy
@@ -36,10 +44,7 @@ class SensorPreprocessor:
     def filter(self, raw_signal: SensorSignal) -> SensorSignal:
         """Run one preprocessing step and return a :class:`SensorSignal`.
 
-        :param float raw_angle: Raw angle from the sensor [rad].
-        :param float gyro_velocity: Gyroscope angular rate [rad/s].
-        :param float timestamp: Timestamp of the current sample [s].
-        :return: Preprocessed :class:`SensorSignal` with timestamp, angle and velocity.
+        :return: Preprocessed :class:`SensorSignal` with timestamp of the current sample [s], raw angle from the sensor [rad] and gyroscope angular rate [rad/s] read from sensor.
         :rtype: SensorSignal
         """
         if self._prev_timestamp is None or raw_signal.timestamp is None:
@@ -51,22 +56,28 @@ class SensorPreprocessor:
         if time_difference <= 0.0:
             raise ValueError(f"Non-positive time_difference: {time_difference}")
 
+        # # TODO: check dt too big
+        if time_difference > 1.0:
+            self._drift_removal = self.config.drift_removal_strategy
+            self._velocity_estimation = self.config.velocity_estimation_strategy
+            time_difference = 0.01
+
         self._prev_timestamp = raw_signal.timestamp
 
-        angle_no_drift = self._drift_removal.filter(
+        angle_no_drift_rad = self._drift_removal.filter(
             raw_angle=raw_signal.angle_rad, time_difference=time_difference
         )
 
-        angle_out, velocity_out = self._velocity_estimation.filter(
-            angle=angle_no_drift,
+        angle_out_rad, velocity_out_rad_per_sec = self._velocity_estimation.filter(
+            angle_rad=angle_no_drift_rad,
             time_difference=time_difference,
-            gyro_velocity=raw_signal.velocity_rad_per_sec,
+            gyro_velocity_rad_per_sec=raw_signal.velocity_rad_per_sec,
         )
 
         return SensorSignal(
             timestamp=raw_signal.timestamp,
-            angle_rad=angle_out,
-            velocity_rad_per_sec=velocity_out,
+            angle_rad=angle_out_rad,
+            velocity_rad_per_sec=velocity_out_rad_per_sec,
         )
 
     def reset(self) -> None:

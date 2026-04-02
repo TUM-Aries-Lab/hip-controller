@@ -154,7 +154,7 @@ def demonstrate_random_lpf_static() -> None:  # pragma no cover
 
     # Create filter instance
     cfg = LowPassFilterConfig(
-        cut_off_frequency=wn,
+        cut_off_frequency_rad_per_sec=wn,
         damping_ratio=zt,
         initial_condition=x0,
         solver_type=SolverType.RUNGE_KUTTA,

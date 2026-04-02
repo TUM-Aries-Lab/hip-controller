@@ -2,9 +2,9 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from math import isinf, isnan
 
 import numpy as np
+from loguru import logger
 
 from hip_controller.definitions import (
     AMPLITUDE_GAIN,
@@ -125,19 +125,21 @@ class AmplitudeModulation:
         :return: Amplitude in range [0, 1].
         :rtype: float
         """
-        try:
-            exponent = value**power
-            # If exponent is too large, return value close to 1 (saturated sigmoid)
-            if isinf(exponent):
+        with np.errstate(over="raise"):
+            try:
+                exponent = np.float64(value) ** power
+                # If exponent is too large, return value close to 1 (saturated sigmoid)
+                if np.isinf(exponent):
+                    return 1.0
+                elif np.isnan(exponent):
+                    return 1.0
+                else:
+                    result = exponent / (exponent + 1.0)
+                    return result
+            except FloatingPointError:
+                # Fallback for edge cases
+                logger.warning(f"Exponent = {value} ** {power}")
                 return 1.0
-            elif isnan(exponent):
-                return 1.0
-            else:
-                result = exponent / (exponent + 1.0)
-                return result
-        except (OverflowError, ValueError):
-            # Fallback for edge cases
-            return 1.0
 
     def fake_sigmoid_scaling(self, value: float) -> float:
         """Substitute for apply_sigmoid_scaling, value=scaled_portrait_radius, power=params.sigmoid_power."""

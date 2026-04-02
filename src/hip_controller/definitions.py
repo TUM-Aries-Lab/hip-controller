@@ -42,6 +42,8 @@ class BasicConfig:
         DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
     )
 
+    frequency: int = 100
+
 
 class SolverType(StrEnum):
     """Selects the numerical integration strategy for the LPF.
@@ -64,9 +66,9 @@ class SolverType(StrEnum):
 
 @dataclass
 class LowPassFilterConfig:
-    """Settings for the second-order low-pass filter containing cut_off_frequency, damping_ratio, initial_condition, time_difference, solver_type."""
+    """Settings for the second-order low-pass filter containing cut_off_frequency, damping_ratio, initial_condition, solver_type."""
 
-    cut_off_frequency: float = 20.0  # in rad/s
+    cut_off_frequency_rad_per_sec: float = 20.0  # in rad/s
     damping_ratio: float = 1.0  # 1.0 = critically damped
     initial_condition: float = 0.0
     solver_type: SolverType = (
@@ -83,7 +85,7 @@ class NotchConfig:
 
     center_freq_hz: float
     bandwidth_3db_hz: float
-    sample_rate_hz: float
+    sample_rate_hz: float = BasicConfig.frequency
 
 
 @dataclass(frozen=True)
@@ -171,14 +173,14 @@ class PreprocessorConfig:
 
     # Configurations for the filters
     drift_removal_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
-        cut_off_frequency=1.25, damping_ratio=1.0, initial_condition=0.0
+        cut_off_frequency_rad_per_sec=1.25, damping_ratio=1.0, initial_condition=0.0
     )
     drift_removal_notch_config: NotchConfig = NotchConfig(
-        center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=100
+        center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=BasicConfig.frequency
     )
     filtering_sogifll_config: SogiFllConfig = SogiFllConfig()
     filtering_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
-        cut_off_frequency=20.0, damping_ratio=1.0, initial_condition=0.0
+        cut_off_frequency_rad_per_sec=20.0, damping_ratio=1.0, initial_condition=0.0
     )
 
     @property
@@ -201,11 +203,11 @@ class PreprocessorConfig:
             DiscreteDerivativeVelocityEstimation,
             GyroscopeVelocityEstimation,
             LowPassVelocityEstimation,
-            SogiVelocityEstimation,
+            SogifllVelocityEstimation,
         )
 
         if self.velocity_estimation_method == VelocityEstimationMethod.SOGI:
-            return SogiVelocityEstimation(self.filtering_sogifll_config)
+            return SogifllVelocityEstimation(self.filtering_sogifll_config)
         elif (
             self.velocity_estimation_method
             == VelocityEstimationMethod.DISCRETE_DERIVATIVE
@@ -314,7 +316,7 @@ class RecordedSensorData:
     ang_right: str = "angle_right (rad)"
     vel_right: str = "vel_right (rad/s)"
 
-    fake_frequency_hz: int = 100
+    fake_frequency_hz: int = BasicConfig.frequency
 
 
 @dataclass(frozen=True)
