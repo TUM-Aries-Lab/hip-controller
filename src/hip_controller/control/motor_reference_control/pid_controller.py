@@ -30,9 +30,9 @@ class PIDController:
 
         self._integral: float = 0.0
         self._prev_velocity: float = 0.0  # previous velocity output fed into LPF
-        self._prev_timestamp: float
+        self._prev_timestamp: float | None = None
 
-    def pid_tuning(
+    def compute_output(
         self, timestamp: float, motor_reference: float, motor_position: float
     ) -> float:
         """Compute the velocity command for one control cycle using the PID controller.
@@ -44,6 +44,11 @@ class PIDController:
         :return: Commanded velocity, clamped to output_limits if set.
         :rtype: float
         """
+        # Initialize previous timestamp on first call
+        if self._prev_timestamp is None:
+            self._prev_timestamp = timestamp
+            return 0.0
+
         #  calculate how much the motors have to move
         error = motor_reference - motor_position
 
@@ -51,13 +56,19 @@ class PIDController:
 
         time_difference = timestamp - self._prev_timestamp
         self._integral += error * time_difference
-        integral = clip(self.config.integral_gain * self._integral)
+        integral_term = self.config.integral_gain * self._integral
 
-        _, filtered_velocity = self.low_pass_filter.step(
+        if self.config.output_limits is not None:
+            low, high = self.config.output_limits
+            integral = clip(a=integral_term, a_min=low, a_max=high)
+        else:
+            integral = integral_term
+
+        _, damping_derivative = self.low_pass_filter.step(
             x=self._prev_velocity, time_difference=time_difference
         )
 
-        derivative = self.config.derivative_gain * filtered_velocity
+        derivative = self.config.derivative_gain * damping_derivative
         output = proportional + integral - derivative
         if self.config.output_limits is not None:
             low, high = self.config.output_limits

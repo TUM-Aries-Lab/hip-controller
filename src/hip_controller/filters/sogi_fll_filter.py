@@ -15,75 +15,86 @@ from hip_controller.definitions import SogiFllConfig
 
 
 class SogiFllFilter:
-    """Second-Order Generalized Integrator which generates in-phase + quadrature, with Frequency-Locked Loop which (adapts internal frequency to cadence changes (SOGI-FLL)."""
+    """Second-Order Generalized Integrator (SOGI) + Frequency-Locked Loop (FLL).
+
+    Produces in-phase and quadrature signals and tracks cadence-derived frequency.
+    """
 
     def __init__(self, config: SogiFllConfig) -> None:
-        """Initialize the sogi fill filter.
+        """Initialize SOGI-FLL filter with configuration parameters.
 
-        :param SogiFllConfig config: Configurations  of SOGI-FLL filter, including fixed and rarely changed parameters.
+        :param SogiFllConfig config: SOGI-FLL controller tuning parameters.
         :return: None
         """
         self._config: SogiFllConfig = config
 
         self._walking: bool = True
-        # Persistent states
-        self._va: float = 0.0
-        self._vb: float = 0.0
-        self._w_est: float = 2.0 * pi * self._config.initial_frequency_guess
-        self._f_state: float = self._config.initial_frequency_guess
-        self._lock_state: float = 0.0
+
+        # Persistent internal state (SOGI outputs)
+        self._inphase: float = 0.0
+        self._quadrature: float = 0.0
+
+        # Estimated angular freq and smoothed frequency state
+        self._omega_est: float = 2.0 * pi * self._config.initial_frequency_guess
+        self._frequency_estimate: float = self._config.initial_frequency_guess
+
+        # Lock confidence state (energy-based)
+        self._confidence_state: float = 0.0
 
     def stop_walking(self) -> None:
-        """Stop walking.
-
-        :return: None
-        """
+        """Transition filter to non-walking mode (decay instead of tracking)."""
         self._walking = False
 
-    def filter(self, theta: float, time_difference: float) -> tuple[float, float]:
-        """Filter the inpit angle of one step into a clean sinusoidal component and return the surrogate angle and quadrature angular velocity.
+    def filter(
+        self, raw_theta_rad: float, time_difference: float
+    ) -> tuple[float, float]:
+        """Process a single sample.
 
-        :param float theta: Drift-removed joint angle.
-        :param time_difference: Sample period / elapsed time since last call [s].
+        :param float theta: Drift-corrected joint angle input.
+        :param float time_difference: Time delta since last sample in seconds.
 
-        :return: Tuple of ``(theta, theta_quad)`` — in-phase filtered surrogate angle and 90°-shifted quadrature angular velocity.
+        :return: Tuple of (inphase_output, quadrature_output).
         """
         w_min = 2.0 * pi * self._config.lower_cadence_bound
         w_max = 2.0 * pi * self._config.upper_cadence_bound
 
-        # Smoothing coefficients (recomputed each call so dt changes are safe)
-        a_f = exp(
+        # Smoothed frequency updates
+        alpha_frequency = exp(
             -2.0
             * pi
             * self._config.frequency_estimate_smoother_bandwidth
             * time_difference
         )
-        a_lock = exp(
+        alpha_confidence = exp(
             -2.0 * pi * self._config.lock_state_smoother_bandwidth * time_difference
         )
 
-        w0 = clip(a=self._w_est, a_min=w_min, a_max=w_max)
+        omega_clipped = clip(a=self._omega_est, a_min=w_min, a_max=w_max)
 
-        # ---- SOGI --------------------------------------------------------
+        # ---- SOGI core update ------------------------------------------------
         if self._walking:
-            e = theta - self._va
-            self._va += time_difference * (
-                w0 * self._vb + self._config.sogi_adaptation_gain * w0 * e
+            phase_error = raw_theta_rad - self._inphase
+            self._inphase += time_difference * (
+                omega_clipped * self._quadrature
+                + self._config.sogi_adaptation_gain * omega_clipped * phase_error
             )
-            self._vb += time_difference * (-w0 * self._va)
+            self._quadrature += time_difference * (-omega_clipped * self._inphase)
         else:
-            self._va *= self._config.decay_not_walking
-            self._vb *= self._config.decay_not_walking
-            e = 0.0
+            self._inphase *= self._config.decay_not_walking
+            self._quadrature *= self._config.decay_not_walking
+            phase_error = 0.0
 
-        theta = self._va
-        theta_quad = self._vb
+        inphase_output = self._inphase
+        quadrature_output = self._quadrature
 
-        # ---- Lock / confidence -------------------------------------------
-        E = theta * theta + theta_quad * theta_quad
-        self._lock_state = a_lock * self._lock_state + (1.0 - a_lock) * E
-        lock = clip(
-            a=(self._lock_state - self._config.lower_energy_threshold)
+        # ---- energy-based lock confidence ---------------------------------------
+        energy = inphase_output * inphase_output + quadrature_output * quadrature_output
+        self._confidence_state = (
+            alpha_confidence * self._confidence_state
+            + (1.0 - alpha_confidence) * energy
+        )
+        confidence = clip(
+            a=(self._confidence_state - self._config.lower_energy_threshold)
             / (
                 self._config.upper_energy_threshold
                 - self._config.lower_energy_threshold
@@ -93,35 +104,43 @@ class SogiFllFilter:
             a_max=1.0,
         )
 
-        # ---- FLL ---------------------------------------------------------
+        # ---- FLL frequency adaptation -------------------------------------------
         if self._walking:
-            mu = (e * theta_quad) / (E + self._config.numerical_safety_floor)
-            self._w_est = (
-                w0
-                + time_difference * (self._config.fll_adaptation_gain * w0 * mu) * lock
+            adaptation_error = (phase_error * quadrature_output) / (
+                energy + self._config.numerical_safety_floor
             )
-            self._w_est = clip(a=self._w_est, a_min=w_min, a_max=w_max)
+            self._omega_est = (
+                omega_clipped
+                + time_difference
+                * (self._config.fll_adaptation_gain * omega_clipped * adaptation_error)
+                * confidence
+            )
+            self._omega_est = clip(a=self._omega_est, a_min=w_min, a_max=w_max)
 
-            f_raw = self._w_est / (2.0 * pi)
-            self._f_state = a_f * self._f_state + (1.0 - a_f) * f_raw
-            self._w_est = (
+            raw_frequency = self._omega_est / (2.0 * pi)
+            self._frequency_estimate = (
+                alpha_frequency * self._frequency_estimate
+                + (1.0 - alpha_frequency) * raw_frequency
+            )
+            self._omega_est = (
                 2.0
                 * pi
                 * clip(
-                    a=self._f_state,
+                    a=self._frequency_estimate,
                     a_min=self._config.lower_cadence_bound,
                     a_max=self._config.upper_cadence_bound,
                 )
             )
         else:
-            self._f_state = (
-                0.995 * self._f_state + 0.005 * self._config.initial_frequency_guess
+            self._frequency_estimate = (
+                0.995 * self._frequency_estimate
+                + 0.005 * self._config.initial_frequency_guess
             )
-            self._w_est = 2.0 * pi * self._f_state
+            self._omega_est = 2.0 * pi * self._frequency_estimate
 
-        return theta, theta_quad
+        return inphase_output, quadrature_output
 
     @property
     def estimated_frequency_hz(self) -> float:
-        """Current FLL frequency estimate [Hz] — useful for monitoring/logging."""
-        return self._f_state
+        """Current FLL frequency estimate [Hz]."""
+        return self._frequency_estimate

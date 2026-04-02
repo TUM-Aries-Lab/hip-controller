@@ -12,7 +12,7 @@ from loguru import logger
 from matplotlib import ticker
 from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
-from hip_controller.control.app import ExoController  # pragma: no cover
+
 from hip_controller.filters.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
@@ -21,11 +21,13 @@ from hip_controller.definitions import (
     BasicConfig,
     LowPassFilterConfig,
     SolverType,
+    ExosuitData
 )
 
 from src.hip_controller.plotter.csv_player import CSVPlayer
 from dataclasses import dataclass
 from scripts.script import ScriptPlayer, ComparisonData
+from hip_controller.control.app import WalkOnController
 from scripts.live_comparison_plot import TimePlotterComparisonWindow
 from hip_controller.utils.utils import setup_logger
 
@@ -112,7 +114,8 @@ def simulate_controller_with_data(
     app = QtWidgets.QApplication([])
 
     player = CSVPlayer(csv_path)
-    controller = ExoController()
+    controller_left = WalkOnController(reverse=False,plot=True, filtered=True)
+    controller_right = WalkOnController(reverse=True,plot=True, filtered=True)
     timer = QtCore.QTimer()
 
     def update() -> None:
@@ -121,13 +124,15 @@ def simulate_controller_with_data(
             timer.stop()
             return
 
-        sensordata = player.get_sensor_data_from_csv()
+
+
+
+        sensor_data : ExosuitData = player.get_sensor_data_from_csv()
+        controller_left.step(sensor_data.left)
+        controller_right.step(sensor_data.right)
 
         # setInterval in miliseconds. Update each 10ms
         timer.setInterval(10)
-
-        controller.step(sensor_data=sensordata)
-
     def sigint_handler(signal, frame) -> None:
         """Handle SIGINT (Ctrl+C) gracefully."""
         logger.success("Keyboard interrupted with ^C.")
@@ -253,3 +258,27 @@ def plot_notch_filter_debug(
 
     plt.tight_layout()
     plt.show()
+
+if __name__ == "__main__":
+    """Simulate the comparison of the output and the expected output.
+
+    :param str input_name: The column name of the input variable.
+    :param str expected_output_name: The column name of the output variable.
+    :param Callable[[float], tuple[float, Any]] func: Function to call and compare.
+    :param str csv_path: Path to the CSV file used for simulated real-time playback. The user could pass in the path of a file as well.
+    :return: None
+
+
+    Usage Example:
+        from hip_controller.definitions import DATA_DIR
+        simulate( input_name="motion_mapping_key", output_name="motion_mapping_value", func=MotionMapping().spline, path=DATA_DIR / "sensor_data" / "look_up_table_2026_02_25.csv")
+        -----------
+        lpf = SecondOrderLPF(config=FilterConfig(wn=20.0, zt=1.0, x0=0.0, dt=0.01, solver_type=SolverType.RK4))
+        if __name__ == "__main__":
+            simulate(input_name="x", expected_output_name="y", func=lpf.step, path=TESTING_DIR / "controller_test/low_level_testing/low_level_testing_data/second_order_lpf_2026_03_06.csv")
+    """
+    from hip_controller.control.signal_processing.sensor_preprocessor import SensorPreprocessor
+    from hip_controller.definitions import PreprocessorConfig
+    preprocessor = SensorPreprocessor(PreprocessorConfig())
+
+    #simulate_comparison_dynamic(input_name="angle_right (rad)", expected_output_name="filtered_velocity_right (rad/s)", func=preprocessor.filter, path=Path"/home/minz/thesisproject/hip-controller/scripts/evaluation_output/normal_walk/normal_walk_1_2/AB06_normal_walk_1_1-2_angle.csv"))

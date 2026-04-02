@@ -35,7 +35,7 @@ class WalkOnController:
 
         # due to different wire settings one of them might need to be reversed - mirrored with -1
         self.amplitude_modulation = AmplitudeModulation(reverse=reverse)
-        self.motor_reference_controller = MotionReferenceController()
+        self.motion_reference_controller = MotionReferenceController()
 
         self._prev_timestamp: float | None = None
 
@@ -62,7 +62,7 @@ class WalkOnController:
         amplitude = self.amplitude_modulation.compute_amplitude(signal=filtered_signal)
 
         # Compute motor command velocity
-        motor_command = self.motor_reference_controller.compute_motor_command(
+        motor_command = self.motion_reference_controller.compute_motor_command(
             gait_phase=gait_phase, amplitude=amplitude
         )
 

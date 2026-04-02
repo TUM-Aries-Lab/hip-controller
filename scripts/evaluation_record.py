@@ -104,14 +104,14 @@ def run_controllers(df: pd.DataFrame,
         filt_r   = ctrl_right.pre_processor.filter(raw_signal=signal_r)
         phase_r  = ctrl_right.gait_controller.update_and_compute(curr_signal=filt_r)
         amplitude_r    = ctrl_right.amplitude_modulation.compute_amplitude(signal=filt_r)
-        command_r    = ctrl_right.motor_reference_controller.compute_motor_command(
+        command_r    = ctrl_right.motion_reference_controller.compute_motor_command(
                        gait_phase=phase_r, amplitude=amplitude_r)
 
         # ── left side ──
         filt_l   = ctrl_left.pre_processor.filter(raw_signal=signal_l)
         phase_l  = ctrl_left.gait_controller.update_and_compute(curr_signal=filt_l)
         amplitude_l    = ctrl_left.amplitude_modulation.compute_amplitude(signal=filt_l)
-        command_l    = ctrl_left.motor_reference_controller.compute_motor_command(
+        command_l    = ctrl_left.motion_reference_controller.compute_motor_command(
                        gait_phase=phase_l, amplitude=amplitude_l)
 
         records.append({

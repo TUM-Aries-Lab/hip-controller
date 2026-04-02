@@ -73,7 +73,7 @@ class SogiVelocityEstimation(VelocityEstimationStrategy):
         :rtype: tuple[float, float]
         """
         angle_surrogate, vel_quadrature = self._sogi_filter.filter(
-            theta=angle, time_difference=time_difference
+            raw_theta_rad=angle, time_difference=time_difference
         )
         return angle_surrogate, vel_quadrature
 
