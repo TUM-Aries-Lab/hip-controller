@@ -157,7 +157,6 @@ def process_evaluation()->None:
         except Exception as exc:
             logger.warning(f"  ✗ {input_path.name}: {exc}")
         logger.info(input_path)
-        break
 
     logger.info(f"\nDone. Results written to {OUTPUT_ROOT}/")
 

@@ -183,5 +183,3 @@ src/matlab-files/slprj
 .vscode
 
 # evaluation files
-scripts/evaluation_plots/*
-scripts/evaluation_output/*

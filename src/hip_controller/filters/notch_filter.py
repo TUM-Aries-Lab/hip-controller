@@ -1,6 +1,6 @@
 """Notch filtering utilities for drift rejection.
 
-Notch-peak filter implementation following the MATLAB DSP Toolbox algorithm.
+Notch-peak filter implementation following the MATLAB DSP Toolbox algorithm. The notch function from scipy.signal.iirnotch is not used here, because it is incompatible with 0 Hz center frequency. As a result, implementation of the matlab design equations is used instead.
 Reference: https://www.mathworks.com/help/dsp/ref/notchpeakfilter.html
 """
 

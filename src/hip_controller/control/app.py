@@ -1,4 +1,4 @@
-"""Walk ON Controller for a single lower limb."""
+"""Walk On Controller for single-limb and bilateral hip flexion exosuit control."""
 
 from hip_controller.control.gait_phase_control.gait_controller import GaitController
 from hip_controller.control.motor_reference_control.amplitude_modulation import (
@@ -14,10 +14,17 @@ from hip_controller.definitions import PreprocessorConfig, SensorSignal
 
 
 class WalkOnController:
-    """Walk ON Controller for a single lower limb."""
+    """Walk ON Controller for a single lower limb.
+
+    This controller implements a gait phase-based control strategy for a single limb, which can be used for both unilateral and bilateral hip flexion exosuits. The controller processes raw sensor signals to compute the current gait phase, applies amplitude modulation based on the sensor signals, and generates motor velocity commands for the exosuit's actuators.
+    """
 
     def __init__(self, reverse: bool, plot: bool = False, filtered=False):
         """Initialize the controller.
+
+        :param bool reverse: Whether to reverse the motor command output (for mirrored wiring).
+        :param bool plot: Whether to enable live plotting of the controller's internal states.
+        :param bool filtered: Whether to use pre-filtered sensor signals instead of raw signals.
 
         :return: None
         """
@@ -42,9 +49,9 @@ class WalkOnController:
     def step(self, curr_signal: SensorSignal) -> float:
         """Step the controller ahead.
 
-        :param SensorSignal curr_signal: Current timestamp, raw hip angle in radians, raw hip angle velocity in radians per second.
+        :param SensorSignal curr_signal: Current timestamp, raw hip angle in radians, raw hip angle velocity in radians per second read from sensor.
 
-        :return: Motor velocity command for motion reference.
+        :return: Motor velocity command in radians per second for motion reference.
         :rtype: float
         """
         # Pre-processing
