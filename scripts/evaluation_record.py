@@ -144,7 +144,7 @@ def process_evaluation()->None:
     logger.info(f"Found {len(csv_files)} CSV files — processing…\n")
 
     for input_path in csv_files:
-        ctrl_left  = WalkOnController(reverse=True, filtered=False)   # add constructor args as needed
+        ctrl_left  = WalkOnController(reverse=False, filtered=False)   # add constructor args as needed
         ctrl_right = WalkOnController(reverse=True, filtered=False)
         # Mirror subfolder structure: evaluation_raw_data/a/b.csv → evaluation_data/a/b.csv
         relative   = input_path.relative_to(ZWISCHEN_ROOT)
