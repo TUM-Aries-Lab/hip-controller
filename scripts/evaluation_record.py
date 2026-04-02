@@ -31,8 +31,9 @@ DOWNSAMPLE  = RAW_HZ // TARGET_HZ   # keep every 2nd row
 
 
 
-# Step 1 – load & filter columns
+
 def load_and_filter(path: Path) -> pd.DataFrame:
+    """Load and filter columns."""
     df = pd.read_csv(path)
     cols = (["source_file"] if "source_file" in df.columns else []) + KEEP_COLS
     missing = [c for c in KEEP_COLS if c not in df.columns]
@@ -41,19 +42,19 @@ def load_and_filter(path: Path) -> pd.DataFrame:
     return df[cols].reset_index(drop=True)
 
 
-# Step 2 – unit conversion + downsampling
+
 def prepare(df: pd.DataFrame) -> pd.DataFrame:
+    """Unit conversion and downsampling."""
     df = df.copy()
     df["hip_flexion_r_rad"] = df["hip_flexion_r"].apply(math.radians)
     df["hip_flexion_l_rad"] = df["hip_flexion_l"].apply(math.radians)
     df = df.iloc[::DOWNSAMPLE].reset_index(drop=True)   # 200 Hz → 100 Hz
     return df
 
-# ---------------------------------------------------------------------------
-# Step 4 – process a single CSV
-# ---------------------------------------------------------------------------
+
 def process_file(input_path: Path,
                  output_path: Path) -> None:
+    """Process a single CSV."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     df_raw  = load_and_filter(input_path)
@@ -63,10 +64,9 @@ def process_file(input_path: Path,
     df_prep.to_csv(output_path, index=False)
     logger.info(f"  ✓ {input_path.relative_to(RAW_INPUT_ROOT)}  →  {output_path.relative_to(OUTPUT_ROOT)}  ({len(df_prep)} rows)")
 
-# ---------------------------------------------------------------------------
-# Step 5 – discover all CSVs and batch-process
-# ---------------------------------------------------------------------------
+
 def run_evaluation() -> None:
+    """Discover all CSVs and batch-process."""
     csv_files = sorted(RAW_INPUT_ROOT.rglob("*.csv"))
     if not csv_files:
         logger.warning(f"No CSV files found under {RAW_INPUT_ROOT}/")
@@ -85,11 +85,12 @@ def run_evaluation() -> None:
 
     logger.info(f"\nDone. Results written to {OUTPUT_ROOT}/")
 
-# Step 3 – run controllers row-by-row
+
 
 def run_controllers(df: pd.DataFrame,
                     ctrl_left: WalkOnController,
                     ctrl_right: WalkOnController) -> pd.DataFrame:
+    """Run controllers row-by-row."""
     records = []
 
     for i in range(0, len(df)):
@@ -146,6 +147,7 @@ def process_evaluation()->None:
     for input_path in csv_files:
         ctrl_left  = WalkOnController(reverse=False, filtered=False)   # add constructor args as needed
         ctrl_right = WalkOnController(reverse=True, filtered=False)
+
         # Mirror subfolder structure: evaluation_raw_data/a/b.csv → evaluation_data/a/b.csv
         relative   = input_path.relative_to(ZWISCHEN_ROOT)
         output_path = OUTPUT_ROOT / relative
