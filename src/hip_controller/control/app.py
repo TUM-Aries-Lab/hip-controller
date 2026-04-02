@@ -1,6 +1,4 @@
-"""Sample doc string."""
-
-from loguru import logger
+"""Walk ON Controller for a single lower limb."""
 
 from hip_controller.control.gait_phase_control.gait_controller import GaitController
 from hip_controller.control.motor_reference_control.amplitude_modulation import (
@@ -12,46 +10,7 @@ from hip_controller.control.motor_reference_control.motor_reference_controller i
 from hip_controller.control.signal_processing.sensor_preprocessor import (
     SensorPreprocessor,
 )
-from hip_controller.definitions import (
-    BasicConfig,
-    ExosuitData,
-    PreprocessorConfig,
-    SensorSignal,
-)
-
-
-class ExoController:
-    """Walk ON Controller for the lower limb exosuit."""
-
-    def __init__(self):
-        """Initialize the controller.
-
-        :return: None
-        """
-        logger.info("Initializing the lower limb controller.")
-        self.left_controller = WalkOnController(
-            reverse=BasicConfig.left_limb_reverse, plot=BasicConfig.left_limb_plot
-        )
-        self.right_controller = WalkOnController(
-            reverse=BasicConfig.right_limb_reverse, plot=BasicConfig.right_limb_plot
-        )
-
-    def step(self, sensor_data: ExosuitData):
-        """Step the controller ahead.
-
-        :param ang_left: hip angle of the left lower limb in radians.
-        :param vel_left: hip angle velocity of the left lower limb in radians per second.
-        :param ang_right: hip angle of the right lower limb in radians.
-        :param vel_right: hip angle velocity of the right lower limb in radians per second.
-        :param timestamp: current timestamp.
-        :return: None
-
-        """
-        try:
-            self.left_controller.step(curr_signal=sensor_data.left)
-            self.right_controller.step(curr_signal=sensor_data.right)
-        except Exception as err:
-            logger.error(f"{err} - Something went wrong.")
+from hip_controller.definitions import PreprocessorConfig, SensorSignal
 
 
 class WalkOnController:

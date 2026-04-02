@@ -142,6 +142,8 @@ Run the main application:
 ```python
 from hip_controller.control.app import WalkOnController
 from hip_controller.definitions import SensorSignal
+logger.info("Initializing the lower limb controller.")
+
 
 self.controller_left = WalkOnController(reverse=False, plot=False)
 self.controller_right = WalkOnController(reverse=True, plot=False)
