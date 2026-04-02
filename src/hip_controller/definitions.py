@@ -169,7 +169,9 @@ class PreprocessorConfig:
 
     # Select methods for drift removal and velocity estimation filtering
     drift_removal_method: DriftRemovalMethod = DriftRemovalMethod.LOW_PASS
-    velocity_estimation_method: VelocityEstimationMethod = VelocityEstimationMethod.SOGI
+    velocity_estimation_method: VelocityEstimationMethod = (
+        VelocityEstimationMethod.DISCRETE_DERIVATIVE
+    )
 
     # Configurations for the filters
     drift_removal_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
