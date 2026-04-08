@@ -99,7 +99,7 @@ def compute_metrics(data: ComparisonData) -> ComparisonMetrics:
         motor_command_right_mape=mape(data.matlab_motor_command_right, data.output_motor_command_right),
     )
 
-def plot_comparison(data: ComparisonData, metrics: ComparisonMetrics) -> None:
+def plot_comparison(data: ComparisonData, metrics: ComparisonMetrics, filepath: Path) -> None:
     """Plot matlab vs output for all 4 pairs with RMSE and MAPE annotations."""
 
     pairs = [
@@ -134,17 +134,19 @@ def plot_comparison(data: ComparisonData, metrics: ComparisonMetrics) -> None:
         )
 
     plt.tight_layout()
-    plt.show()
+    fig.savefig(filepath, dpi=150)
+
+
 
 if __name__ == "__main__":
     root = Path(__file__).resolve().parents[1]
     mat_folder = root / "scripts/matlab_output_data"
     output_folder = root / "scripts/normalized_output"
+    plot_folder = root / "scripts/matlab_output_plots"
+    plot_folder.mkdir(parents=True, exist_ok=True)
     for matlab_file, output_file in iter_matlab_module_file_pair(matlab_folder=mat_folder, output_folder=output_folder):
-        if matlab_file.stem == "AB01_normal_walk_1_0-6_angle":
-            print(matlab_file)
-            print(output_file)
-            comparison_data = parse_matlab_module(matlab_file=matlab_file, output_file=output_file)
-            metrics = compute_metrics(comparison_data)
-            plot_comparison(comparison_data, metrics)
-            break # TODO
+        print(matlab_file)
+        print(output_file)
+        comparison_data = parse_matlab_module(matlab_file=matlab_file, output_file=output_file)
+        metrics = compute_metrics(comparison_data)
+        plot_comparison(data=comparison_data, metrics=metrics, filepath=Path(plot_folder)/matlab_file.stem)
