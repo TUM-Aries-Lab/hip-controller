@@ -140,6 +140,20 @@ class SogiFllFilter:
 
         return inphase_output, quadrature_output
 
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition."""
+        # va, vb
+        self._inphase: float = 0.0
+        self._quadrature: float = 0.0
+
+        # w_est, f_state, lock_state
+        self._omega_est: float = 2.0 * pi * self._config.initial_frequency_guess
+        self._frequency_estimate: float = self._config.initial_frequency_guess
+        self._confidence_state: float = 0.0
+
+        # walking
+        self._walking: bool = True
+
     @property
     def estimated_frequency_hz(self) -> float:
         """Current FLL frequency estimate [Hz]."""

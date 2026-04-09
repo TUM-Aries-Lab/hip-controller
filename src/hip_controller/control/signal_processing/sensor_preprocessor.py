@@ -96,3 +96,7 @@ class SensorPreprocessor:
         :return: None
         """
         self._prev_timestamp = None
+
+        self._drift_removal.reset()
+        self._sogi_fll.reset()
+        self._velocity_estimation.reset()

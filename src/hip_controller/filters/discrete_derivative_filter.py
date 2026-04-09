@@ -51,5 +51,8 @@ class DiscreteDerivativeFilter:
         """Reset the filter to a known initial condition.
 
         :param theta_init: Value to treat as the previous sample after reset.
+
+        :return: None
         """
         self._theta_prev = theta_init
+        self._derivative_prev = 0.0

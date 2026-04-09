@@ -39,6 +39,13 @@ class VelocityEstimationStrategy(ABC):
         :rtype: tuple[float, float]
         """
 
+    @abstractmethod
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition.
+
+        :return: None
+        """
+
 
 class SogifllVelocityEstimation(VelocityEstimationStrategy):
     """Velocity estimation via Second-Order Generalized Integrator (SOGI).
@@ -77,6 +84,13 @@ class SogifllVelocityEstimation(VelocityEstimationStrategy):
         )
         return angle_surrogate, vel_quadrature
 
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition.
+
+        :return: None
+        """
+        self._sogi_filter.reset()
+
 
 class DiscreteDerivativeVelocityEstimation(VelocityEstimationStrategy):
     """Velocity estimation via backward-difference discrete differentiation.
@@ -111,6 +125,13 @@ class DiscreteDerivativeVelocityEstimation(VelocityEstimationStrategy):
             theta=angle_rad, time_difference=time_difference
         )
         return angle_rad, velocity_discrete_derivative
+
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition.
+
+        :return: None
+        """
+        self._discrete_filter.reset()
 
 
 class LowPassVelocityEstimation(VelocityEstimationStrategy):
@@ -151,6 +172,13 @@ class LowPassVelocityEstimation(VelocityEstimationStrategy):
         )
         return angle_filtered, velocity_derivative_filtered
 
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition.
+
+        :return: None
+        """
+        self._lpf.reset()
+
 
 class GyroscopeVelocityEstimation(VelocityEstimationStrategy):
     """Velocity estimation by reading the sensor's own gyroscope channel.
@@ -175,3 +203,10 @@ class GyroscopeVelocityEstimation(VelocityEstimationStrategy):
         :rtype: tuple[float, float]
         """
         return angle_rad, gyro_velocity_rad_per_sec
+
+    def reset(self) -> None:
+        """Pass without internal filter.
+
+        :return: None
+        """
+        pass
