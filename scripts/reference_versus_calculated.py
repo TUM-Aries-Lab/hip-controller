@@ -22,7 +22,7 @@ def load_and_validate(reference_path: str, calculated_path: str):
     return ref_df, calc_df
 
 
-def build_reference_gait_phase(ref_df: pd.DataFrame, time_axis: np.ndarray) -> np.ndarray:
+def build_reference_gait_phase(ref_df: pd.DataFrame, time_axis: np.ndarray, offset: float = 0.0) -> np.ndarray:
     """
     For every gait cycle defined by (left_col1, left_col2), linearly interpolate
     gait phase from -pi to pi over that interval.  Time points outside any cycle
@@ -31,7 +31,7 @@ def build_reference_gait_phase(ref_df: pd.DataFrame, time_axis: np.ndarray) -> n
     ref_phase = np.full_like(time_axis, np.nan, dtype=float)
 
     for _, row in ref_df.iterrows():
-        t_start, t_end = float(row["left_col1"]), float(row["left_col2"])
+        t_start, t_end = float(row["left_col1"]) + offset, float(row["left_col2"]) + offset
         if t_end <= t_start:
             logger.warning(f"  [warning] skipping degenerate cycle: start={t_start}, end={t_end}")
             continue
@@ -64,20 +64,20 @@ def compute_metrics(ref: np.ndarray, calc: np.ndarray):
 
 def plot_comparison(
     time_axis: np.ndarray,
-    ref_phase: np.ndarray,
+    ref_df: pd.DataFrame,
     calc_phase: np.ndarray,
-    rmse: float,
-    mape: float,
-    valid_mask: np.ndarray,
     save_path: str | None = None,
+    offset: float = 0.0
 ):
     """Draw two-panel comparison figure."""
-    error = ref_phase - calc_phase
 
-    fig = plt.figure(figsize=(13, 7))
+    ref_phase = build_reference_gait_phase(ref_df, time_axis)
+    rmse, mape, valid_mask = compute_metrics(ref_phase, calc_phase)
+
+    fig = plt.figure(figsize=(13, 9))
     fig.suptitle("Gait Phase Comparison – Left Leg", fontsize=14, fontweight="bold", y=0.98)
 
-    gs = gridspec.GridSpec(2, 1, figure=fig, hspace=0.45)
+    gs = gridspec.GridSpec(3, 1, figure=fig, hspace=0.45)
 
     # ── Panel 1: Phase signals ──────────────────────────────────────────────
     ax1 = fig.add_subplot(gs[0])
@@ -95,10 +95,30 @@ def plot_comparison(
     ax1.legend(loc="upper right", fontsize=9)
     ax1.grid(True, alpha=0.3)
 
-    # ── Panel 2: Error ──────────────────────────────────────────────────────
-    ax2 = fig.add_subplot(gs[1])
+    ref_phase = build_reference_gait_phase(ref_df, time_axis, offset=offset)
+    rmse, mape, valid_mask = compute_metrics(ref_phase, calc_phase)
+
+    # ── Panel 2: Phase signals ──────────────────────────────────────────────
+    ax3 = fig.add_subplot(gs[1])
+    ax3.plot(time_axis, ref_phase,  label="Reference (offset)", color="#2563EB", linewidth=1.4, zorder=3)
+    ax3.plot(time_axis, calc_phase, label="Calculated",               color="#DC2626", linewidth=1.0,
+             linestyle="--", alpha=0.85, zorder=2)
+    ax3.set_ylabel("Gait Phase (rad)", fontsize=10)
+    ax3.set_xlabel("Time (s)", fontsize=10)
+    ax3.set_title("Reference (offset) vs. Calculated Gait Phase", fontsize=11)
+    ax3.set_ylim(-np.pi - 0.3, np.pi + 0.3)
+    ax3.axhline(-np.pi, color="gray", linewidth=0.5, linestyle=":")
+    ax3.axhline( np.pi, color="gray", linewidth=0.5, linestyle=":")
+    ax3.set_yticks([-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi])
+    ax3.set_yticklabels([r"$-\pi$", r"$-\pi/2$", "0", r"$\pi/2$", r"$\pi$"])
+    ax3.legend(loc="upper right", fontsize=9)
+    ax3.grid(True, alpha=0.3)
+
+    # ── Panel 3: Error ──────────────────────────────────────────────────────
+    error = ref_phase - calc_phase
+    ax2 = fig.add_subplot(gs[2])
     ax2.fill_between(time_axis, error, 0,
-                     where=valid_mask, color="#7C3AED", alpha=0.35, label="Error (ref − calc)")
+                     where=valid_mask, color="#7C3AED", alpha=0.35, label="Error (ref − calc)")  # type: ignore
     ax2.plot(time_axis[valid_mask], error[valid_mask],
              color="#7C3AED", linewidth=0.9, alpha=0.8)
     ax2.axhline(0, color="black", linewidth=0.8)
@@ -110,8 +130,9 @@ def plot_comparison(
         if not np.isnan(mape)
         else f"RMSE = {rmse:.4f} rad\nMAPE = N/A (ref≈0)"
     )
+    offset_string = f"\nRef Offset = {offset}"
     ax2.text(
-        1.01, 0.5, metrics_text,
+        1.01, 0.5, metrics_text + offset_string,
         transform=ax2.transAxes,
         fontsize=10, verticalalignment="center",
         bbox=dict(boxstyle="round,pad=0.5", facecolor="#F3F4F6", edgecolor="#9CA3AF", linewidth=1.2),
@@ -134,7 +155,7 @@ def plot_comparison(
     plt.close(fig)
 
 
-def compare_gait_phases(reference_path: str, calculated_path: str, save_path: str | None = None):
+def compare_gait_phases(reference_path: str, calculated_path: str, save_path: str | None = None, offset: float = 0.0):
     logger.info(f"\nLoading reference CSV  : {reference_path}")
     logger.info(f"Loading calculated CSV : {calculated_path}")
 
@@ -158,7 +179,11 @@ def compare_gait_phases(reference_path: str, calculated_path: str, save_path: st
     else:
         logger.info("  MAPE : N/A (reference values too close to zero)")
 
-    plot_comparison(time_axis, ref_phase, calc_phase, rmse, mape, valid_mask, save_path)
+    plot_comparison(time_axis=time_axis,
+                    ref_df=ref_df,
+                    calc_phase=calc_phase,
+                    save_path=save_path,
+                    offset=offset)
 
 
 # ── CLI entry point ────────────────────────────────────────────────────────────
@@ -167,6 +192,7 @@ def compare_gait_phases(reference_path: str, calculated_path: str, save_path: st
 reference_csv = "scripts/ground_truth_gait_parsing/normal_walk_1_2/01/normal_walk_1_1-2_parsing.csv"
 calculated_csv = "scripts/evaluation_output/normal_walk/normal_walk_1_2/AB01_normal_walk_1_1-2_angle.csv"
 save_path = "scripts/test"
+offset = -0.24
 
 if __name__ == "__main__":
-    compare_gait_phases(reference_path=reference_csv, calculated_path=calculated_csv, save_path=save_path)
+    compare_gait_phases(reference_path=reference_csv, calculated_path=calculated_csv, save_path=save_path, offset=offset)
