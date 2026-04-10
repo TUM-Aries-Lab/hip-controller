@@ -172,7 +172,7 @@ def compare_gait_phases(reference_path: str | Path, calculated_path: str | Path,
     rmse = np.inf
     valid_mask: np.ndarray = np.array([])
 
-    while offset_tmp <= 1.5 and offset_tmp >= -0.5:
+    while offset_tmp <= 1.8 and offset_tmp >= -0.5:
         offset_tmp += 0.01
 
         ref_phase = build_reference_gait_phase(ref_df, time_axis, offset=offset_tmp)
