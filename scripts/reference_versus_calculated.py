@@ -1,12 +1,12 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-import argparse
-import sys
 from loguru import logger
 
-def load_and_validate(reference_path: str, calculated_path: str):
+def load_and_validate(reference_path: str | Path, calculated_path: str | Path):
     """Load and validate both CSV files."""
     ref_df = pd.read_csv(reference_path)
     calc_df = pd.read_csv(calculated_path)
@@ -49,17 +49,13 @@ def build_reference_gait_phase(ref_df: pd.DataFrame, time_axis: np.ndarray, offs
 
 
 def compute_metrics(ref: np.ndarray, calc: np.ndarray):
-    """Compute RMSE and MAPE ignoring NaN positions."""
+    """Compute RMSE."""
     valid = ~(np.isnan(ref) | np.isnan(calc))
     r, c = ref[valid], calc[valid]
 
     rmse = np.sqrt(np.mean((r - c) ** 2))
 
-    # MAPE – guard against zero reference values
-    nonzero = np.abs(r) > 1e-9
-    mape = np.mean(np.abs((r[nonzero] - c[nonzero]) / r[nonzero])) * 100 if nonzero.any() else np.nan
-
-    return rmse, mape, valid
+    return rmse, valid
 
 
 def plot_comparison(
@@ -72,10 +68,10 @@ def plot_comparison(
     """Draw two-panel comparison figure."""
 
     ref_phase = build_reference_gait_phase(ref_df, time_axis)
-    rmse, mape, valid_mask = compute_metrics(ref_phase, calc_phase)
+    rmse, valid_mask = compute_metrics(ref_phase, calc_phase)
 
     fig = plt.figure(figsize=(13, 9))
-    fig.suptitle("Gait Phase Comparison – Left Leg", fontsize=14, fontweight="bold", y=0.98)
+    fig.suptitle("Gait Phase Comparison – Normal Walk – Left Leg", fontsize=14, fontweight="bold", y=0.98)
 
     gs = gridspec.GridSpec(3, 1, figure=fig, hspace=0.45)
 
@@ -96,13 +92,20 @@ def plot_comparison(
     ax1.grid(True, alpha=0.3)
 
     ref_phase = build_reference_gait_phase(ref_df, time_axis, offset=offset)
-    rmse, mape, valid_mask = compute_metrics(ref_phase, calc_phase)
+    rmse, valid_mask = compute_metrics(ref_phase, calc_phase)
 
     # ── Panel 2: Phase signals ──────────────────────────────────────────────
     ax3 = fig.add_subplot(gs[1])
     ax3.plot(time_axis, ref_phase,  label="Reference (offset)", color="#2563EB", linewidth=1.4, zorder=3)
     ax3.plot(time_axis, calc_phase, label="Calculated",               color="#DC2626", linewidth=1.0,
              linestyle="--", alpha=0.85, zorder=2)
+    offset_string = f"Ref Offset = {offset:.2f}"
+    ax3.text(
+        1.01, 0.5, offset_string,
+        transform=ax3.transAxes,
+        fontsize=10, verticalalignment="center",
+        bbox=dict(boxstyle="round,pad=0.5", facecolor="#F3F4F6", edgecolor="#9CA3AF", linewidth=1.2),
+    )
     ax3.set_ylabel("Gait Phase (rad)", fontsize=10)
     ax3.set_xlabel("Time (s)", fontsize=10)
     ax3.set_title("Reference (offset) vs. Calculated Gait Phase", fontsize=11)
@@ -116,7 +119,7 @@ def plot_comparison(
 
     # ── Panel 3: Error ──────────────────────────────────────────────────────
     error = ref_phase - calc_phase
-    ax2 = fig.add_subplot(gs[2])
+    ax2 = fig.add_subplot(gs[2], sharex=ax1)
     ax2.fill_between(time_axis, error, 0,
                      where=valid_mask, color="#7C3AED", alpha=0.35, label="Error (ref − calc)")  # type: ignore
     ax2.plot(time_axis[valid_mask], error[valid_mask],
@@ -125,14 +128,10 @@ def plot_comparison(
 
     # Metrics text box
     metrics_text = (
-        f"RMSE = {rmse:.4f} rad\n"
-        f"MAPE = {mape:.2f} %"
-        if not np.isnan(mape)
-        else f"RMSE = {rmse:.4f} rad\nMAPE = N/A (ref≈0)"
+        f"RMSE = {rmse:.4f} rad"
     )
-    offset_string = f"\nRef Offset = {offset}"
     ax2.text(
-        1.01, 0.5, metrics_text + offset_string,
+        1.01, 0.5, metrics_text,
         transform=ax2.transAxes,
         fontsize=10, verticalalignment="center",
         bbox=dict(boxstyle="round,pad=0.5", facecolor="#F3F4F6", edgecolor="#9CA3AF", linewidth=1.2),
@@ -155,7 +154,7 @@ def plot_comparison(
     plt.close(fig)
 
 
-def compare_gait_phases(reference_path: str, calculated_path: str, save_path: str | None = None, offset: float = 0.0):
+def compare_gait_phases(reference_path: str | Path, calculated_path: str | Path, save_path: str | None = None):
     logger.info(f"\nLoading reference CSV  : {reference_path}")
     logger.info(f"Loading calculated CSV : {calculated_path}")
 
@@ -167,17 +166,26 @@ def compare_gait_phases(reference_path: str, calculated_path: str, save_path: st
     logger.info(f"  Calculated CSV rows  : {len(time_axis)}")
     logger.info(f"  Reference gait cycles: {len(ref_df)}")
 
-    ref_phase = build_reference_gait_phase(ref_df, time_axis)
+    offset_tmp = -0.5
+    offset = 0.0
+    least_rmse = np.inf
+    rmse = np.inf
+    valid_mask: np.ndarray = np.array([])
 
-    rmse, mape, valid_mask = compute_metrics(ref_phase, calc_phase)
+    while offset_tmp <= 1.5 and offset_tmp >= -0.5:
+        offset_tmp += 0.01
+
+        ref_phase = build_reference_gait_phase(ref_df, time_axis, offset=offset_tmp)
+
+        rmse, valid_mask_tmp = compute_metrics(ref_phase, calc_phase)
+        if rmse < least_rmse:
+            offset = offset_tmp
+            least_rmse = rmse
+            valid_mask = valid_mask_tmp
 
     covered = valid_mask.sum()
     logger.info(f"\n  Time points inside a reference cycle: {covered} / {len(time_axis)}")
     logger.info(f"  RMSE : {rmse:.6f} rad")
-    if not np.isnan(mape):
-        logger.info(f"  MAPE : {mape:.4f} %")
-    else:
-        logger.info("  MAPE : N/A (reference values too close to zero)")
 
     plot_comparison(time_axis=time_axis,
                     ref_df=ref_df,
@@ -188,11 +196,25 @@ def compare_gait_phases(reference_path: str, calculated_path: str, save_path: st
 
 # ── CLI entry point ────────────────────────────────────────────────────────────
 
+def iter_normal_walk(reference_dir: Path, calculated_dir: Path):
+    for ref in reference_dir.rglob("*.csv"):
+        trial_num = str(ref.parent.stem)
+        output_dir = calculated_dir / ref.resolve().parents[1].stem
+        for cal in output_dir.rglob("*.csv"):
+            if "AB" + trial_num in cal.stem:
+                yield ref, cal, trial_num
+
 
 reference_csv = "scripts/ground_truth_gait_parsing/normal_walk_1_2/01/normal_walk_1_1-2_parsing.csv"
 calculated_csv = "scripts/evaluation_output/normal_walk/normal_walk_1_2/AB01_normal_walk_1_1-2_angle.csv"
-save_path = "scripts/test"
+save_path = "scripts/normal_walk/"
 offset = -0.24
 
 if __name__ == "__main__":
-    compare_gait_phases(reference_path=reference_csv, calculated_path=calculated_csv, save_path=save_path, offset=offset)
+    root = Path(__file__).resolve().parents[1]
+    reference_dir = root / "scripts/ground_truth_gait_parsing/normal_walk"
+    calculated_dir = root / "scripts/evaluation_output/normal_walk"
+    plot_folder = Path(save_path)
+    plot_folder.mkdir(parents=True, exist_ok=True)
+    for ref, cal, num in iter_normal_walk(reference_dir, calculated_dir):
+        compare_gait_phases(reference_path=ref, calculated_path=cal, save_path=save_path+ref.stem+num)
