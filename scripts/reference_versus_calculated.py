@@ -11,18 +11,23 @@ def load_and_validate(reference_path: str | Path, calculated_path: str | Path):
     ref_df = pd.read_csv(reference_path)
     calc_df = pd.read_csv(calculated_path)
 
-    required_ref = {"left_col1", "left_col2"}
+    required_ref_left = {"left_col1", "left_col2"}
+    required_ref_right = {"right_col1", "right_col2"}
     required_calc = {"time (s)", "gait_phase_left (rad)"}
 
-    if not required_ref.issubset(ref_df.columns):
-        raise ValueError(f"Reference CSV must contain columns: {required_ref}. Found: {set(ref_df.columns)}")
+    if not required_ref_left.issubset(ref_df.columns):
+        if not required_ref_right.issubset(ref_df.columns):
+            raise ValueError(f"Reference CSV must contain columns: {required_ref_left}. Found: {set(ref_df.columns)}")
+        is_left = False
+    else:
+        is_left = True
     if not required_calc.issubset(calc_df.columns):
         raise ValueError(f"Calculated CSV must contain columns: {required_calc}. Found: {set(calc_df.columns)}")
 
-    return ref_df, calc_df
+    return ref_df, calc_df, is_left
 
 
-def build_reference_gait_phase(ref_df: pd.DataFrame, time_axis: np.ndarray, offset: float = 0.0) -> np.ndarray:
+def build_reference_gait_phase(ref_df: pd.DataFrame, time_axis: np.ndarray, is_left: bool, offset: float = 0.0) -> np.ndarray:
     """
     For every gait cycle defined by (left_col1, left_col2), linearly interpolate
     gait phase from -pi to pi over that interval.  Time points outside any cycle
@@ -31,7 +36,10 @@ def build_reference_gait_phase(ref_df: pd.DataFrame, time_axis: np.ndarray, offs
     ref_phase = np.full_like(time_axis, np.nan, dtype=float)
 
     for _, row in ref_df.iterrows():
-        t_start, t_end = float(row["left_col1"]) + offset, float(row["left_col2"]) + offset
+        if is_left:
+            t_start, t_end = float(row["left_col1"]) + offset, float(row["left_col2"]) + offset
+        else:
+            t_start, t_end = float(row["right_col1"]) + offset, float(row["right_col2"]) + offset
         if t_end <= t_start:
             logger.warning(f"  [warning] skipping degenerate cycle: start={t_start}, end={t_end}")
             continue
@@ -62,16 +70,18 @@ def plot_comparison(
     time_axis: np.ndarray,
     ref_df: pd.DataFrame,
     calc_phase: np.ndarray,
+    is_left: bool,
     save_path: str | None = None,
     offset: float = 0.0
 ):
     """Draw two-panel comparison figure."""
 
-    ref_phase = build_reference_gait_phase(ref_df, time_axis)
+    ref_phase = build_reference_gait_phase(ref_df=ref_df, time_axis=time_axis, is_left=is_left)
     rmse, valid_mask = compute_metrics(ref_phase, calc_phase)
+    leg_title = "Left Leg" if is_left else "Right Leg"
 
     fig = plt.figure(figsize=(13, 9))
-    fig.suptitle("Gait Phase Comparison – Normal Walk – Left Leg", fontsize=14, fontweight="bold", y=0.98)
+    fig.suptitle(f"Gait Phase Comparison – Incline Walk – {leg_title}", fontsize=14, fontweight="bold", y=0.98)
 
     gs = gridspec.GridSpec(3, 1, figure=fig, hspace=0.45)
 
@@ -91,7 +101,7 @@ def plot_comparison(
     ax1.legend(loc="upper right", fontsize=9)
     ax1.grid(True, alpha=0.3)
 
-    ref_phase = build_reference_gait_phase(ref_df, time_axis, offset=offset)
+    ref_phase = build_reference_gait_phase(ref_df=ref_df, time_axis=time_axis, offset=offset, is_left=is_left)
     rmse, valid_mask = compute_metrics(ref_phase, calc_phase)
 
     # ── Panel 2: Phase signals ──────────────────────────────────────────────
@@ -158,7 +168,7 @@ def compare_gait_phases(reference_path: str | Path, calculated_path: str | Path,
     logger.info(f"\nLoading reference CSV  : {reference_path}")
     logger.info(f"Loading calculated CSV : {calculated_path}")
 
-    ref_df, calc_df = load_and_validate(reference_path, calculated_path)
+    ref_df, calc_df, is_left = load_and_validate(reference_path, calculated_path)
 
     time_axis  = calc_df["time (s)"].to_numpy(dtype=float)
     calc_phase = calc_df["gait_phase_left (rad)"].to_numpy(dtype=float)
@@ -175,7 +185,7 @@ def compare_gait_phases(reference_path: str | Path, calculated_path: str | Path,
     while offset_tmp <= 1.8 and offset_tmp >= -0.5:
         offset_tmp += 0.01
 
-        ref_phase = build_reference_gait_phase(ref_df, time_axis, offset=offset_tmp)
+        ref_phase = build_reference_gait_phase(ref_df=ref_df, time_axis=time_axis, offset=offset_tmp, is_left=is_left)
 
         rmse, valid_mask_tmp = compute_metrics(ref_phase, calc_phase)
         if rmse < least_rmse:
@@ -189,6 +199,7 @@ def compare_gait_phases(reference_path: str | Path, calculated_path: str | Path,
 
     plot_comparison(time_axis=time_axis,
                     ref_df=ref_df,
+                    is_left=is_left,
                     calc_phase=calc_phase,
                     save_path=save_path,
                     offset=offset)
@@ -204,17 +215,39 @@ def iter_normal_walk(reference_dir: Path, calculated_dir: Path):
             if "AB" + trial_num in cal.stem:
                 yield ref, cal, trial_num
 
+def iter_incline_walk(reference_dir: Path, calculated_dir: Path):
+    for ref in reference_dir.rglob("*.csv"):
+        trial_num = str(ref.parent.stem)
+        output_dir = calculated_dir / ref.resolve().parents[1].stem
+        direction: str
+        if "up" in ref.stem:
+            direction = "up"
+        elif "down" in ref.stem:
+            direction = "down"
+        else:
+            raise ValueError
+        for cal in output_dir.rglob("*.csv"):
+            if "AB" + trial_num in cal.stem and direction in cal.stem:
+                yield ref, cal, trial_num
 
-reference_csv = "scripts/ground_truth_gait_parsing/normal_walk_1_2/01/normal_walk_1_1-2_parsing.csv"
-calculated_csv = "scripts/evaluation_output/normal_walk/normal_walk_1_2/AB01_normal_walk_1_1-2_angle.csv"
-save_path = "scripts/normal_walk/"
-offset = -0.24
 
-if __name__ == "__main__":
+save_path = "scripts/incline_walk/"
+
+def normal_walk_pipeline():
     root = Path(__file__).resolve().parents[1]
     reference_dir = root / "scripts/ground_truth_gait_parsing/normal_walk"
     calculated_dir = root / "scripts/evaluation_output/normal_walk"
     plot_folder = Path(save_path)
     plot_folder.mkdir(parents=True, exist_ok=True)
     for ref, cal, num in iter_normal_walk(reference_dir, calculated_dir):
+        compare_gait_phases(reference_path=ref, calculated_path=cal, save_path=save_path+ref.stem+num)
+
+
+if __name__ == "__main__":
+    root = Path(__file__).resolve().parents[1]
+    reference_dir = root / "scripts/ground_truth_gait_parsing/incline_walk"
+    calculated_dir = root / "scripts/evaluation_output/incline_walk"
+    plot_folder = Path(save_path)
+    plot_folder.mkdir(parents=True, exist_ok=True)
+    for ref, cal, num in iter_incline_walk(reference_dir, calculated_dir):
         compare_gait_phases(reference_path=ref, calculated_path=cal, save_path=save_path+ref.stem+num)
