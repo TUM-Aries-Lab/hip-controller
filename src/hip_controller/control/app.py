@@ -34,7 +34,7 @@ class WalkOnController:
             from hip_controller.plotter.live_phase_portrait import PortraitWindow
 
             # Execute the Qt plot application.
-            self.plotter = PortraitWindow(left=reverse)
+            self.plotter = PortraitWindow(left=not reverse)
             self.plotter.show()
 
         self.pre_processor = SensorPreprocessor(PreprocessorConfig())

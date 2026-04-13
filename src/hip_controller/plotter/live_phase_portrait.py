@@ -69,11 +69,13 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         self.setCentralWidget(central)
 
         # ---- Left: time-series graph of sinusoidal behavior of the gait phase ----
-        self.time_plot = pg.PlotWidget(title="Sin-wave of the gait phase vs Time")
+        self.time_plot = pg.PlotWidget(title=PlotConfig.time_plot_title)
 
         # Label the axes
-        self.time_plot.setLabel("bottom", "Time", units="s")
-        self.time_plot.setLabel("left", "<math>-sin(Φ) </math>")
+        self.time_plot.setLabel("bottom", PlotConfig.time_plot_x_axis_label, units="s")
+        self.time_plot.setLabel(
+            "left", PlotConfig.time_plot_y_axis_label, units="rad/s"
+        )
 
         # PlotWidget.setXRange(r, padding) is a wrapper that forwards arguments down to ViewBox.setXRange(min, max, padding)
         # At runtime, ViewBox expects min and max. As a result, min and max are passed positionally here, instead of keywords.
@@ -90,11 +92,15 @@ class PortraitWindow(QtWidgets.QMainWindow):  # pragma: no cover
         )
 
         # ---- Right: phase portrait ----
-        self.phase_plot = pg.PlotWidget(title="Phase Portrait of angle vs velocity")
+        self.phase_plot = pg.PlotWidget(title=PlotConfig.phase_plot_title)
 
         # Create the phase portrait plot widget
-        self.phase_plot.setLabel("bottom", PlotConfig.phase_plot_axis_angle)
-        self.phase_plot.setLabel("left", PlotConfig.phase_plot_axis_velocity)
+        self.phase_plot.setLabel(
+            "bottom", PlotConfig.phase_plot_axis_angle, units="rad"
+        )
+        self.phase_plot.setLabel(
+            "left", PlotConfig.phase_plot_axis_velocity, units="rad/s"
+        )
         self.phase_plot.setAspectLocked(True)
 
         # Setup for the manual window range

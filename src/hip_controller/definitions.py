@@ -341,6 +341,9 @@ class PlotConfig:
     draw_sample_frequency = 10
 
     # left time-series graph config
+    time_plot_title: str = "Motor Command Time Series"
+    time_plot_x_axis_label = "Time"
+    time_plot_y_axis_label = "Motor Velocity Command"
     time_plot_size: int = 150
     time_plot_window_size_sec = (
         2  # This should align with the plot number size with frequency of the samples
@@ -357,11 +360,12 @@ class PlotConfig:
     time_plot_window_follow = time_plot_window_lead_sec - time_plot_window_size_sec
 
     # right phase portrait config
+    phase_plot_title: str = "Phase Portrait"
     phase_plot_size: int = 150
     phase_plot_window_margin = 1.1
 
-    phase_plot_axis_angle = "Angle (rad)"
-    phase_plot_axis_velocity = "Velocity (rad/s)"
+    phase_plot_axis_angle = "Centered and Scaled Angle"
+    phase_plot_axis_velocity = "Centered Angular Velocity"
     phase_plot_scatter_size = 5
 
     # Since the spots are fading transparently, RGB values are be given separately
