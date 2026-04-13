@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 
 import numpy as np
@@ -5,6 +7,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from loguru import logger
+
+
+class Scenarios(StrEnum):
+        incline_walk_down5 = "incline_walk_1_down5_parsing"
+        incline_walk_up5 = "incline_walk_1_up5_parsing"
+        incline_walk_up10 = "incline_walk_2_up10_parsing"
+        incline_walk_down10 = "incline_walk_2_down10_parsing"
+        normal_walk_0_6 = "normal_walk_1_0-6_parsing"
+        incline_walk_1_2 = "normal_walk_1_1-2_parsing"
+        incline_walk_1_8 = "normal_walk_1_1-8_parsing"
+
+@dataclass
+class EvaluationData:
+    subject: int
+    scenario: str
+    ref_offset: float
+    num_cycles: int
+    RMSE: float
+    RMSE_spike_rm: float
 
 def load_and_validate(reference_path: str | Path, calculated_path: str | Path):
     """Load and validate both CSV files."""
@@ -63,7 +84,12 @@ def compute_metrics(ref: np.ndarray, calc: np.ndarray):
 
     rmse = np.sqrt(np.mean((r - c) ** 2))
 
-    return rmse, valid
+    # Filter out the spikes
+    error = r - c
+    mask = np.abs(error) < 5.0  # Threshold for outlier removal (adjust as needed)
+    rmse_spike_removed = np.sqrt(np.mean((error[mask]) ** 2))
+
+    return rmse, rmse_spike_removed, valid
 
 
 def plot_comparison(
@@ -71,17 +97,18 @@ def plot_comparison(
     ref_df: pd.DataFrame,
     calc_phase: np.ndarray,
     is_left: bool,
+    scenario: str,
     save_path: str | None = None,
     offset: float = 0.0
 ):
     """Draw two-panel comparison figure."""
 
     ref_phase = build_reference_gait_phase(ref_df=ref_df, time_axis=time_axis, is_left=is_left)
-    rmse, valid_mask = compute_metrics(ref_phase, calc_phase)
+    rmse, rmse_spike_removed, valid_mask = compute_metrics(ref_phase, calc_phase)
     leg_title = "Left Leg" if is_left else "Right Leg"
 
     fig = plt.figure(figsize=(13, 9))
-    fig.suptitle(f"Gait Phase Comparison – Incline Walk – {leg_title}", fontsize=14, fontweight="bold", y=0.98)
+    fig.suptitle(f"Gait Phase Comparison – {scenario} – {leg_title}", fontsize=14, fontweight="bold", y=0.98)
 
     gs = gridspec.GridSpec(3, 1, figure=fig, hspace=0.45)
 
@@ -102,14 +129,14 @@ def plot_comparison(
     ax1.grid(True, alpha=0.3)
 
     ref_phase = build_reference_gait_phase(ref_df=ref_df, time_axis=time_axis, offset=offset, is_left=is_left)
-    rmse, valid_mask = compute_metrics(ref_phase, calc_phase)
+    rmse, rmse_spike_removed, valid_mask = compute_metrics(ref_phase, calc_phase)
 
     # ── Panel 2: Phase signals ──────────────────────────────────────────────
     ax3 = fig.add_subplot(gs[1])
     ax3.plot(time_axis, ref_phase,  label="Reference (offset)", color="#2563EB", linewidth=1.4, zorder=3)
     ax3.plot(time_axis, calc_phase, label="Calculated",               color="#DC2626", linewidth=1.0,
              linestyle="--", alpha=0.85, zorder=2)
-    offset_string = f"Ref Offset = {offset:.2f}"
+    offset_string = f"Ref Offset = {offset:.2f}\nNumber of cycles = {len(ref_df)}"
     ax3.text(
         1.01, 0.5, offset_string,
         transform=ax3.transAxes,
@@ -139,6 +166,7 @@ def plot_comparison(
     # Metrics text box
     metrics_text = (
         f"RMSE = {rmse:.4f} rad"
+        f"\nRMSE (spike removed) = {rmse_spike_removed:.4f} rad"
     )
     ax2.text(
         1.01, 0.5, metrics_text,
@@ -164,7 +192,7 @@ def plot_comparison(
     plt.close(fig)
 
 
-def compare_gait_phases(reference_path: str | Path, calculated_path: str | Path, save_path: str | None = None):
+def compare_gait_phases(scenario: str, reference_path: Path, calculated_path: Path, save_path: str | None = None, plot_flag: bool = True):
     logger.info(f"\nLoading reference CSV  : {reference_path}")
     logger.info(f"Loading calculated CSV : {calculated_path}")
 
@@ -182,12 +210,12 @@ def compare_gait_phases(reference_path: str | Path, calculated_path: str | Path,
     rmse = np.inf
     valid_mask: np.ndarray = np.array([])
 
-    while offset_tmp <= 1.8 and offset_tmp >= -0.5:
+    while offset_tmp <= 0.5 and offset_tmp >= -0.5:
         offset_tmp += 0.01
 
         ref_phase = build_reference_gait_phase(ref_df=ref_df, time_axis=time_axis, offset=offset_tmp, is_left=is_left)
 
-        rmse, valid_mask_tmp = compute_metrics(ref_phase, calc_phase)
+        rmse, rmse_spike_removed, valid_mask_tmp = compute_metrics(ref_phase, calc_phase)
         if rmse < least_rmse:
             offset = offset_tmp
             least_rmse = rmse
@@ -195,14 +223,27 @@ def compare_gait_phases(reference_path: str | Path, calculated_path: str | Path,
 
     covered = valid_mask.sum()
     logger.info(f"\n  Time points inside a reference cycle: {covered} / {len(time_axis)}")
-    logger.info(f"  RMSE : {rmse:.6f} rad")
+    logger.info(f"  RMSE : {least_rmse:.6f} rad")
 
-    plot_comparison(time_axis=time_axis,
-                    ref_df=ref_df,
-                    is_left=is_left,
-                    calc_phase=calc_phase,
-                    save_path=save_path,
-                    offset=offset)
+    if plot_flag:
+        plot_comparison(time_axis=time_axis,
+                        ref_df=ref_df,
+                        is_left=is_left,
+                        scenario=scenario,
+                        calc_phase=calc_phase,
+                        save_path=save_path,
+                        offset=offset)
+
+    ref_phase = build_reference_gait_phase(ref_df=ref_df, time_axis=time_axis, offset=offset, is_left=is_left)
+    rmse, rmse_spike_removed, valid_mask = compute_metrics(ref_phase, calc_phase)
+    return EvaluationData(
+        subject=int(reference_path.parent.stem),
+        scenario=reference_path.stem,
+        ref_offset=offset,
+        num_cycles=len(ref_df),
+        RMSE=least_rmse,
+        RMSE_spike_rm=rmse_spike_removed
+    )
 
 
 # ── CLI entry point ────────────────────────────────────────────────────────────
@@ -231,23 +272,81 @@ def iter_incline_walk(reference_dir: Path, calculated_dir: Path):
                 yield ref, cal, trial_num
 
 
-save_path = "scripts/incline_walk/"
-
 def normal_walk_pipeline():
     root = Path(__file__).resolve().parents[1]
     reference_dir = root / "scripts/ground_truth_gait_parsing/normal_walk"
     calculated_dir = root / "scripts/evaluation_output/normal_walk"
+    save_path = "scripts/normal_walk/"
+    scenario = "Normal Walk"
     plot_folder = Path(save_path)
     plot_folder.mkdir(parents=True, exist_ok=True)
     for ref, cal, num in iter_normal_walk(reference_dir, calculated_dir):
-        compare_gait_phases(reference_path=ref, calculated_path=cal, save_path=save_path+ref.stem+num)
+        compare_gait_phases(scenario=scenario, reference_path=ref, calculated_path=cal, save_path=save_path+ref.stem+num)
 
-
-if __name__ == "__main__":
+def incline_walk_pipeline():
     root = Path(__file__).resolve().parents[1]
     reference_dir = root / "scripts/ground_truth_gait_parsing/incline_walk"
     calculated_dir = root / "scripts/evaluation_output/incline_walk"
+    save_path = "scripts/incline_walk/"
+    scenario = "Incline Walk"
     plot_folder = Path(save_path)
     plot_folder.mkdir(parents=True, exist_ok=True)
     for ref, cal, num in iter_incline_walk(reference_dir, calculated_dir):
-        compare_gait_phases(reference_path=ref, calculated_path=cal, save_path=save_path+ref.stem+num)
+        compare_gait_phases(scenario=scenario, reference_path=ref, calculated_path=cal, save_path=save_path+ref.stem+num)
+
+
+
+def calculate_mean_rmse():
+    trials: dict[str, list[EvaluationData]] = {scenario: [] for scenario in Scenarios}
+    root = Path(__file__).resolve().parents[1]
+    reference_dir = root / "scripts/ground_truth_gait_parsing/normal_walk"
+    calculated_dir = root / "scripts/evaluation_output/normal_walk"
+    save_path = "scripts/normal_walk/"
+    scenario = "Normal Walk"
+    plot_folder = Path(save_path)
+    plot_folder.mkdir(parents=True, exist_ok=True)
+    for ref, cal, num in iter_normal_walk(reference_dir, calculated_dir):
+        evaluation_data = compare_gait_phases(scenario=scenario, reference_path=ref, calculated_path=cal, save_path=save_path+ref.stem+num, plot_flag=False)
+        logger.info(evaluation_data)
+        appended = False
+        for s in Scenarios:
+            if evaluation_data.scenario in s:
+                trials[s].append(evaluation_data)
+                appended = True
+                break
+        if not appended:
+            logger.warning(f"Trial not appended: {ref}")
+    root = Path(__file__).resolve().parents[1]
+    reference_dir = root / "scripts/ground_truth_gait_parsing/incline_walk"
+    calculated_dir = root / "scripts/evaluation_output/incline_walk"
+    save_path = "scripts/incline_walk/"
+    scenario = "Incline Walk"
+    plot_folder = Path(save_path)
+    plot_folder.mkdir(parents=True, exist_ok=True)
+    for ref, cal, num in iter_incline_walk(reference_dir, calculated_dir):
+        evaluation_data = compare_gait_phases(scenario=scenario, reference_path=ref, calculated_path=cal, save_path=save_path+ref.stem+num, plot_flag=False)
+        logger.info(evaluation_data)
+        appended = False
+        for s in Scenarios:
+            if evaluation_data.scenario in s:
+                trials[s].append(evaluation_data)
+                appended = True
+                break
+        if not appended:
+            logger.warning(f"Trial not appended: {ref}")
+
+    for scenario in trials.keys():
+        data_list = trials[scenario]
+        RMSE_mean = np.mean([data.RMSE for data in data_list])
+        RMSE_spike_rm_mean = np.mean([data.RMSE_spike_rm for data in data_list])
+        RMSE_variance = np.var([data.RMSE for data in data_list])
+        RMSE_spike_rm_variance = np.var([data.RMSE_spike_rm for data in data_list])
+        logger.info(f"Scenario: {scenario}")
+        logger.info(f"  Mean RMSE: {RMSE_mean:.6f} rad")
+        logger.info(f"  Mean RMSE (spike removed): {RMSE_spike_rm_mean:.6f} rad")
+        logger.info(f"  RMSE Variance: {RMSE_variance:.6f} rad^2")
+        logger.info(f"  RMSE (spike removed) Variance: {RMSE_spike_rm_variance:.6f} rad^2")
+
+
+if __name__ == "__main__":
+    calculate_mean_rmse()
