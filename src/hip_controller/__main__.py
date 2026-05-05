@@ -4,14 +4,21 @@ Reads data from a CSV file with CSV player with timestamp and compute the contro
 """
 
 import argparse  # pragma: no cover
+import signal  # pragma: no cover
 from pathlib import Path  # pragma: no cover
 
+from loguru import logger
+from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
+
+from hip_controller.control.app import WalkOnController
 from hip_controller.definitions import (
     DEFAULT_LOG_LEVEL,
     BasicConfig,
+    ExosuitData,
     LogLevel,
 )  # pragma: no cover
-from scripts.simulator import simulate_controller_with_data
+from hip_controller.plotter.csv_player import CSVPlayer
+from hip_controller.utils.utils import setup_logger
 
 
 def main(
@@ -29,9 +36,38 @@ def main(
     # Example
         -  simulate_controller_with_data(log_level=log_level, stderr_level=stderr_level, csv_path=BasicConfig.read_data_from_path)
     """
-    simulate_controller_with_data(
-        log_level=log_level, stderr_level=stderr_level, csv_path=csv_path
-    )
+    setup_logger(log_level=log_level, stderr_level=stderr_level)
+
+    app = QtWidgets.QApplication([])
+
+    player = CSVPlayer(csv_path)
+    controller_left = WalkOnController(reverse=True, plot=True, filtered=True)
+    controller_right = WalkOnController(reverse=False, plot=True, filtered=True)
+    timer = QtCore.QTimer()
+
+    def update() -> None:
+        """Update the controller with the next line of CSV data."""
+        if not player.has_next_line():
+            timer.stop()
+            return
+
+        sensor_data: ExosuitData = player.get_sensor_data_from_csv()
+        controller_left.step(sensor_data.left)
+        controller_right.step(sensor_data.right)
+
+        # setInterval in miliseconds. Update each 10ms
+        timer.setInterval(10)
+
+    def sigint_handler(signal, frame) -> None:
+        """Handle SIGINT (Ctrl+C) gracefully."""
+        logger.success("Keyboard interrupted with ^C.")
+        timer.stop()
+        app.quit()
+
+    timer.timeout.connect(slot=update)
+    signal.signal(signal.SIGINT, sigint_handler)
+    timer.start(0)
+    app.exec()
 
 
 if __name__ == "__main__":  # pragma: no cover

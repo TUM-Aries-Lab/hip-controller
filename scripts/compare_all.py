@@ -193,6 +193,60 @@ def plot_aggregate_comparison(data_list: list[ComparisonData], filepath: Path) -
     plt.tight_layout()
     fig.savefig(filepath, dpi=150)
 
+def plot_rmse_errorbar(trial_groups: dict[str, list[ComparisonData]]) -> None:
+    """
+    For each group, compute per-trial average RMSE (mean of left+right legs,
+    for both gait phase and motor command), then plot an error bar chart
+    sorted by ascending mean RMSE per signal type.
+    """
+
+    def per_trial_avg_rmse(data_list: list[ComparisonData]) -> dict[str, np.ndarray]:
+        """Returns arrays of shape (n_trials,) for each signal type."""
+        gait, motor = [], []
+        for d in data_list:
+            m = compute_metrics(d)
+            gait.append(np.mean([m.gait_phase_left_rmse, m.gait_phase_right_rmse]))
+            motor.append(np.mean([m.motor_command_left_rmse, m.motor_command_right_rmse]))
+        return {
+            "Gait Phase":    np.array(gait),
+            "Motor Command": np.array(motor),
+        }
+
+    # Compute stats per group
+    group_stats: dict[str, dict[str, tuple[float, float]]] = {}
+    for group_name, data_list in trial_groups.items():
+        trial_rmses = per_trial_avg_rmse(data_list)
+        group_stats[group_name] = {
+            signal: (values.mean(), values.std())
+            for signal, values in trial_rmses.items()
+        }
+
+    signal_types = ["Gait Phase", "Motor Command"]
+    fig, axes = plt.subplots(2, 1, figsize=(10, 8))
+    fig.suptitle("RMSE by Trial Group", fontsize=14, fontweight="bold")
+
+    for ax, signal in zip(axes, signal_types):
+        # Sort groups by ascending mean RMSE for this signal
+        sorted_groups = sorted(group_stats.items(), key=lambda kv: kv[1][signal][0])
+        labels = [g for g, _ in sorted_groups]
+        means  = np.array([stats[signal][0] for _, stats in sorted_groups])
+        stds   = np.array([stats[signal][1] for _, stats in sorted_groups])
+
+        xs = np.arange(len(labels))
+        ax.errorbar(xs, means, yerr=stds, fmt="o", capsize=5,
+                    linewidth=1.5, markersize=6, color="tab:blue", ecolor="tab:blue")
+
+        ax.set_title(signal)
+        ax.set_xticks(xs)
+        ax.set_xticklabels(labels, rotation=25, ha="right")
+        ax.set_ylabel("RMSE")
+        ax.grid(True, alpha=0.3, axis="y")
+
+    plt.tight_layout()
+    plt.show()
+
+# --------------------------------------------------------------------------------------------------------------
+
 def plot_all_pipeline():
     root = Path(__file__).resolve().parents[1]
     mat_folder = root / "scripts/matlab_output_data"
@@ -226,6 +280,41 @@ def plot_combined_pipeline():
 
     plot_aggregate_comparison(data_list=comparison_data_combined, filepath=Path(plot_folder) / "normal_walk_1_1-2")
 
+def plot_error_bar_pipeline():
+    root = Path(__file__).resolve().parents[1]
+    mat_folder = root / "scripts/matlab_output_data"
+    output_folder = root / "scripts/normalized_output"
+    plot_folder = root / "scripts/matlab_output_plots"
+    plot_folder.mkdir(parents=True, exist_ok=True)
+    trial_group_names: list[str] = [
+        "incline_walk_5",
+        "incline_walk_10",
+        "normal_walk_1_0-6",
+        "normal_walk_1_1-2",
+        "normal_walk_1_1-8",
+        #"stairs_combined",
+        "turn_and_step_1_left",
+        "turn_and_step_1_right"
+    ]
+    trial_group_rename: list[str] = [
+        "incline_walk_5",
+        "incline_walk_10",
+        "normal_walk_0-6",
+        "normal_walk_1-2",
+        "normal_walk_1-8",
+        #"stairs_combined",
+        "turn_and_step_left",
+        "turn_and_step_right"
+    ]
+    trial_groups: dict[str, list[ComparisonData]] = {name: [] for name in trial_group_rename}
+    for matlab_file, output_file in iter_matlab_module_file_pair(matlab_folder=mat_folder, output_folder=output_folder):
+        index = 0
+        for trial in trial_group_names:
+            if trial in matlab_file.stem:
+                trial_groups[trial_group_rename[index]].append(parse_matlab_module(matlab_file=matlab_file, output_file=output_file))
+            index += 1
+    plot_rmse_errorbar(trial_groups=trial_groups)
+
 
 if __name__ == "__main__":
-    plot_combined_pipeline()
+    plot_error_bar_pipeline()
