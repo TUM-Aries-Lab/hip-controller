@@ -39,16 +39,14 @@ def simulate_comparison_dynamic(
     func: Callable[[float], tuple[float, Any]],
     path: Path,
 ) -> None:
-    """Simulate the comparison of the output and the expected output.
+    """Simulate the comparison of the actual output against an expected output from CSV data.
 
-    :param str input_name: The column name of the input variable.
-    :param str expected_output_name: The column name of the output variable.
-    :param Callable[[float], tuple[float, Any]] func: Function to call and compare.
-    :param str csv_path: Path to the CSV file used for simulated real-time playback. The user could pass in the path of a file as well.
+    :param str input_name: Column name of the input variable.
+    :param str expected_output_name: Column name of the expected output variable.
+    :param Callable[[float], tuple[float, Any]] func: Callable that produces the actual output from an input value.
+    :param Path path: Path to the CSV file used for simulated real-time playback.
     :return: None
 
-
-    Usage Example:
         from hip_controller.definitions import DATA_DIR
         simulate( input_name="motion_mapping_key", output_name="motion_mapping_value", func=MotionMapping().spline, path=DATA_DIR / "sensor_data" / "look_up_table_2026_02_25.csv")
         -----------
@@ -102,11 +100,11 @@ def simulate_controller_with_data(
     stderr_level: str = DEFAULT_LOG_LEVEL,
     csv_path: Path = BasicConfig.read_data_from_path,
 ) -> None:  # pragma: no cover
-    """Run the main pipeline.
+    """Run the main GUI controller pipeline using CSV sensor data.
 
-    :param log_level: The log level to use.
-    :param stderr_level: The std err level to use.
-    :param str csv_path: Path to the CSV file used for simulated real-time playback. The user could pass in the path of a file as well.
+    :param str log_level: The log level to use for logger output.
+    :param str stderr_level: The log level to use for stderr output.
+    :param Path csv_path: Path to the CSV file used for simulated real-time playback.
     :return: None
     """
     setup_logger(log_level=log_level, stderr_level=stderr_level)
@@ -146,7 +144,10 @@ def simulate_controller_with_data(
 
 
 def demonstrate_random_lpf_static() -> None:  # pragma no cover
-    """Demonstrate to test the 2nd order low pass filter with small random data and show the plot."""
+    """Demonstrate the second-order low-pass filter with random test data and display the plot.
+
+    :return: None
+    """
     wn = 100.0
     zt = 1.0
     x0 = 0.0
@@ -209,15 +210,12 @@ def plot_notch_filter_debug(
 ) -> None:
     """Plot notch filter input, expected output, actual output, and their difference.
 
-        :param str csv_path: Path to the CSV file.
-        :param str timestamp_col: Column name for timestamps.
-        :param str raw_angle_col: Column name for raw angle (filter input).
-        :param str expected_col: Column name for expected filtered output.
-        :param list[float] actual_results: Actual filter outputs collected during the test.
-
-        # Example
-            - plot_notch_filter_debug(csv_path=DATA_PRE_PROCESSING, timestamp_col=KinematicsDataColumnName.TIMESTAMP, raw_angle_col=KinematicsDataColumnName.RAW_ANG_LEFT, expected_col=KinematicsDataColumnName.NO_DRIFT_ANG_NOTCH, actual_results=actual_results,
-    )
+    :param Path csv_path: Path to the CSV file.
+    :param str timestamp_col: Column name for timestamps.
+    :param str raw_input_col: Column name for raw angle input.
+    :param str expected_col: Column name for expected filtered output.
+    :param list[float] actual_results: Actual filter outputs collected during the test.
+    :return: None
     """
     df = pd.read_csv(csv_path)
 

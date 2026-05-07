@@ -57,8 +57,15 @@ def load_and_validate(reference_path: str | Path, calculated_path: str | Path):
 def build_reference_gait_phase(ref_df: pd.DataFrame, time_axis: np.ndarray, is_left: bool, offset: float = 0.0) -> np.ndarray:
     """
     For every gait cycle defined by (left_col1, left_col2), linearly interpolate
-    gait phase from -pi to pi over that interval.  Time points outside any cycle
+    gait phase from -pi to pi over that interval. Time points outside any cycle
     are set to NaN.
+
+    :param pd.DataFrame ref_df: Reference cycle boundaries from the CSV.
+    :param np.ndarray time_axis: Time axis for the calculated phase values.
+    :param bool is_left: True if the reference data is for the left leg; otherwise the right leg.
+    :param float offset: Optional time offset to apply to reference cycle boundaries.
+    :return: Interpolated reference gait phase values.
+    :rtype: np.ndarray
     """
     ref_phase = np.full_like(time_axis, np.nan, dtype=float)
 
@@ -84,7 +91,12 @@ def build_reference_gait_phase(ref_df: pd.DataFrame, time_axis: np.ndarray, is_l
 
 
 def compute_metrics(ref: np.ndarray, calc: np.ndarray):
-    """Compute RMSE."""
+    """Compute RMSE and RMSE with spikes removed.
+
+    :param np.ndarray ref: Reference phase array.
+    :param np.ndarray calc: Calculated phase array.
+    :return: Tuple containing (rmse, rmse_spike_removed, valid_mask).
+    """
     valid = ~(np.isnan(ref) | np.isnan(calc))
     r, c = ref[valid], calc[valid]
 
@@ -107,7 +119,17 @@ def plot_comparison(
     save_path: str | None = None,
     offset: float = 0.0
 ):
-    """Draw two-panel comparison figure."""
+    """Draw a two-panel comparison figure for reference and calculated gait phase.
+
+    :param np.ndarray time_axis: Time axis for the comparison plot.
+    :param pd.DataFrame ref_df: Reference gait cycle CSV data.
+    :param np.ndarray calc_phase: Calculated gait phase values.
+    :param bool is_left: Whether the comparison is for the left leg.
+    :param str scenario: Scenario name used in plot titles.
+    :param str | None save_path: Optional path to save the figure.
+    :param float offset: Reference offset applied to the second comparison panel.
+    :return: None
+    """
 
     ref_phase = build_reference_gait_phase(ref_df=ref_df, time_axis=time_axis, is_left=is_left)
     rmse, rmse_spike_removed, valid_mask = compute_metrics(ref_phase, calc_phase)
@@ -205,9 +227,10 @@ def compare_gait_phases(scenario: str, reference_path: Path, calculated_path: Pa
     :param str scenario: The scenario name.
     :param Path reference_path: Path to the reference CSV.
     :param Path calculated_path: Path to the calculated CSV.
-    :param str | None save_path: Path to save the plot; if None, display.
-    :param bool plot_flag: Whether to plot the comparison.
-    :return: Tuple of (rmse, rmse_spike_removed, offset).
+    :param str | None save_path: Path to save the plot; if None, display it.
+    :param bool plot_flag: Whether to render the comparison plot.
+    :return: EvaluationData containing the selected offset and RMSE values.
+    :rtype: EvaluationData
     """
     logger.info(f"\nLoading reference CSV  : {reference_path}")
     logger.info(f"Loading calculated CSV : {calculated_path}")
@@ -270,7 +293,7 @@ def iter_normal_walk(reference_dir: Path, calculated_dir: Path):
 
     :param Path reference_dir: Directory containing reference files.
     :param Path calculated_dir: Directory containing calculated files.
-    :yield: Tuple of (ref_path, cal_path, trial_num).
+    :yield: Tuples of (ref_path, cal_path, trial_num) for matching trials.
     """
     for ref in reference_dir.rglob("*.csv"):
         trial_num = str(ref.parent.stem)
@@ -285,7 +308,7 @@ def iter_incline_walk(reference_dir: Path, calculated_dir: Path):
 
     :param Path reference_dir: Directory containing reference files.
     :param Path calculated_dir: Directory containing calculated files.
-    :yield: Tuple of (ref_path, cal_path, trial_num).
+    :yield: Tuples of (ref_path, cal_path, trial_num) for matching trials.
     """
     for ref in reference_dir.rglob("*.csv"):
         trial_num = str(ref.parent.stem)
@@ -305,6 +328,8 @@ def iter_incline_walk(reference_dir: Path, calculated_dir: Path):
 def normal_walk_pipeline():
     """
     Run the pipeline for normal walk comparisons.
+
+    :return: None
     """
     root = Path(__file__).resolve().parents[1]
     reference_dir = root / "scripts/ground_truth_gait_parsing/normal_walk"
@@ -319,6 +344,8 @@ def normal_walk_pipeline():
 def incline_walk_pipeline():
     """
     Run the pipeline for incline walk comparisons.
+
+    :return: None
     """
     root = Path(__file__).resolve().parents[1]
     reference_dir = root / "scripts/ground_truth_gait_parsing/incline_walk"
@@ -335,6 +362,8 @@ def incline_walk_pipeline():
 def calculate_mean_rmse():
     """
     Calculate and plot mean RMSE for different scenarios.
+
+    :return: None
     """
     trials: dict[str, list[EvaluationData]] = {scenario: [] for scenario in Scenarios}
     root = Path(__file__).resolve().parents[1]

@@ -45,7 +45,13 @@ class ComparisonMetrics:
     motor_command_right_mape: float
 
 def parse_matlab_module(matlab_file: str | Path, output_file: str | Path) -> ComparisonData:
-    """Parse the file pairs and extract the relevant data for comparison. """
+    """Parse the file pairs and extract the relevant data for comparison.
+
+    :param str | Path matlab_file: MATLAB CSV file containing reference signals.
+    :param str | Path output_file: Output CSV file produced by the module.
+    :return: ComparisonData containing parsed MATLAB and module output arrays.
+    :rtype: ComparisonData
+    """
     matlab_df = pd.read_csv(matlab_file)
     output_df = pd.read_csv(output_file)
 
@@ -67,6 +73,10 @@ def iter_matlab_module_file_pair(matlab_folder: str | Path, output_folder: str |
     """Extract the MATLAB / module datafile pairs.
 
     The two folders' structures must match.
+
+    :param str | Path matlab_folder: Root folder containing MATLAB CSV files.
+    :param str | Path output_folder: Root folder containing output CSV files.
+    :yield: Tuples of matching MATLAB/output file paths.
     """
     matlab_path = Path(matlab_folder)
     output_path = Path(output_folder)
@@ -79,7 +89,12 @@ def iter_matlab_module_file_pair(matlab_folder: str | Path, output_folder: str |
 
 
 def compute_metrics(data: ComparisonData) -> ComparisonMetrics:
-    """Calculate RMSE and MAPE for each pair, using matlab arrays as reference."""
+    """Calculate RMSE and MAPE for each signal pair using MATLAB as the reference.
+
+    :param ComparisonData data: Comparison data containing matched MATLAB and output arrays.
+    :return: ComparisonMetrics containing RMSE and MAPE results.
+    :rtype: ComparisonMetrics
+    """
 
     def rmse(ref: np.ndarray, out: np.ndarray) -> float:
         return np.sqrt(np.mean((ref - out) ** 2))
@@ -100,7 +115,13 @@ def compute_metrics(data: ComparisonData) -> ComparisonMetrics:
     )
 
 def plot_comparison(data: ComparisonData, metrics: ComparisonMetrics, filepath: Path) -> None:
-    """Plot matlab vs output for all 4 pairs with RMSE and MAPE annotations."""
+    """Plot MATLAB vs output comparison for gait phase and motor commands.
+
+    :param ComparisonData data: Parsed signal arrays for comparison.
+    :param ComparisonMetrics metrics: Computed RMSE and MAPE metrics.
+    :param Path filepath: Path where the figure PNG will be saved.
+    :return: None
+    """
 
     pairs = [
         ("Gait Phase — Left",    data.matlab_gait_phase_left,     data.output_gait_phase_left,
@@ -139,8 +160,12 @@ def plot_comparison(data: ComparisonData, metrics: ComparisonMetrics, filepath: 
 
 def plot_aggregate_comparison(data_list: list[ComparisonData], filepath: Path) -> None:
     """
-    Plot all matlab and output signals per pair, with mean and std envelope.
+    Plot all MATLAB and output signals per pair, with mean and standard-deviation envelopes.
     Each pair gets its own subplot (4 rows).
+
+    :param list[ComparisonData] data_list: List of comparison datasets to aggregate.
+    :param Path filepath: File path where the aggregate figure will be saved.
+    :return: None
     """
 
     pairs = [
@@ -195,9 +220,10 @@ def plot_aggregate_comparison(data_list: list[ComparisonData], filepath: Path) -
 
 def plot_rmse_errorbar(trial_groups: dict[str, list[ComparisonData]]) -> None:
     """
-    For each group, compute per-trial average RMSE (mean of left+right legs,
-    for both gait phase and motor command), then plot an error bar chart
-    sorted by ascending mean RMSE per signal type.
+    Compute and plot per-group RMSE error bars for gait phase and motor command.
+
+    :param dict[str, list[ComparisonData]] trial_groups: Mapping from group name to comparison data lists.
+    :return: None
     """
 
     def per_trial_avg_rmse(data_list: list[ComparisonData]) -> dict[str, np.ndarray]:
@@ -250,6 +276,8 @@ def plot_rmse_errorbar(trial_groups: dict[str, list[ComparisonData]]) -> None:
 def plot_all_pipeline():
     """
     Plot comparisons for all MATLAB and output file pairs.
+
+    :return: None
     """
     root = Path(__file__).resolve().parents[1]
     mat_folder = root / "scripts/matlab_output_data"
@@ -266,6 +294,8 @@ def plot_all_pipeline():
 def plot_combined_pipeline():
     """
     Plot aggregate comparisons for selected MATLAB and output file pairs.
+
+    :return: None
     """
     root = Path(__file__).resolve().parents[1]
     mat_folder = root / "scripts/matlab_output_data"
@@ -289,6 +319,8 @@ def plot_combined_pipeline():
 def plot_error_bar_pipeline():
     """
     Plot RMSE error bars for different trial groups.
+
+    :return: None
     """
     root = Path(__file__).resolve().parents[1]
     mat_folder = root / "scripts/matlab_output_data"

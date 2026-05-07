@@ -39,12 +39,11 @@ def concatenate_stairs(
     AB##_stairs_1_*_(up|down)_angle.csv and merges them in
     numeric order into <output_dir>/<participant>_stairs_combined.csv.
 
-
-    :param str | Path stairs_root:  Path to the 'stairs' folder containing AB01-AB13 subdirs.
-    :param str | Path output_dir:   Destination folder for the combined per-participant files.
-    :param list[str] | None = None participants: Optional list of participant IDs (e.g. ['AB01', 'AB03']).
-                      Defaults to all subdirectories found in stairs_root.
-
+    :param str | Path stairs_root: Path to the 'stairs' folder containing AB01-AB13 subdirectories.
+    :param str | Path output_dir: Destination folder for the combined per-participant files.
+    :param list[str] | None participants: Optional list of participant IDs (e.g. ['AB01', 'AB03']).
+        Defaults to all subdirectories found in stairs_root.
+    :return: None
     """
     stairs_root = Path(stairs_root)
     output_dir = Path(output_dir)
@@ -130,7 +129,12 @@ def combine_two_files(
 
 
 def _read_and_filter(path: Path) -> pd.DataFrame:
-    """Read a CSV and retain only the required columns."""
+    """Read a CSV and retain only the required columns.
+
+    :param Path path: Path to the input CSV file.
+    :return: Filtered DataFrame containing required columns.
+    :rtype: pd.DataFrame
+    """
     df = pd.read_csv(path)
     available = [c for c in KEEP_COLS if c in df.columns]
     missing = set(KEEP_COLS) - set(available)
@@ -140,7 +144,14 @@ def _read_and_filter(path: Path) -> pd.DataFrame:
 
 
 def _find_file(folder: Path, participant: str, keyword: str) -> Path | None:
-    """Return the first CSV in folder whose name contains participant and keyword."""
+    """Return the first CSV in folder whose name contains participant and keyword.
+
+    :param Path folder: Directory to search.
+    :param str participant: Participant identifier to match.
+    :param str keyword: Keyword to search for in the filename.
+    :return: Matching file path, or None if no file is found.
+    :rtype: Path | None
+    """
     matches = list(folder.glob(f"{participant}*{keyword}*angle.csv"))
     if not matches:
         logger.warning(f"  Warning: no file found for {participant} with '{keyword}' in {folder}")
@@ -157,10 +168,10 @@ def combine_incline_walk(
     For each participant and each slope (5 and 10), concatenate up then down
     into a single CSV containing only time, hip_flexion_r, hip_flexion_l.
 
-
-    :param incline_root: Path to the 'incline_walk' folder.
-    :param output_dir:   Destination folder for combined files.
-    :param participants: List of participant IDs. Defaults to AB01–AB13.
+    :param str | Path incline_root: Path to the 'incline_walk' folder.
+    :param str | Path output_dir: Destination folder for combined files.
+    :param list[str] participants: List of participant IDs. Defaults to AB01–AB13.
+    :return: None
     """
     incline_root = Path(incline_root)
     output_dir = Path(output_dir)

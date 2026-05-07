@@ -45,7 +45,13 @@ class ComparisonMetrics:
     motor_command_right_mape: float
 
 def parse_matlab_module(matlab_file: str | Path, output_file: str | Path) -> ComparisonData:
-    """Parse the file pairs and extract the relevant data for comparison. """
+    """Parse the file pairs and extract the relevant data for comparison.
+
+    :param str | Path matlab_file: MATLAB CSV file containing reference signals.
+    :param str | Path output_file: Output CSV file produced by the module.
+    :return: ComparisonData containing parsed MATLAB and module output arrays.
+    :rtype: ComparisonData
+    """
     matlab_df = pd.read_csv(matlab_file)
     output_df = pd.read_csv(output_file)
 
@@ -67,6 +73,10 @@ def iter_matlab_module_file_pair(matlab_folder: str | Path, output_folder: str |
     """Extract the MATLAB / module datafile pairs.
 
     The two folders' structures must match.
+
+    :param str | Path matlab_folder: Root folder containing MATLAB CSV files.
+    :param str | Path output_folder: Root folder containing output CSV files.
+    :yield: Tuples of matching MATLAB/output file paths.
     """
     matlab_path = Path(matlab_folder)
     output_path = Path(output_folder)
@@ -79,7 +89,12 @@ def iter_matlab_module_file_pair(matlab_folder: str | Path, output_folder: str |
 
 
 def compute_metrics(data: ComparisonData) -> ComparisonMetrics:
-    """Calculate RMSE and MAPE for each pair, using matlab arrays as reference."""
+    """Calculate RMSE and MAPE for each signal pair using MATLAB as the reference.
+
+    :param ComparisonData data: Comparison data containing matched MATLAB and output arrays.
+    :return: ComparisonMetrics containing RMSE and MAPE results.
+    :rtype: ComparisonMetrics
+    """
 
     def rmse(ref: np.ndarray, out: np.ndarray) -> float:
         return np.sqrt(np.mean((ref - out) ** 2))
@@ -100,7 +115,13 @@ def compute_metrics(data: ComparisonData) -> ComparisonMetrics:
     )
 
 def plot_comparison(data: ComparisonData, metrics: ComparisonMetrics, filepath: Path) -> None:
-    """Plot matlab vs output for all 4 pairs with RMSE and MAPE annotations."""
+    """Plot MATLAB vs output comparison for gait phase and motor commands.
+
+    :param ComparisonData data: Parsed signal arrays for comparison.
+    :param ComparisonMetrics metrics: Computed RMSE and MAPE metrics.
+    :param Path filepath: Path where the figure PNG will be saved.
+    :return: None
+    """
 
     pairs = [
         ("Gait Phase — Left",    data.matlab_gait_phase_left,     data.output_gait_phase_left,

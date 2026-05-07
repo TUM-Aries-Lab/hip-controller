@@ -17,7 +17,7 @@ def convert_xlsx_to_csv(
     more portable and scriptable format.
 
     :param Path input_xlsx_path: Absolute path to the input Excel file.
-    :param Path output_xlsx_path: Absolute path to the output CSV file.
+    :param Path | None output_csv_path: Absolute path to the output CSV file.
 
     :return: Path to the newly created CSV file with the same name as the input file but with .csv extension.
     :rtype: Path
@@ -41,7 +41,7 @@ def convert_zero_one_to_boolean(path: Path, column_names: list[str]) -> None:
     """Convert 0/1 values in columns to boolean.
 
     :param Path path: The path of the CSV file.
-    :param list[str] columnnames: Names of columns which has 0 and 1 values that needs to be converted.
+    :param list[str] column_names: Names of columns which have 0 and 1 values that need to be converted.
 
     :return: None
     """

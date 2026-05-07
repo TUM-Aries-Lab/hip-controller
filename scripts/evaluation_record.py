@@ -33,7 +33,12 @@ DOWNSAMPLE  = RAW_HZ // TARGET_HZ   # keep every 2nd row
 
 
 def load_and_filter(path: Path) -> pd.DataFrame:
-    """Load and filter columns."""
+    """Load a CSV file and retain only the required evaluation columns.
+
+    :param Path path: Path to the input CSV file.
+    :return: Filtered DataFrame containing required columns.
+    :rtype: pd.DataFrame
+    """
     df = pd.read_csv(path)
     cols = (["source_file"] if "source_file" in df.columns else []) + KEEP_COLS
     missing = [c for c in KEEP_COLS if c not in df.columns]
@@ -44,7 +49,12 @@ def load_and_filter(path: Path) -> pd.DataFrame:
 
 
 def prepare(df: pd.DataFrame) -> pd.DataFrame:
-    """Unit conversion and downsampling."""
+    """Convert degrees to radians and downsample the input data.
+
+    :param pd.DataFrame df: Input evaluation dataframe with degree columns.
+    :return: Processed dataframe with radian columns and reduced sampling rate.
+    :rtype: pd.DataFrame
+    """
     df = df.copy()
     df["hip_flexion_r_rad"] = df["hip_flexion_r"].apply(math.radians)
     df["hip_flexion_l_rad"] = df["hip_flexion_l"].apply(math.radians)
@@ -54,7 +64,12 @@ def prepare(df: pd.DataFrame) -> pd.DataFrame:
 
 def process_file(input_path: Path,
                  output_path: Path) -> None:
-    """Process a single CSV."""
+    """Process a single evaluation CSV file and write the processed output.
+
+    :param Path input_path: Path to the raw input CSV file.
+    :param Path output_path: Path where the processed CSV will be written.
+    :return: None
+    """
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     df_raw  = load_and_filter(input_path)
@@ -66,7 +81,10 @@ def process_file(input_path: Path,
 
 
 def run_evaluation() -> None:
-    """Discover all CSVs and batch-process."""
+    """Discover all raw CSVs and batch-process them through the evaluation pipeline.
+
+    :return: None
+    """
     csv_files = sorted(RAW_INPUT_ROOT.rglob("*.csv"))
     if not csv_files:
         logger.warning(f"No CSV files found under {RAW_INPUT_ROOT}/")
@@ -90,7 +108,14 @@ def run_evaluation() -> None:
 def run_controllers(df: pd.DataFrame,
                     ctrl_left: WalkOnController,
                     ctrl_right: WalkOnController) -> pd.DataFrame:
-    """Run controllers row-by-row."""
+    """Run the left and right controllers on each row of prepared sensor data.
+
+    :param pd.DataFrame df: Prepared dataframe with radian angle columns.
+    :param WalkOnController ctrl_left: Controller instance for the left leg.
+    :param WalkOnController ctrl_right: Controller instance for the right leg.
+    :return: DataFrame containing filtered signals, phase, amplitude, and motor command outputs.
+    :rtype: pd.DataFrame
+    """
     records = []
 
     for i in range(0, len(df)):
@@ -137,7 +162,10 @@ def run_controllers(df: pd.DataFrame,
 
 
 def process_evaluation()->None:
-    """Run the data of ZWISCHEN ROOT and output in evaluation output folder."""
+    """Process all input angle CSVs from ZWISCHEN_ROOT and write evaluation output files.
+
+    :return: None
+    """
     csv_files = sorted(ZWISCHEN_ROOT.rglob("*.csv"))
     if not csv_files:
         logger.warning(f"No CSV files found under {ZWISCHEN_ROOT}/")

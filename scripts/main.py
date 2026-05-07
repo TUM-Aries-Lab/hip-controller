@@ -51,6 +51,18 @@ def plot_preprocessor_comparison(
 ) -> Figure:
     """
     Replay a CSV through a preprocessing callable and compare actual vs expected output.
+
+    :param str | Path csv_path: Path to the CSV file.
+    :param str time_col: Column name for the timestamp.
+    :param str input_col: Column name for the raw input signal.
+    :param str expected_output_col: Column name for the expected output signal.
+    :param Callable[[float, float], Any] build_signal: Callable that creates the signal object from time and raw input.
+    :param Callable[[Any], Any] run_callable: Callable that processes the signal and returns the result.
+    :param Callable[[Any], float] extract_output: Function that extracts the numeric output from the callable result.
+    :param str title: Plot title.
+    :param str | Path | None save_path: Optional file path to save the generated figure. If None the figure is shown interactively.
+    :return: The created matplotlib Figure.
+    :rtype: Figure
     """
     csv_path = Path(csv_path)
     df = pd.read_csv(csv_path)
@@ -128,7 +140,12 @@ def plot_preprocessor_comparison(
 # ── Internal helper ──────────────────────────────────────────────────────────
 
 def _infer_unit(col_name: str) -> str:
-    """Extract a short axis label from a column name, e.g. 'angle_right (rad)' → 'rad'."""
+    """Extract a short axis label from a column name, e.g. 'angle_right (rad)' → 'rad'.
+
+    :param str col_name: The column name string.
+    :return: Extracted unit string if present, otherwise the original column name.
+    :rtype: str
+    """
     import re
     m = re.search(r"\(([^)]+)\)", col_name)
     return m.group(1) if m else col_name
