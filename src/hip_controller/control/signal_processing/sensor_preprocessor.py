@@ -60,7 +60,7 @@ class SensorPreprocessor:
         if time_difference <= 0.0:
             raise ValueError(f"Non-positive time_difference: {time_difference}")
 
-        # # TODO: check dt too big
+        # check dt too big
         if time_difference > 1.0:
             self._drift_removal = self.config.drift_removal_strategy
             self._velocity_estimation = self.config.velocity_estimation_strategy
