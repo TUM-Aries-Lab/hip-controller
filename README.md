@@ -295,7 +295,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 <!-- TREE-START -->
 ```
 ├── data
-│   ├── evaluation_data
+│   ├── evaluation_raw_data
 │   │   ├── incline_walk
 │   │   │   ├── incline_walk_10
 │   │   │   │   ├── AB01_incline_walk_2_down10_angle.csv
@@ -345,6 +345,31 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │       ├── AB12_incline_walk_1_up5_angle.csv
 │   │   │       ├── AB13_incline_walk_1_down5_angle.csv
 │   │   │       └── AB13_incline_walk_1_up5_angle.csv
+│   │   ├── incline_walk_combined
+│   │   │   ├── AB01_incline_walk_10_combined.csv
+│   │   │   ├── AB01_incline_walk_5_combined.csv
+│   │   │   ├── AB02_incline_walk_10_combined.csv
+│   │   │   ├── AB02_incline_walk_5_combined.csv
+│   │   │   ├── AB03_incline_walk_10_combined.csv
+│   │   │   ├── AB03_incline_walk_5_combined.csv
+│   │   │   ├── AB05_incline_walk_10_combined.csv
+│   │   │   ├── AB05_incline_walk_5_combined.csv
+│   │   │   ├── AB06_incline_walk_10_combined.csv
+│   │   │   ├── AB06_incline_walk_5_combined.csv
+│   │   │   ├── AB07_incline_walk_10_combined.csv
+│   │   │   ├── AB07_incline_walk_5_combined.csv
+│   │   │   ├── AB08_incline_walk_10_combined.csv
+│   │   │   ├── AB08_incline_walk_5_combined.csv
+│   │   │   ├── AB09_incline_walk_10_combined.csv
+│   │   │   ├── AB09_incline_walk_5_combined.csv
+│   │   │   ├── AB10_incline_walk_10_combined.csv
+│   │   │   ├── AB10_incline_walk_5_combined.csv
+│   │   │   ├── AB11_incline_walk_10_combined.csv
+│   │   │   ├── AB11_incline_walk_5_combined.csv
+│   │   │   ├── AB12_incline_walk_10_combined.csv
+│   │   │   ├── AB12_incline_walk_5_combined.csv
+│   │   │   ├── AB13_incline_walk_10_combined.csv
+│   │   │   └── AB13_incline_walk_5_combined.csv
 │   │   ├── normal_walk
 │   │   │   ├── normal_walk_0_6
 │   │   │   │   ├── AB01_normal_walk_1_0-6_angle.csv
@@ -382,6 +407,332 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │   │       ├── AB11_normal_walk_1_1-8_angle.csv
 │   │   │       ├── AB12_normal_walk_1_1-8_angle.csv
 │   │   │       └── AB13_normal_walk_1_1-8_angle.csv
+│   │   ├── parsing_mat
+│   │   │   ├── incline_walk_10
+│   │   │   │   ├── 01
+│   │   │   │   │   ├── incline_walk_2_down10_parsing.mat
+│   │   │   │   │   └── incline_walk_2_up10_parsing.mat
+│   │   │   │   ├── 02
+│   │   │   │   │   ├── incline_walk_2_down10_parsing.mat
+│   │   │   │   │   └── incline_walk_2_up10_parsing.mat
+│   │   │   │   ├── 03
+│   │   │   │   │   ├── incline_walk_2_down10_parsing.mat
+│   │   │   │   │   └── incline_walk_2_up10_parsing.mat
+│   │   │   │   ├── 05
+│   │   │   │   │   ├── incline_walk_2_down10_parsing.mat
+│   │   │   │   │   └── incline_walk_2_up10_parsing.mat
+│   │   │   │   ├── 06
+│   │   │   │   │   ├── incline_walk_2_down10_parsing.mat
+│   │   │   │   │   └── incline_walk_2_up10_parsing.mat
+│   │   │   │   ├── 08
+│   │   │   │   │   ├── incline_walk_2_down10_parsing.mat
+│   │   │   │   │   └── incline_walk_2_up10_parsing.mat
+│   │   │   │   ├── 09
+│   │   │   │   │   ├── incline_walk_2_down10_parsing.mat
+│   │   │   │   │   └── incline_walk_2_up10_parsing.mat
+│   │   │   │   ├── 10
+│   │   │   │   │   ├── incline_walk_2_down10_parsing.mat
+│   │   │   │   │   └── incline_walk_2_up10_parsing.mat
+│   │   │   │   ├── 11
+│   │   │   │   │   ├── incline_walk_2_down10_parsing.mat
+│   │   │   │   │   └── incline_walk_2_up10_parsing.mat
+│   │   │   │   ├── 12
+│   │   │   │   │   ├── incline_walk_2_down10_parsing.mat
+│   │   │   │   │   └── incline_walk_2_up10_parsing.mat
+│   │   │   │   └── 13
+│   │   │   │       ├── incline_walk_2_down10_parsing.mat
+│   │   │   │       └── incline_walk_2_up10_parsing.mat
+│   │   │   ├── incline_walk_5
+│   │   │   │   ├── 01
+│   │   │   │   │   ├── incline_walk_1_down5_parsing.mat
+│   │   │   │   │   └── incline_walk_1_up5_parsing.mat
+│   │   │   │   ├── 02
+│   │   │   │   │   ├── incline_walk_1_down5_parsing.mat
+│   │   │   │   │   └── incline_walk_1_up5_parsing.mat
+│   │   │   │   ├── 03
+│   │   │   │   │   ├── incline_walk_1_down5_parsing.mat
+│   │   │   │   │   └── incline_walk_1_up5_parsing.mat
+│   │   │   │   ├── 05
+│   │   │   │   │   ├── incline_walk_1_down5_parsing.mat
+│   │   │   │   │   └── incline_walk_1_up5_parsing.mat
+│   │   │   │   ├── 06
+│   │   │   │   │   ├── incline_walk_1_down5_parsing.mat
+│   │   │   │   │   └── incline_walk_1_up5_parsing.mat
+│   │   │   │   ├── 08
+│   │   │   │   │   ├── incline_walk_1_down5_parsing.mat
+│   │   │   │   │   └── incline_walk_1_up5_parsing.mat
+│   │   │   │   ├── 09
+│   │   │   │   │   ├── incline_walk_1_down5_parsing.mat
+│   │   │   │   │   └── incline_walk_1_up5_parsing.mat
+│   │   │   │   ├── 10
+│   │   │   │   │   ├── incline_walk_1_down5_parsing.mat
+│   │   │   │   │   └── incline_walk_1_up5_parsing.mat
+│   │   │   │   ├── 11
+│   │   │   │   │   ├── incline_walk_1_down5_parsing.mat
+│   │   │   │   │   └── incline_walk_1_up5_parsing.mat
+│   │   │   │   ├── 12
+│   │   │   │   │   ├── incline_walk_1_down5_parsing.mat
+│   │   │   │   │   └── incline_walk_1_up5_parsing.mat
+│   │   │   │   └── 13
+│   │   │   │       ├── incline_walk_1_down5_parsing.mat
+│   │   │   │       └── incline_walk_1_up5_parsing.mat
+│   │   │   ├── normal_walk_0_6
+│   │   │   │   ├── 01
+│   │   │   │   │   └── normal_walk_1_0-6_parsing.mat
+│   │   │   │   ├── 02
+│   │   │   │   │   └── normal_walk_1_0-6_parsing.mat
+│   │   │   │   ├── 03
+│   │   │   │   │   └── normal_walk_1_0-6_parsing.mat
+│   │   │   │   ├── 05
+│   │   │   │   │   └── normal_walk_1_0-6_parsing.mat
+│   │   │   │   ├── 06
+│   │   │   │   │   └── normal_walk_1_0-6_parsing.mat
+│   │   │   │   ├── 08
+│   │   │   │   │   └── normal_walk_1_0-6_parsing.mat
+│   │   │   │   ├── 09
+│   │   │   │   │   └── normal_walk_1_0-6_parsing.mat
+│   │   │   │   ├── 10
+│   │   │   │   │   └── normal_walk_1_0-6_parsing.mat
+│   │   │   │   ├── 11
+│   │   │   │   │   └── normal_walk_1_0-6_parsing.mat
+│   │   │   │   ├── 12
+│   │   │   │   │   └── normal_walk_1_0-6_parsing.mat
+│   │   │   │   └── 13
+│   │   │   │       └── normal_walk_1_0-6_parsing.mat
+│   │   │   ├── normal_walk_1_2
+│   │   │   │   ├── 01
+│   │   │   │   │   └── normal_walk_1_1-2_parsing.mat
+│   │   │   │   ├── 02
+│   │   │   │   │   └── normal_walk_1_1-2_parsing.mat
+│   │   │   │   ├── 03
+│   │   │   │   │   └── normal_walk_1_1-2_parsing.mat
+│   │   │   │   ├── 05
+│   │   │   │   │   └── normal_walk_1_1-2_parsing.mat
+│   │   │   │   ├── 06
+│   │   │   │   │   └── normal_walk_1_1-2_parsing.mat
+│   │   │   │   ├── 08
+│   │   │   │   │   └── normal_walk_1_1-2_parsing.mat
+│   │   │   │   ├── 09
+│   │   │   │   │   └── normal_walk_1_1-2_parsing.mat
+│   │   │   │   ├── 10
+│   │   │   │   │   └── normal_walk_1_1-2_parsing.mat
+│   │   │   │   ├── 11
+│   │   │   │   │   └── normal_walk_1_1-2_parsing.mat
+│   │   │   │   ├── 12
+│   │   │   │   │   └── normal_walk_1_1-2_parsing.mat
+│   │   │   │   └── 13
+│   │   │   │       └── normal_walk_1_1-2_parsing.mat
+│   │   │   ├── normal_walk_1_8
+│   │   │   │   ├── 01
+│   │   │   │   │   └── normal_walk_1_1-8_parsing.mat
+│   │   │   │   ├── 02
+│   │   │   │   │   └── normal_walk_1_1-8_parsing.mat
+│   │   │   │   ├── 03
+│   │   │   │   │   └── normal_walk_1_1-8_parsing.mat
+│   │   │   │   ├── 05
+│   │   │   │   │   └── normal_walk_1_1-8_parsing.mat
+│   │   │   │   ├── 06
+│   │   │   │   │   └── normal_walk_1_1-8_parsing.mat
+│   │   │   │   ├── 08
+│   │   │   │   │   └── normal_walk_1_1-8_parsing.mat
+│   │   │   │   ├── 09
+│   │   │   │   │   └── normal_walk_1_1-8_parsing.mat
+│   │   │   │   ├── 10
+│   │   │   │   │   └── normal_walk_1_1-8_parsing.mat
+│   │   │   │   ├── 11
+│   │   │   │   │   └── normal_walk_1_1-8_parsing.mat
+│   │   │   │   ├── 12
+│   │   │   │   │   └── normal_walk_1_1-8_parsing.mat
+│   │   │   │   └── 13
+│   │   │   │       └── normal_walk_1_1-8_parsing.mat
+│   │   │   ├── stairs
+│   │   │   │   ├── 01
+│   │   │   │   │   ├── stairs_1_10_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_1_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_2_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_3_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_4_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_6_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_7_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_8_down_parsing.mat
+│   │   │   │   │   └── stairs_1_9_up_parsing.mat
+│   │   │   │   ├── 02
+│   │   │   │   │   ├── stairs_1_10_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_11_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_12_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_1_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_2_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_3_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_4_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_segmented.mat
+│   │   │   │   │   ├── stairs_1_6_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_7_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_8_down_parsing.mat
+│   │   │   │   │   └── stairs_1_9_up_parsing.mat
+│   │   │   │   ├── 03
+│   │   │   │   │   ├── stairs_1_10_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_1_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_2_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_3_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_4_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_6_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_7_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_8_down_parsing.mat
+│   │   │   │   │   └── stairs_1_9_up_parsing.mat
+│   │   │   │   ├── 05
+│   │   │   │   │   ├── stairs_1_10_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_1_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_2_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_3_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_4_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_6_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_7_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_8_down_parsing.mat
+│   │   │   │   │   └── stairs_1_9_up_parsing.mat
+│   │   │   │   ├── 06
+│   │   │   │   │   ├── stairs_1_10_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_1_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_2_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_3_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_4_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_6_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_7_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_8_down_parsing.mat
+│   │   │   │   │   └── stairs_1_9_up_parsing.mat
+│   │   │   │   ├── 07
+│   │   │   │   │   ├── stairs_1_10_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_1_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_2_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_3_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_4_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_6_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_7_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_8_down_parsing.mat
+│   │   │   │   │   └── stairs_1_9_up_parsing.mat
+│   │   │   │   ├── 08
+│   │   │   │   │   ├── stairs_1_10_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_1_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_2_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_3_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_4_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_6_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_7_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_8_down_parsing.mat
+│   │   │   │   │   └── stairs_1_9_up_parsing.mat
+│   │   │   │   ├── 09
+│   │   │   │   │   ├── stairs_1_10_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_1_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_2_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_3_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_4_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_6_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_7_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_8_down_parsing.mat
+│   │   │   │   │   └── stairs_1_9_up_parsing.mat
+│   │   │   │   ├── 10
+│   │   │   │   │   ├── stairs_1_10_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_1_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_2_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_3_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_4_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_6_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_7_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_8_down_parsing.mat
+│   │   │   │   │   └── stairs_1_9_up_parsing.mat
+│   │   │   │   ├── 11
+│   │   │   │   │   ├── stairs_1_10_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_1_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_2_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_3_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_4_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_6_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_7_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_8_down_parsing.mat
+│   │   │   │   │   └── stairs_1_9_up_parsing.mat
+│   │   │   │   ├── 12
+│   │   │   │   │   ├── stairs_1_10_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_11_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_12_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_1_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_2_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_3_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_4_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_5_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_6_down_parsing.mat
+│   │   │   │   │   ├── stairs_1_7_up_parsing.mat
+│   │   │   │   │   ├── stairs_1_8_down_parsing.mat
+│   │   │   │   │   └── stairs_1_9_up_parsing.mat
+│   │   │   │   └── 13
+│   │   │   │       ├── stairs_1_10_down_parsing.mat
+│   │   │   │       ├── stairs_1_1_up_parsing.mat
+│   │   │   │       ├── stairs_1_2_down_parsing.mat
+│   │   │   │       ├── stairs_1_3_up_parsing.mat
+│   │   │   │       ├── stairs_1_4_down_parsing.mat
+│   │   │   │       ├── stairs_1_5_up_parsing.mat
+│   │   │   │       ├── stairs_1_6_down_parsing.mat
+│   │   │   │       ├── stairs_1_7_up_parsing.mat
+│   │   │   │       ├── stairs_1_8_down_parsing.mat
+│   │   │   │       └── stairs_1_9_up_parsing.mat
+│   │   │   ├── turn_and_step_left
+│   │   │   │   ├── 01
+│   │   │   │   │   └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   │   ├── 02
+│   │   │   │   │   └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   │   ├── 03
+│   │   │   │   │   └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   │   ├── 05
+│   │   │   │   │   └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   │   ├── 06
+│   │   │   │   │   └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   │   ├── 07
+│   │   │   │   │   └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   │   ├── 08
+│   │   │   │   │   └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   │   ├── 09
+│   │   │   │   │   └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   │   ├── 10
+│   │   │   │   │   └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   │   ├── 11
+│   │   │   │   │   └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   │   ├── 12
+│   │   │   │   │   └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   │   └── 13
+│   │   │   │       └── turn_and_step_1_left-turn_parsing.mat
+│   │   │   └── turn_and_step_right
+│   │   │       ├── 01
+│   │   │       │   └── turn_and_step_1_right-turn_parsing.mat
+│   │   │       ├── 02
+│   │   │       │   └── turn_and_step_1_right-turn_parsing.mat
+│   │   │       ├── 03
+│   │   │       │   └── turn_and_step_1_right-turn_parsing.mat
+│   │   │       ├── 05
+│   │   │       │   └── turn_and_step_1_right-turn_parsing.mat
+│   │   │       ├── 06
+│   │   │       │   └── turn_and_step_1_right-turn_parsing.mat
+│   │   │       ├── 07
+│   │   │       │   └── turn_and_step_1_right-turn_parsing.mat
+│   │   │       ├── 08
+│   │   │       │   └── turn_and_step_1_right-turn_parsing.mat
+│   │   │       ├── 09
+│   │   │       │   └── turn_and_step_1_right-turn_parsing.mat
+│   │   │       ├── 10
+│   │   │       │   └── turn_and_step_1_right-turn_parsing.mat
+│   │   │       ├── 11
+│   │   │       │   └── turn_and_step_1_right-turn_parsing.mat
+│   │   │       ├── 12
+│   │   │       │   └── turn_and_step_1_right-turn_parsing.mat
+│   │   │       └── 13
+│   │   │           └── turn_and_step_1_right-turn_parsing.mat
 │   │   ├── stairs_combined
 │   │   │   ├── AB01_stairs_combined.csv
 │   │   │   ├── AB02_stairs_combined.csv
@@ -423,7 +774,6 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │           ├── AB12_turn_and_step_1_right-turn_angle.csv
 │   │           └── AB13_turn_and_step_1_right-turn_angle.csv
 │   ├── logs
-│   ├── recordings
 │   └── sensor_data
 │       ├── arduino2_2026_03_23.csv
 │       ├── arduino_2026_03_23.csv
@@ -433,13 +783,21 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       ├── data_raw_2025_12_17.xlsx
 │       └── look_up_table_2026_02_25.csv
 ├── docs
-│   ├── Notch_filter_debug.png
 │   ├── UML_hip_controller_2026_03_10.json
 │   └── paper.pdf
 ├── scripts
+│   ├── compare_all.py
+│   ├── compare_matlab.py
+│   ├── compare_matlab_module.py
 │   ├── csv_converter.py
+│   ├── csv_utils.py
 │   ├── evaluation_matplotlib.py
+│   ├── evaluation_record.py
 │   ├── live_comparison_plot.py
+│   ├── main.py
+│   ├── mat_to_csv.py
+│   ├── normalize_output_time.py
+│   ├── reference_versus_calculated.py
 │   ├── script.py
 │   └── simulator.py
 ├── src

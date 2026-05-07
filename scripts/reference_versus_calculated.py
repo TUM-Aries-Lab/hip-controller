@@ -28,7 +28,13 @@ class EvaluationData:
     RMSE_spike_rm: float
 
 def load_and_validate(reference_path: str | Path, calculated_path: str | Path):
-    """Load and validate both CSV files."""
+    """
+    Load and validate both CSV files.
+
+    :param str | Path reference_path: Path to the reference CSV file.
+    :param str | Path calculated_path: Path to the calculated CSV file.
+    :return: Tuple of (ref_df, calc_df, is_left).
+    """
     ref_df = pd.read_csv(reference_path)
     calc_df = pd.read_csv(calculated_path)
 
@@ -193,6 +199,16 @@ def plot_comparison(
 
 
 def compare_gait_phases(scenario: str, reference_path: Path, calculated_path: Path, save_path: str | None = None, plot_flag: bool = True):
+    """
+    Compare gait phases between reference and calculated data.
+
+    :param str scenario: The scenario name.
+    :param Path reference_path: Path to the reference CSV.
+    :param Path calculated_path: Path to the calculated CSV.
+    :param str | None save_path: Path to save the plot; if None, display.
+    :param bool plot_flag: Whether to plot the comparison.
+    :return: Tuple of (rmse, rmse_spike_removed, offset).
+    """
     logger.info(f"\nLoading reference CSV  : {reference_path}")
     logger.info(f"Loading calculated CSV : {calculated_path}")
 
@@ -249,6 +265,13 @@ def compare_gait_phases(scenario: str, reference_path: Path, calculated_path: Pa
 # ── CLI entry point ────────────────────────────────────────────────────────────
 
 def iter_normal_walk(reference_dir: Path, calculated_dir: Path):
+    """
+    Iterate over normal walk reference and calculated files.
+
+    :param Path reference_dir: Directory containing reference files.
+    :param Path calculated_dir: Directory containing calculated files.
+    :yield: Tuple of (ref_path, cal_path, trial_num).
+    """
     for ref in reference_dir.rglob("*.csv"):
         trial_num = str(ref.parent.stem)
         output_dir = calculated_dir / ref.resolve().parents[1].stem
@@ -257,6 +280,13 @@ def iter_normal_walk(reference_dir: Path, calculated_dir: Path):
                 yield ref, cal, trial_num
 
 def iter_incline_walk(reference_dir: Path, calculated_dir: Path):
+    """
+    Iterate over incline walk reference and calculated files.
+
+    :param Path reference_dir: Directory containing reference files.
+    :param Path calculated_dir: Directory containing calculated files.
+    :yield: Tuple of (ref_path, cal_path, trial_num).
+    """
     for ref in reference_dir.rglob("*.csv"):
         trial_num = str(ref.parent.stem)
         output_dir = calculated_dir / ref.resolve().parents[1].stem
@@ -273,6 +303,9 @@ def iter_incline_walk(reference_dir: Path, calculated_dir: Path):
 
 
 def normal_walk_pipeline():
+    """
+    Run the pipeline for normal walk comparisons.
+    """
     root = Path(__file__).resolve().parents[1]
     reference_dir = root / "scripts/ground_truth_gait_parsing/normal_walk"
     calculated_dir = root / "scripts/evaluation_output/normal_walk"
@@ -284,6 +317,9 @@ def normal_walk_pipeline():
         compare_gait_phases(scenario=scenario, reference_path=ref, calculated_path=cal, save_path=save_path+ref.stem+num)
 
 def incline_walk_pipeline():
+    """
+    Run the pipeline for incline walk comparisons.
+    """
     root = Path(__file__).resolve().parents[1]
     reference_dir = root / "scripts/ground_truth_gait_parsing/incline_walk"
     calculated_dir = root / "scripts/evaluation_output/incline_walk"
@@ -297,6 +333,9 @@ def incline_walk_pipeline():
 
 
 def calculate_mean_rmse():
+    """
+    Calculate and plot mean RMSE for different scenarios.
+    """
     trials: dict[str, list[EvaluationData]] = {scenario: [] for scenario in Scenarios}
     root = Path(__file__).resolve().parents[1]
     reference_dir = root / "scripts/ground_truth_gait_parsing/normal_walk"

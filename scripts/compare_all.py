@@ -248,6 +248,9 @@ def plot_rmse_errorbar(trial_groups: dict[str, list[ComparisonData]]) -> None:
 # --------------------------------------------------------------------------------------------------------------
 
 def plot_all_pipeline():
+    """
+    Plot comparisons for all MATLAB and output file pairs.
+    """
     root = Path(__file__).resolve().parents[1]
     mat_folder = root / "scripts/matlab_output_data"
     output_folder = root / "scripts/normalized_output"
@@ -261,6 +264,9 @@ def plot_all_pipeline():
         plot_comparison(data=comparison_data, metrics=metrics, filepath=Path(plot_folder)/matlab_file.stem)
 
 def plot_combined_pipeline():
+    """
+    Plot aggregate comparisons for selected MATLAB and output file pairs.
+    """
     root = Path(__file__).resolve().parents[1]
     mat_folder = root / "scripts/matlab_output_data"
     output_folder = root / "scripts/normalized_output"
@@ -281,6 +287,9 @@ def plot_combined_pipeline():
     plot_aggregate_comparison(data_list=comparison_data_combined, filepath=Path(plot_folder) / "normal_walk_1_1-2")
 
 def plot_error_bar_pipeline():
+    """
+    Plot RMSE error bars for different trial groups.
+    """
     root = Path(__file__).resolve().parents[1]
     mat_folder = root / "scripts/matlab_output_data"
     output_folder = root / "scripts/normalized_output"
