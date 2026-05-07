@@ -12,8 +12,11 @@ from __future__ import annotations
 from hip_controller.control.signal_processing.drift_removal import (
     DriftRemovalStrategy,
 )
+from hip_controller.control.signal_processing.filtering import (
+    FilteringStrategy,
+    SogiFllFiltering,
+)
 from hip_controller.control.signal_processing.velocity_estimation import (
-    SogifllVelocityEstimation,
     VelocityEstimationStrategy,
 )
 from hip_controller.definitions import PreprocessorConfig, SensorSignal
@@ -36,7 +39,7 @@ class SensorPreprocessor:
         """
         self.config = config
         self._drift_removal: DriftRemovalStrategy = config.drift_removal_strategy
-        self._sogi_fll: VelocityEstimationStrategy = SogifllVelocityEstimation(
+        self._sogi_fll: FilteringStrategy = SogiFllFiltering(
             config=config.filtering_sogifll_config
         )
         self._velocity_estimation: VelocityEstimationStrategy = (
@@ -72,10 +75,8 @@ class SensorPreprocessor:
             raw_angle=raw_signal.angle_rad, time_difference=time_difference
         )
 
-        angle_out_rad, _ = self._sogi_fll.filter(
-            angle_rad=angle_no_drift_rad,
-            time_difference=time_difference,
-            gyro_velocity_rad_per_sec=raw_signal.velocity_rad_per_sec,
+        angle_out_rad = self._sogi_fll.filter(
+            angle_rad=angle_no_drift_rad, time_difference=time_difference
         )
 
         _, velocity_out_rad_per_sec = self._velocity_estimation.filter(

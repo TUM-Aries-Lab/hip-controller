@@ -205,12 +205,9 @@ class PreprocessorConfig:
             DiscreteDerivativeVelocityEstimation,
             GyroscopeVelocityEstimation,
             LowPassVelocityEstimation,
-            SogifllVelocityEstimation,
         )
 
-        if self.velocity_estimation_method == VelocityEstimationMethod.SOGI:
-            return SogifllVelocityEstimation(self.filtering_sogifll_config)
-        elif (
+        if (
             self.velocity_estimation_method
             == VelocityEstimationMethod.DISCRETE_DERIVATIVE
         ):

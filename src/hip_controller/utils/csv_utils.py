@@ -1,10 +1,10 @@
 """Functions to deal with csv data."""
 
-
 from pathlib import Path
 
 import pandas as pd
 from loguru import logger
+
 
 def convert_xlsx_to_csv(
     input_xlsx_path: Path, output_csv_path: Path | None = None

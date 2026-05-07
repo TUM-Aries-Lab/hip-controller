@@ -64,8 +64,28 @@ if __name__ == "__main__":
 ```bash
 uv run python -m hip_controller
 ```
+To use plotting via PyQt6:
 
-
+On linux computer, edit the Jetson entry in `.ssh/config` or `$HOME\.ssh\config` on Windows (to be verified)
+```
+Host jetson
+  HostName 10.183.230.183
+  User aries-orin-1
+  ForwardX11 yes
+  ForwardX11Trusted yes
+```
+Then (in VSCode) run this in the remote terminal:
+```
+echo $DISPLAY
+```
+Which should show: (if empty, then forwarding is not working properly)
+```
+localhost:10.0
+```
+To run PyQT6 on the Jetson, it also needs to install `libxcb-cursor-dev` with:
+```bash
+sudo apt-get install -y libxcb-cursor-dev
+```
 
 ## Introduction
 

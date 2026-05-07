@@ -26,7 +26,7 @@ from hip_controller.definitions import (
 
 from src.hip_controller.plotter.csv_player import CSVPlayer
 from dataclasses import dataclass
-from scripts.script import ScriptPlayer, ComparisonData
+from scripts.csv_player import ScriptPlayer, ComparisonData
 from hip_controller.control.app import WalkOnController
 from scripts.live_comparison_plot import TimePlotterComparisonWindow
 from hip_controller.utils.utils import setup_logger

@@ -5,7 +5,7 @@ from pathlib import Path
 from loguru import logger
 from pandas import read_csv
 from dataclasses import dataclass
-from hip_controller.definitions import ExosuitData, RecordedSensorData, SensorSignal
+from hip_controller.definitions import RecordedSensorData
 
 
 @dataclass

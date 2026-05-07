@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from hip_controller.definitions import LowPassFilterConfig, SogiFllConfig
+from hip_controller.definitions import LowPassFilterConfig
 from hip_controller.filters.discrete_derivative_filter import (
     DiscreteDerivativeFilter,
 )
 from hip_controller.filters.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
-from hip_controller.filters.sogi_fll_filter import SogiFllFilter
 
 
 class VelocityEstimationStrategy(ABC):
@@ -45,51 +44,6 @@ class VelocityEstimationStrategy(ABC):
 
         :return: None
         """
-
-
-class SogifllVelocityEstimation(VelocityEstimationStrategy):
-    """Velocity estimation via Second-Order Generalized Integrator (SOGI).
-
-    The SOGI resonant structure simultaneously produces a surrogate angle
-    (*angle_surrogate*) and an orthogonal quadrature velocity signal
-    (*vel_quadrature*).
-    """
-
-    def __init__(self, config: SogiFllConfig) -> None:
-        """Create a SOGI velocity estimation strategy.
-
-        :param SogiFllConfig config: SOGI-FLL configuration.
-        :return: None
-        :rtype: None
-        """
-        self._sogi_filter: SogiFllFilter = SogiFllFilter(config=config)
-
-    def filter(
-        self,
-        angle_rad: float,
-        time_difference: float,
-        gyro_velocity_rad_per_sec: float = 0.0,
-    ) -> tuple[float, float]:
-        """Estimate velocity using SOGI phase-locked structure.
-
-        :param float angle: Drift-compensated angle [rad].
-        :param float time_difference: Time elapsed since previous sample [s].
-        :param float gyro_velocity: Unused in this implementation.
-
-        :return: (angle_surrogate, velocity_quadrature).
-        :rtype: tuple[float, float]
-        """
-        angle_surrogate, vel_quadrature = self._sogi_filter.filter(
-            raw_theta_rad=angle_rad, time_difference=time_difference
-        )
-        return angle_surrogate, vel_quadrature
-
-    def reset(self) -> None:
-        """Reset the filter to a known initial condition.
-
-        :return: None
-        """
-        self._sogi_filter.reset()
 
 
 class DiscreteDerivativeVelocityEstimation(VelocityEstimationStrategy):

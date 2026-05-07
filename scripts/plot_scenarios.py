@@ -1,7 +1,4 @@
-"""Simulate multiple scripts."""
-
-"""
-Comparison plotting utility for WalkOnController preprocessing validation.
+"""Comparison plotting utility for WalkOnController preprocessing validation.
 
 Given a CSV file, input column(s), and an expected output column, this module:
   1. Replays the CSV row-by-row through a callable (e.g. preprocessor.filter)
