@@ -2,7 +2,7 @@
 
 import os
 import sys
-from enum import StrEnum
+from hip_controller.definitions import StrEnum
 from pathlib import Path
 
 from hip_controller.definitions import TESTING_DIR

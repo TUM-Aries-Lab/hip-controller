@@ -6,7 +6,15 @@ generation, and signal processing for the fully actuated hip flexion exosuit.
 The version number is automatically imported from the pyproject.toml file.
 """
 
-import tomllib
+import sys
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    try:
+        import tomli as tomllib
+    except ImportError as err:
+        raise ImportError("Python 3.10 requires the 'tomli' package: pip install tomli") from err
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 

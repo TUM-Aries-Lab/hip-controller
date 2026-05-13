@@ -1,24 +1,25 @@
 [project]
 name = "hip_controller"
-version = "0.1.0"
+version = "0.1.1"
 description = "Lower limb exosuit hip controller."
 readme = "README.md"
 authors = [
     { name = "Tsmorz", email = "tony.smoragiewicz@tum.de" },
     { name = "Zhongge Lin", email = "zg.lin@outlook.com" },
 ]
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.10,<3.14"
 
 # --- Core dependencies: NO hardware here ---
 dependencies = [
   "numpy>=2.2.3",
   "loguru>=0.7.3",
-  "scipy>=1.16.3",
+  "scipy>=1.14.0",
   "pandas>=2.3.3",
   "pyqtgraph>=0.13.7",
   "pyside6==6.7.3",
   "pyqt6==6.7.1",
   "matplotlib>=3.10.8",
+  "tomli>=2.0.0; python_version < '3.11'",
 ]
 
 # --- Optional dependency groups (PEP 621 standard) ---
