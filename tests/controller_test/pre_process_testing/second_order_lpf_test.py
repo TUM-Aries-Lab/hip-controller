@@ -4,10 +4,10 @@ from math import isclose
 
 from pandas import read_csv
 
-from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+from hip_controller.definitions import LowPassFilterConfig
+from hip_controller.filters.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
-from hip_controller.definitions import LowPassFilterConfig
 from tests.conftest import (
     DATA_SECOND_ORDER_LOW_PASS_FILTER,
     KinematicsDataColumnName,
@@ -22,7 +22,7 @@ def test_second_order_lpf() -> None:
     """
     df = read_csv(filepath_or_buffer=DATA_SECOND_ORDER_LOW_PASS_FILTER)
     config = LowPassFilterConfig(
-        cut_off_frequency=20.0, damping_ratio=1, initial_condition=0
+        cut_off_frequency_rad_per_sec=20.0, damping_ratio=1, initial_condition=0
     )
     low_pass_filter = SecondOrderLowPassFilter(config=config)
 

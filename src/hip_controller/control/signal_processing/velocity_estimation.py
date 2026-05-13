@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from hip_controller.control.signal_processing.discrete_derivative_filter import (
+from hip_controller.definitions import LowPassFilterConfig
+from hip_controller.filters.discrete_derivative_filter import (
     DiscreteDerivativeFilter,
 )
-from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+from hip_controller.filters.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
-from hip_controller.control.signal_processing.sogi_fll_filter import SogiFllFilter
-from hip_controller.definitions import LowPassFilterConfig, SogiFllConfig
 
 
 class VelocityEstimationStrategy(ABC):
@@ -25,57 +24,26 @@ class VelocityEstimationStrategy(ABC):
     @abstractmethod
     def filter(
         self,
-        angle: float,
+        angle_rad: float,
         time_difference: float,
-        gyro_velocity: float = 0.0,
+        gyro_velocity_rad_per_sec: float = 0.0,
     ) -> tuple[float, float]:
         """Estimate velocity from the drift-compensated angle.
 
         :param float angle: Drift-compensated angle [rad].
         :param float time_difference: Time elapsed since the previous sample [s].
         :param float gyro_velocity: Raw gyroscope angular rate [rad/s].
+
         :return: Tuple of filtered ``(angle_out [rad], velocity_out [rad/s])``.
         :rtype: tuple[float, float]
         """
 
+    @abstractmethod
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition.
 
-class SogiVelocityEstimation(VelocityEstimationStrategy):
-    """Velocity estimation via Second-Order Generalized Integrator (SOGI).
-
-    The SOGI resonant structure simultaneously produces a surrogate angle
-    (*angle_surrogate*) and an orthogonal quadrature velocity signal
-    (*vel_quadrature*).
-
-    :param sogi_filter: A configured :class:`SogiFllFilter` instance.
-    """
-
-    def __init__(self, config: SogiFllConfig) -> None:
-        """Create a SOGI velocity estimation strategy.
-
-        :param SogiFllConfig: SOGI filter instance.
         :return: None
-        :rtype: None
         """
-        self._sogi_filter: SogiFllFilter = SogiFllFilter(config=config)
-
-    def filter(
-        self,
-        angle: float,
-        time_difference: float,
-        gyro_velocity: float = 0.0,
-    ) -> tuple[float, float]:
-        """Estimate velocity using SOGI phase-locked structure.
-
-        :param float angle: Drift-compensated angle [rad].
-        :param float time_difference: Time elapsed since previous sample [s].
-        :param float gyro_velocity: Unused in this implementation.
-        :return: (angle_surrogate, velocity_quadrature).
-        :rtype: tuple[float, float]
-        """
-        angle_surrogate, vel_quadrature = self._sogi_filter.filter(
-            theta=angle, time_difference=time_difference
-        )
-        return angle_surrogate, vel_quadrature
 
 
 class DiscreteDerivativeVelocityEstimation(VelocityEstimationStrategy):
@@ -83,8 +51,6 @@ class DiscreteDerivativeVelocityEstimation(VelocityEstimationStrategy):
 
     Computationally minimal; passes the angle through unchanged and returns
     *velocity_discrete_derivative*.
-
-    :param discrete_filter: A configured :class:`DiscreteDerivativeFilter` instance.
     """
 
     def __init__(self) -> None:
@@ -96,22 +62,30 @@ class DiscreteDerivativeVelocityEstimation(VelocityEstimationStrategy):
 
     def filter(
         self,
-        angle: float,
+        angle_rad: float,
         time_difference: float,
-        gyro_velocity: float = 0.0,
+        gyro_velocity_rad_per_sec: float = 0.0,
     ) -> tuple[float, float]:
         """Estimate velocity via discrete backwards derivative.
 
         :param float angle: Drift-compensated angle [rad].
         :param float time_difference: Time elapsed since previous sample [s].
         :param float gyro_velocity: Unused in this implementation.
+
         :return: (angle, velocity_discrete_derivative).
         :rtype: tuple[float, float]
         """
         velocity_discrete_derivative = self._discrete_filter.filter(
-            theta=angle, time_difference=time_difference
+            theta=angle_rad, time_difference=time_difference
         )
-        return angle, velocity_discrete_derivative
+        return angle_rad, velocity_discrete_derivative
+
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition.
+
+        :return: None
+        """
+        self._discrete_filter.reset()
 
 
 class LowPassVelocityEstimation(VelocityEstimationStrategy):
@@ -127,7 +101,7 @@ class LowPassVelocityEstimation(VelocityEstimationStrategy):
     def __init__(self, config: LowPassFilterConfig) -> None:
         """Create a low-pass velocity estimation strategy.
 
-        :param SecondOrderLowPassFilter lpf: Low-pass filter instance.
+        :param LowPassFilterConfig config: Low-pass filter configurations.
         :return: None
         :rtype: None
         """
@@ -135,9 +109,9 @@ class LowPassVelocityEstimation(VelocityEstimationStrategy):
 
     def filter(
         self,
-        angle: float,
+        angle_rad: float,
         time_difference: float,
-        gyro_velocity: float = 0.0,
+        gyro_velocity_rad_per_sec: float = 0.0,
     ) -> tuple[float, float]:
         """Estimate velocity by filtering the angle signal.
 
@@ -148,9 +122,16 @@ class LowPassVelocityEstimation(VelocityEstimationStrategy):
         :rtype: tuple[float, float]
         """
         angle_filtered, velocity_derivative_filtered = self._lpf.step(
-            x=angle, time_difference=time_difference
+            x=angle_rad, time_difference=time_difference
         )
         return angle_filtered, velocity_derivative_filtered
+
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition.
+
+        :return: None
+        """
+        self._lpf.reset()
 
 
 class GyroscopeVelocityEstimation(VelocityEstimationStrategy):
@@ -163,9 +144,9 @@ class GyroscopeVelocityEstimation(VelocityEstimationStrategy):
 
     def filter(
         self,
-        angle: float,
+        angle_rad: float,
         time_difference: float,
-        gyro_velocity: float = 0.0,
+        gyro_velocity_rad_per_sec: float = 0.0,
     ) -> tuple[float, float]:
         """Return gyroscope angular velocity directly.
 
@@ -175,4 +156,11 @@ class GyroscopeVelocityEstimation(VelocityEstimationStrategy):
         :return: (angle, gyro_velocity).
         :rtype: tuple[float, float]
         """
-        return angle, gyro_velocity
+        return angle_rad, gyro_velocity_rad_per_sec
+
+    def reset(self) -> None:
+        """Pass without internal filter.
+
+        :return: None
+        """
+        pass

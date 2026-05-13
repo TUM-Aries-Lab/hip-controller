@@ -10,11 +10,17 @@ from pathlib import Path
 import pandas as pd
 from loguru import logger
 
-KEEP_COLS = ["time", "hip_flexion_r", "hip_flexion_l"]
-
+KEEP_COLS = ["time", "hip_flexion_r", "hip_flexion_l", "source_file"]
+PARTICIPANTS = [f"AB{i:02d}" for i in range(1, 14)]  # AB01–AB13
 
 def filter_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Keep only time, hip_flexion_r, hip_flexion_l columns."""
+    """
+    Keep only time, hip_flexion_r, hip_flexion_l, source_file columns.
+
+    :param pd.DataFrame df: The input dataframe.
+    :return: The filtered dataframe.
+    :rtype: pd.DataFrame
+    """
     available = [c for c in KEEP_COLS if c in df.columns]
     missing = set(KEEP_COLS) - set(available)
     if missing:
@@ -33,12 +39,11 @@ def concatenate_stairs(
     AB##_stairs_1_*_(up|down)_angle.csv and merges them in
     numeric order into <output_dir>/<participant>_stairs_combined.csv.
 
-
-    :param str | Path stairs_root:  Path to the 'stairs' folder containing AB01-AB13 subdirs.
-    :param str | Path output_dir:   Destination folder for the combined per-participant files.
-    :param list[str] | None = None participants: Optional list of participant IDs (e.g. ['AB01', 'AB03']).
-                      Defaults to all subdirectories found in stairs_root.
-
+    :param str | Path stairs_root: Path to the 'stairs' folder containing AB01-AB13 subdirectories.
+    :param str | Path output_dir: Destination folder for the combined per-participant files.
+    :param list[str] | None participants: Optional list of participant IDs (e.g. ['AB01', 'AB03']).
+        Defaults to all subdirectories found in stairs_root.
+    :return: None
     """
     stairs_root = Path(stairs_root)
     output_dir = Path(output_dir)
@@ -117,49 +122,85 @@ def combine_two_files(
     return combined
 
 
-def convert_xlsx_to_csv(
-    input_xlsx_path: Path, output_csv_path: Path | None = None
-) -> Path:
-    """Convert an Excel file to CSV format.
-
-    Reads a single Excel file (.xls or .xlsx) from the testing directory and writes
-    its contents to a CSV file with the same filename stem in the same directory.
-    This is useful for converting test data and measurement recordings to a
-    more portable and scriptable format.
-
-    :param Path input_xlsx_path: Absolute path to the input Excel file.
-    :param Path output_xlsx_path: Absolute path to the output CSV file.
-
-    :return: Path to the newly created CSV file with the same name as the input file but with .csv extension.
-    :rtype: Path
-    """
-    if not input_xlsx_path.exists():
-        raise FileNotFoundError(f"File not found: {input_xlsx_path}")
-
-    if output_csv_path is None:
-        output_csv_path = input_xlsx_path.with_suffix(".csv")
-
-    logger.info(f"Reading Excel file: {input_xlsx_path}")
-    data: pd.DataFrame = pd.read_excel(input_xlsx_path)
-
-    logger.info(f"Writing CSV file: {output_csv_path}")
-    data.to_csv(output_csv_path, index=False)
-
-    return output_csv_path
 
 
-def convert_zero_one_to_boolean(path: Path, column_names: list[str]) -> None:
-    """Convert 0/1 values in columns to boolean.
 
-    :param Path path: The path of the CSV file.
-    :param list[str] columnnames: Names of columns which has 0 and 1 values that needs to be converted.
 
-    :return: None
+
+
+def _read_and_filter(path: Path) -> pd.DataFrame:
+    """Read a CSV and retain only the required columns.
+
+    :param Path path: Path to the input CSV file.
+    :return: Filtered DataFrame containing required columns.
+    :rtype: pd.DataFrame
     """
     df = pd.read_csv(path)
+    available = [c for c in KEEP_COLS if c in df.columns]
+    missing = set(KEEP_COLS) - set(available)
+    if missing:
+       logger.warning(f"  Warning: {path.name} missing columns {missing}")
+    return df[available]
 
-    for column_name in column_names:
-        df[column_name] = df[column_name].astype(int).astype(bool)
 
-    # Save back to CSV
-    df.to_csv(path, index=False)
+def _find_file(folder: Path, participant: str, keyword: str) -> Path | None:
+    """Return the first CSV in folder whose name contains participant and keyword.
+
+    :param Path folder: Directory to search.
+    :param str participant: Participant identifier to match.
+    :param str keyword: Keyword to search for in the filename.
+    :return: Matching file path, or None if no file is found.
+    :rtype: Path | None
+    """
+    matches = list(folder.glob(f"{participant}*{keyword}*angle.csv"))
+    if not matches:
+        logger.warning(f"  Warning: no file found for {participant} with '{keyword}' in {folder}")
+        return None
+    return matches[0]
+
+
+def combine_incline_walk(
+    incline_root: str | Path,
+    output_dir: str | Path,
+    participants: list[str] = PARTICIPANTS,
+) -> None:
+    """
+    For each participant and each slope (5 and 10), concatenate up then down
+    into a single CSV containing only time, hip_flexion_r, hip_flexion_l.
+
+    :param str | Path incline_root: Path to the 'incline_walk' folder.
+    :param str | Path output_dir: Destination folder for combined files.
+    :param list[str] participants: List of participant IDs. Defaults to AB01–AB13.
+    :return: None
+    """
+    incline_root = Path(incline_root)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    slopes = [
+        ("incline_walk_5",  "up5",  "down5",  5),
+        ("incline_walk_10", "up10", "down10", 10),
+    ]
+
+    for subfolder, up_kw, down_kw, slope in slopes:
+        folder = incline_root / subfolder
+        if not folder.exists():
+            logger.warning((f"Folder not found: {folder} — skipping slope {slope}.\n"))
+            continue
+
+
+        for participant in participants:
+            up_file   = _find_file(folder, participant, up_kw)
+            down_file = _find_file(folder, participant, down_kw)
+
+            if not up_file or not down_file:
+                continue  # warning already printed inside _find_file
+
+            df_up   = _read_and_filter(up_file);   df_up["source_file"]   = up_file.name
+            df_down = _read_and_filter(down_file); df_down["source_file"] = down_file.name
+
+            combined = pd.concat([df_up, df_down], ignore_index=True)
+
+            out_path = output_dir / f"{participant}_incline_walk_{slope}_combined.csv"
+            combined.to_csv(out_path, index=False)
+            logger.info(f"  {participant}: {up_file.name} + {down_file.name} → {out_path.name}  ({len(combined)} rows)")

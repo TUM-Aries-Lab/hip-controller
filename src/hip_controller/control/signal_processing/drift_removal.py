@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from hip_controller.control.signal_processing.notch_filter import NotchFilter
-from hip_controller.control.signal_processing.second_order_low_pass_filter import (
+from hip_controller.definitions import LowPassFilterConfig, NotchConfig
+from hip_controller.filters.notch_filter import NotchFilter
+from hip_controller.filters.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
-from hip_controller.definitions import LowPassFilterConfig, NotchConfig
 
 
 class DriftRemovalStrategy(ABC):
@@ -31,6 +31,13 @@ class DriftRemovalStrategy(ABC):
         :param float timestamp: Wall-clock or monotonic timestamp [s].
         :return: Drift-compensated angle [rad].
         :rtype: float
+        """
+
+    @abstractmethod
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition.
+
+        :return: None
         """
 
 
@@ -67,6 +74,13 @@ class LowPassDriftRemoval(DriftRemovalStrategy):
         angle_no_drift_low_pass = raw_angle - drift_estimate
         return angle_no_drift_low_pass
 
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition.
+
+        :return: None
+        """
+        self._low_pass_filter.reset()
+
 
 class NotchDriftRemoval(DriftRemovalStrategy):
     """Drift removal via a notch filter tuned to the drift frequency.
@@ -96,3 +110,10 @@ class NotchDriftRemoval(DriftRemovalStrategy):
         """
         angle_no_drift_notch = self._notch.filter(raw_value=raw_angle)
         return angle_no_drift_notch
+
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition.
+
+        :return: None
+        """
+        self._notch.reset()

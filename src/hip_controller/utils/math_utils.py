@@ -92,15 +92,3 @@ def transform_to_cyclic(val: float) -> float:
     :rtype: float
     """
     return -sin(val)
-
-
-def apply_sigmoid_scaling(value: float, power: float) -> float:
-    """Apply sigmoid scaling a^n / (a^n + 1) so that the higher n is, the lower amplitudes are scaled down.
-
-    :param float value: Variable a.
-    :param float power: Variable n.
-
-    :return: Amplitude.
-    :rtype: float
-    """
-    return (value**power) / ((value**power) + 1)

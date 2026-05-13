@@ -22,8 +22,8 @@ class SteadyStateTracker:
         self._velocity_min: float = 0.0
 
         # center velocity, center angle and rescale factor, updated when valid stride event is detected
-        self._center_vel = 0.0
-        self._center_ang = 0.0
+        self._center_vel: float = 0.0
+        self._center_ang: float = 0.0
         self._scale_factor: float = 0.0
 
         # normalized and centered values, updated each step

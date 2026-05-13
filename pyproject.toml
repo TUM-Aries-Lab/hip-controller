@@ -16,8 +16,8 @@ dependencies = [
   "scipy>=1.16.3",
   "pandas>=2.3.3",
   "pyqtgraph>=0.13.7",
-  "pyside6 >= 6.10.0",
-  "pyqt6>=6.10.2",
+  "pyside6==6.7.3",
+  "pyqt6==6.7.1",
   "matplotlib>=3.10.8",
 ]
 

@@ -42,6 +42,8 @@ class BasicConfig:
         DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
     )
 
+    frequency: int = 100
+
 
 class SolverType(StrEnum):
     """Selects the numerical integration strategy for the LPF.
@@ -64,9 +66,9 @@ class SolverType(StrEnum):
 
 @dataclass
 class LowPassFilterConfig:
-    """Settings for the second-order low-pass filter containing cut_off_frequency, damping_ratio, initial_condition, time_difference, solver_type."""
+    """Settings for the second-order low-pass filter containing cut_off_frequency, damping_ratio, initial_condition, solver_type."""
 
-    cut_off_frequency: float = 20.0  # in rad/s
+    cut_off_frequency_rad_per_sec: float = 20.0  # in rad/s
     damping_ratio: float = 1.0  # 1.0 = critically damped
     initial_condition: float = 0.0
     solver_type: SolverType = (
@@ -83,7 +85,7 @@ class NotchConfig:
 
     center_freq_hz: float
     bandwidth_3db_hz: float
-    sample_rate_hz: float
+    sample_rate_hz: float = BasicConfig.frequency
 
 
 @dataclass(frozen=True)
@@ -167,18 +169,20 @@ class PreprocessorConfig:
 
     # Select methods for drift removal and velocity estimation filtering
     drift_removal_method: DriftRemovalMethod = DriftRemovalMethod.LOW_PASS
-    velocity_estimation_method: VelocityEstimationMethod = VelocityEstimationMethod.SOGI
+    velocity_estimation_method: VelocityEstimationMethod = (
+        VelocityEstimationMethod.DISCRETE_DERIVATIVE
+    )
 
     # Configurations for the filters
     drift_removal_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
-        cut_off_frequency=1.25, damping_ratio=1.0, initial_condition=0.0
+        cut_off_frequency_rad_per_sec=1.25, damping_ratio=1.0, initial_condition=0.0
     )
     drift_removal_notch_config: NotchConfig = NotchConfig(
-        center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=100
+        center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=BasicConfig.frequency
     )
     filtering_sogifll_config: SogiFllConfig = SogiFllConfig()
     filtering_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
-        cut_off_frequency=20.0, damping_ratio=1.0, initial_condition=0.0
+        cut_off_frequency_rad_per_sec=20.0, damping_ratio=1.0, initial_condition=0.0
     )
 
     @property
@@ -201,12 +205,9 @@ class PreprocessorConfig:
             DiscreteDerivativeVelocityEstimation,
             GyroscopeVelocityEstimation,
             LowPassVelocityEstimation,
-            SogiVelocityEstimation,
         )
 
-        if self.velocity_estimation_method == VelocityEstimationMethod.SOGI:
-            return SogiVelocityEstimation(self.filtering_sogifll_config)
-        elif (
+        if (
             self.velocity_estimation_method
             == VelocityEstimationMethod.DISCRETE_DERIVATIVE
         ):
@@ -314,7 +315,7 @@ class RecordedSensorData:
     ang_right: str = "angle_right (rad)"
     vel_right: str = "vel_right (rad/s)"
 
-    fake_frequency_hz: int = 100
+    fake_frequency_hz: int = BasicConfig.frequency
 
 
 @dataclass(frozen=True)
@@ -337,6 +338,9 @@ class PlotConfig:
     draw_sample_frequency = 10
 
     # left time-series graph config
+    time_plot_title: str = "Motor Command Time Series"
+    time_plot_x_axis_label = "Time"
+    time_plot_y_axis_label = "Motor Velocity Command"
     time_plot_size: int = 150
     time_plot_window_size_sec = (
         2  # This should align with the plot number size with frequency of the samples
@@ -353,11 +357,12 @@ class PlotConfig:
     time_plot_window_follow = time_plot_window_lead_sec - time_plot_window_size_sec
 
     # right phase portrait config
+    phase_plot_title: str = "Phase Portrait"
     phase_plot_size: int = 150
     phase_plot_window_margin = 1.1
 
-    phase_plot_axis_angle = "Angle (rad)"
-    phase_plot_axis_velocity = "Velocity (rad/s)"
+    phase_plot_axis_angle = "Centered and Scaled Angle"
+    phase_plot_axis_velocity = "Centered Angular Velocity"
     phase_plot_scatter_size = 5
 
     # Since the spots are fading transparently, RGB values are be given separately

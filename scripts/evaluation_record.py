@@ -1,0 +1,195 @@
+"""
+Evaluation pipeline for WalkOnController.
+
+Reads all CSVs from evaluation_raw_data/, processes them through
+left and right WalkOnControllers, and writes results to evaluation_data/
+mirroring the original subfolder structure.
+
+Assumed signal constructor:  Signal(angle_rad=<float>)
+Adjust the `_make_signal` helper below if your Signal class differs.
+"""
+
+import math
+import pandas as pd
+from pathlib import Path
+
+# ── ADJUST THESE IMPORTS TO MATCH YOUR PROJECT ─────────────────────────────
+from hip_controller.control.app import WalkOnController   # your controller class
+from hip_controller.definitions import SensorSignal
+from loguru import logger
+# ───────────────────────────────────────────────────────────────────────────
+
+CONTROLLER_ROOT = Path(__file__).resolve().parents[1]
+RAW_INPUT_ROOT  = CONTROLLER_ROOT / Path("data/evaluation_raw_data")
+ZWISCHEN_ROOT = CONTROLLER_ROOT / Path("scripts/evaluation_input_angles")
+OUTPUT_ROOT = CONTROLLER_ROOT / Path("scripts/evaluation_output")
+
+KEEP_COLS   = ["time", "hip_flexion_r", "hip_flexion_l"]  # degrees
+RAW_HZ      = 200
+TARGET_HZ   = 100
+DOWNSAMPLE  = RAW_HZ // TARGET_HZ   # keep every 2nd row
+
+
+
+
+def load_and_filter(path: Path) -> pd.DataFrame:
+    """Load a CSV file and retain only the required evaluation columns.
+
+    :param Path path: Path to the input CSV file.
+    :return: Filtered DataFrame containing required columns.
+    :rtype: pd.DataFrame
+    """
+    df = pd.read_csv(path)
+    cols = (["source_file"] if "source_file" in df.columns else []) + KEEP_COLS
+    missing = [c for c in KEEP_COLS if c not in df.columns]
+    if missing:
+        raise ValueError(f"{path.name}: missing required columns {missing}")
+    return df[cols].reset_index(drop=True)
+
+
+
+def prepare(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert degrees to radians and downsample the input data.
+
+    :param pd.DataFrame df: Input evaluation dataframe with degree columns.
+    :return: Processed dataframe with radian columns and reduced sampling rate.
+    :rtype: pd.DataFrame
+    """
+    df = df.copy()
+    df["hip_flexion_r_rad"] = df["hip_flexion_r"].apply(math.radians)
+    df["hip_flexion_l_rad"] = df["hip_flexion_l"].apply(math.radians)
+    df = df.iloc[::DOWNSAMPLE].reset_index(drop=True)   # 200 Hz → 100 Hz
+    return df
+
+
+def process_file(input_path: Path,
+                 output_path: Path) -> None:
+    """Process a single evaluation CSV file and write the processed output.
+
+    :param Path input_path: Path to the raw input CSV file.
+    :param Path output_path: Path where the processed CSV will be written.
+    :return: None
+    """
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    df_raw  = load_and_filter(input_path)
+    df_prep = prepare(df_raw)
+
+
+    df_prep.to_csv(output_path, index=False)
+    logger.info(f"  ✓ {input_path.relative_to(RAW_INPUT_ROOT)}  →  {output_path.relative_to(OUTPUT_ROOT)}  ({len(df_prep)} rows)")
+
+
+def run_evaluation() -> None:
+    """Discover all raw CSVs and batch-process them through the evaluation pipeline.
+
+    :return: None
+    """
+    csv_files = sorted(RAW_INPUT_ROOT.rglob("*.csv"))
+    if not csv_files:
+        logger.warning(f"No CSV files found under {RAW_INPUT_ROOT}/")
+        return
+
+    logger.info(f"Found {len(csv_files)} CSV files — processing…\n")
+
+    for input_path in csv_files:
+        # Mirror subfolder structure: evaluation_raw_data/a/b.csv → evaluation_data/a/b.csv
+        relative   = input_path.relative_to(RAW_INPUT_ROOT)
+        output_path = OUTPUT_ROOT / relative
+        try:
+            process_file(input_path, output_path)
+        except Exception as exc:
+            logger.warning(f"  ✗ {input_path.name}: {exc}")
+
+    logger.info(f"\nDone. Results written to {OUTPUT_ROOT}/")
+
+
+
+def run_controllers(df: pd.DataFrame,
+                    ctrl_left: WalkOnController,
+                    ctrl_right: WalkOnController) -> pd.DataFrame:
+    """Run the left and right controllers on each row of prepared sensor data.
+
+    :param pd.DataFrame df: Prepared dataframe with radian angle columns.
+    :param WalkOnController ctrl_left: Controller instance for the left leg.
+    :param WalkOnController ctrl_right: Controller instance for the right leg.
+    :return: DataFrame containing filtered signals, phase, amplitude, and motor command outputs.
+    :rtype: pd.DataFrame
+    """
+    records = []
+
+    for i in range(0, len(df)):
+        row = df.iloc[i]
+
+        timestamp = float(row["time"])
+        signal_r = SensorSignal(timestamp=timestamp, angle_rad=float(row["hip_flexion_r_rad"]),velocity_rad_per_sec=0.0)
+        signal_l = SensorSignal(timestamp=timestamp, angle_rad=float(row["hip_flexion_l_rad"]),velocity_rad_per_sec=0.0)
+
+
+        # ── right side ──
+        filt_r   = ctrl_right.pre_processor.filter(raw_signal=signal_r)
+        phase_r  = ctrl_right.gait_controller.update_and_compute(curr_signal=filt_r)
+        amplitude_r    = ctrl_right.amplitude_modulation.compute_amplitude(signal=filt_r)
+        command_r    = ctrl_right.motion_reference_controller.compute_motor_command(
+                       gait_phase=phase_r, amplitude=amplitude_r)
+
+        # ── left side ──
+        filt_l   = ctrl_left.pre_processor.filter(raw_signal=signal_l)
+        phase_l  = ctrl_left.gait_controller.update_and_compute(curr_signal=filt_l)
+        amplitude_l    = ctrl_left.amplitude_modulation.compute_amplitude(signal=filt_l)
+        command_l    = ctrl_left.motion_reference_controller.compute_motor_command(
+                       gait_phase=phase_l, amplitude=amplitude_l)
+
+        records.append({
+            "time (s)":                     row["time"],
+            "angle_right (deg)":            row["hip_flexion_r"],
+            "angle_left (deg)":             row["hip_flexion_l"],
+            "angle_right (rad)":            row["hip_flexion_r_rad"],
+            "angle_left (rad)":             row["hip_flexion_l_rad"],
+            "filtered_angle_right (rad)":   filt_r.angle_rad,
+            "filtered_angle_left (rad)":    filt_l.angle_rad,
+            "filtered_velocity_right (rad/s)": filt_r.velocity_rad_per_sec,
+            "filtered_velocity_left (rad/s)":  filt_l.velocity_rad_per_sec,
+            "gait_phase_right (rad)":       phase_r,
+            "gait_phase_left (rad)":        phase_l,
+            "amplitude_right": amplitude_r,
+            "amplitude_left": amplitude_l,
+            "motor_command_right (rad/s)":  command_r,
+            "motor_command_left (rad/s)":   command_l,
+        })
+
+    return pd.DataFrame(records)
+
+
+def process_evaluation()->None:
+    """Process all input angle CSVs from ZWISCHEN_ROOT and write evaluation output files.
+
+    :return: None
+    """
+    csv_files = sorted(ZWISCHEN_ROOT.rglob("*.csv"))
+    if not csv_files:
+        logger.warning(f"No CSV files found under {ZWISCHEN_ROOT}/")
+
+    logger.info(f"Found {len(csv_files)} CSV files — processing…\n")
+
+    for input_path in csv_files:
+        ctrl_left  = WalkOnController(reverse=False, filtered=False)   # add constructor args as needed
+        ctrl_right = WalkOnController(reverse=True, filtered=False)
+
+        # Mirror subfolder structure: evaluation_raw_data/a/b.csv → evaluation_data/a/b.csv
+        relative   = input_path.relative_to(ZWISCHEN_ROOT)
+        output_path = OUTPUT_ROOT / relative
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            df_out  = run_controllers(pd.read_csv(input_path), ctrl_left, ctrl_right)
+            df_out.to_csv(output_path, index=False)
+
+        except Exception as exc:
+            logger.warning(f"  ✗ {input_path.name}: {exc}")
+        logger.info(input_path)
+
+    logger.info(f"\nDone. Results written to {OUTPUT_ROOT}/")
+
+if __name__ == "__main__":
+
+    process_evaluation()
