@@ -2,10 +2,9 @@
 
 import sys
 from dataclasses import asdict, dataclass
-from enum import auto
 
 if sys.version_info >= (3, 11):
-    from enum import StrEnum
+    from enum import StrEnum, auto
 else:
     from enum import Enum
 
@@ -33,27 +32,27 @@ RECORDINGS_DIR: Path = DATA_DIR / "recordings"
 LOG_DIR: Path = DATA_DIR / "logs"
 
 
-@dataclass(frozen=True)
-class BasicConfig:
-    """Basic configurations for the hip controller."""
+class DriftRemovalMethod(StrEnum):
+    """Drift removal strategy options."""
 
-    # if the graph is displayed or not
-    left_limb_plot: bool = True
-    right_limb_plot: bool = True
+    LOW_PASS = auto()
+    NOTCH = auto()
 
-    # if the wiring settings are reversed or not
-    left_limb_reverse: bool = False
-    right_limb_reverse: bool = True
 
-    # either read data from imu or read data from csv file using csv player
-    read_from_imu: bool = False
+class FilteringMethod(StrEnum):
+    """Filtering strategy options."""
 
-    # the path where data is read from
-    read_data_from_path: Path = (
-        DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
-    )
+    SOGI = auto()
+    KALMAN = auto()
+    LOW_PASS = auto()
 
-    frequency: int = 100
+
+class VelocityEstimationMethod(StrEnum):
+    """Velocity estimation strategy options."""
+
+    DISCRETE_DERIVATIVE = auto()
+    LOW_PASS = auto()
+    GYROSCOPE = auto()
 
 
 class SolverType(StrEnum):
@@ -69,17 +68,56 @@ class SolverType(StrEnum):
                        Maps to Simulink continuous integrator + ode4 solver.
     """
 
-    FORWARD_EULER = "forward_euler"
-    BACKWARD_EULER = "backward_euler"
-    TRAPEZOIDAL = "trapezoidal"
-    RUNGE_KUTTA = "rk4"
+    FORWARD_EULER = auto()
+    BACKWARD_EULER = auto()
+    TRAPEZOIDAL = auto()
+    RUNGE_KUTTA = auto()
+
+
+@dataclass(frozen=True)
+class BasicConfig:
+    """Basic configurations for the hip controller."""
+
+    # general frequency
+    frequency: int = 100
+
+    # if data is pre filtered - skip the pre processing
+    filtered: bool = False
+
+    # if the graph is displayed or not
+    left_limb_plot: bool = False
+    right_limb_plot: bool = False
+
+    # if the wiring settings are reversed or not
+    left_limb_reverse: bool = False
+    right_limb_reverse: bool = True
+
+    # either read data from imu or read data from csv file using csv player
+    read_from_imu: bool = False
+
+    # the path where data is read from
+    read_data_from_path: Path = (
+        DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
+    )
+
+    # select which DriftRemovalMethod, VelocityEstimationMethod
+    drift_removal_method: DriftRemovalMethod = DriftRemovalMethod.LOW_PASS
+
+    filtering_method: FilteringMethod = FilteringMethod.SOGI
+    velocity_estimation_method: VelocityEstimationMethod = (
+        VelocityEstimationMethod.DISCRETE_DERIVATIVE
+    )
+    # cut-off frequency for the 2ndOrderLP filter
+    cut_off_freq_low_pass_rad_per_sec: float = 80.0
 
 
 @dataclass
 class LowPassFilterConfig:
     """Settings for the second-order low-pass filter containing cut_off_frequency, damping_ratio, initial_condition, solver_type."""
 
-    cut_off_frequency_rad_per_sec: float = 20.0  # in rad/s
+    cut_off_frequency_rad_per_sec: float = (
+        BasicConfig.cut_off_freq_low_pass_rad_per_sec
+    )  # in rad/s
     damping_ratio: float = 1.0  # 1.0 = critically damped
     initial_condition: float = 0.0
     solver_type: SolverType = (
@@ -94,8 +132,8 @@ class LowPassFilterConfig:
 class NotchConfig:
     """Configurations for the notch function."""
 
-    center_freq_hz: float
-    bandwidth_3db_hz: float
+    center_freq_hz: float = 0.0
+    bandwidth_3db_hz: float = 0.1
     sample_rate_hz: float = BasicConfig.frequency
 
 
@@ -159,74 +197,25 @@ class SogiFllConfig:
     numerical_safety_floor: float = 1e-9
 
 
-class DriftRemovalMethod(StrEnum):
-    """Drift removal strategy options."""
-
-    LOW_PASS = auto()
-    NOTCH = auto()
-
-
-class VelocityEstimationMethod(StrEnum):
-    """Velocity estimation strategy options."""
-
-    SOGI = auto()
-    DISCRETE_DERIVATIVE = auto()
-    LOW_PASS = auto()
-    GYROSCOPE = auto()
-
-
 class PreprocessorConfig:
     """Configurations for the sensor preprocessor."""
-
-    # Select methods for drift removal and velocity estimation filtering
-    drift_removal_method: DriftRemovalMethod = DriftRemovalMethod.LOW_PASS
-    velocity_estimation_method: VelocityEstimationMethod = (
-        VelocityEstimationMethod.DISCRETE_DERIVATIVE
-    )
 
     # Configurations for the filters
     drift_removal_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
         cut_off_frequency_rad_per_sec=1.25, damping_ratio=1.0, initial_condition=0.0
     )
-    drift_removal_notch_config: NotchConfig = NotchConfig(
-        center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=BasicConfig.frequency
-    )
+    drift_removal_notch_config: NotchConfig = NotchConfig()
+
     filtering_sogifll_config: SogiFllConfig = SogiFllConfig()
+    filtering_lowpass_config: LowPassFilterConfig = LowPassFilterConfig()
+
     filtering_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
+        cut_off_frequency_rad_per_sec=80.0, damping_ratio=1.0, initial_condition=0.0
+    )
+
+    velocity_estimation_low_pass_config: LowPassFilterConfig = LowPassFilterConfig(
         cut_off_frequency_rad_per_sec=20.0, damping_ratio=1.0, initial_condition=0.0
     )
-
-    @property
-    def drift_removal_strategy(self):
-        """Get instance of different options of drift removal."""
-        from hip_controller.control.signal_processing.drift_removal import (
-            LowPassDriftRemoval,
-            NotchDriftRemoval,
-        )
-
-        if self.drift_removal_method == DriftRemovalMethod.LOW_PASS:
-            return LowPassDriftRemoval(self.drift_removal_second_order_lpf_config)
-        else:
-            return NotchDriftRemoval(self.drift_removal_notch_config)
-
-    @property
-    def velocity_estimation_strategy(self):
-        """Get instance of different options of velocity estimation."""
-        from hip_controller.control.signal_processing.velocity_estimation import (
-            DiscreteDerivativeVelocityEstimation,
-            GyroscopeVelocityEstimation,
-            LowPassVelocityEstimation,
-        )
-
-        if (
-            self.velocity_estimation_method
-            == VelocityEstimationMethod.DISCRETE_DERIVATIVE
-        ):
-            return DiscreteDerivativeVelocityEstimation()
-        elif self.velocity_estimation_method == VelocityEstimationMethod.LOW_PASS:
-            return LowPassVelocityEstimation(self.filtering_second_order_lpf_config)
-        else:
-            return GyroscopeVelocityEstimation()
 
 
 # centering & normalization

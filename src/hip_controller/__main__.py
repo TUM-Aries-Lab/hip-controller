@@ -41,8 +41,10 @@ def main(
     app = QtWidgets.QApplication([])
 
     player = CSVPlayer(csv_path)
-    controller_left = WalkOnController(reverse=True, plot=True, filtered=True)
-    controller_right = WalkOnController(reverse=False, plot=True, filtered=True)
+    config = BasicConfig(filtered=True)
+
+    controller_left = WalkOnController(left_limb=True, config=config)
+    controller_right = WalkOnController(left_limb=False, config=config)
     timer = QtCore.QTimer()
 
     def update() -> None:
