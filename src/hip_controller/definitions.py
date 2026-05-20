@@ -1,14 +1,18 @@
 """Common definitions for this module."""
-import sys
 
+import sys
 from dataclasses import asdict, dataclass
 from enum import auto
+
 if sys.version_info >= (3, 11):
     from enum import StrEnum
 else:
     from enum import Enum
+
     class StrEnum(str, Enum):
         """String enum backport for Python <3.11."""
+
+
 from math import pi
 from pathlib import Path
 
