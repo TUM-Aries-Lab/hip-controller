@@ -38,7 +38,7 @@ uv publish  # make sure your version in pyproject.toml is updated
 
 or
 
-Update the version number in pyproject.toml and imu_module/__init__.py
+Update the version number in pyproject.toml and hip_controller/__init__.py
 Commit your changes and add a git tag v<new.version.number>
 Push the tag git push --tag
 
