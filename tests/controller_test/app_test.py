@@ -9,6 +9,7 @@ from hip_controller.control.app import (
     SensorSignal,
     WalkOnController,
 )
+from hip_controller.definitions import BasicConfig
 from tests.conftest import (
     DATA_REFERENCE_MOTION_RIGHT,
     REL_TOL,
@@ -18,7 +19,8 @@ from tests.conftest import (
 
 def test_controller_right():
     """Test the main function with the right lower limb data."""
-    controller = WalkOnController(reverse=True, plot=False, filtered=True)
+    config = BasicConfig(filtered=True)
+    controller = WalkOnController(left_limb=False, config=config)
 
     df = read_csv(filepath_or_buffer=DATA_REFERENCE_MOTION_RIGHT)
 

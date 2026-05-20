@@ -14,7 +14,7 @@ from hip_controller.control.motor_reference_control.motor_reference_controller i
 from hip_controller.control.signal_processing.sensor_preprocessor import (
     SensorPreprocessor,
 )
-from hip_controller.definitions import PreprocessorConfig, SensorSignal
+from hip_controller.definitions import BasicConfig, SensorSignal
 
 # Pause-detection thresholds for the SOGI/FLL walking-mode gate. The envelope
 # is an exponential moving average of |raw velocity| with time constant
@@ -37,7 +37,7 @@ class WalkOnController:
     This controller implements a gait phase-based control strategy for a single limb, which can be used for both unilateral and bilateral hip flexion exosuits. The controller processes raw sensor signals to compute the current gait phase, applies amplitude modulation based on the sensor signals, and generates motor velocity commands for the exosuit's actuators.
     """
 
-    def __init__(self, reverse: bool, plot: bool = False, filtered=False):
+    def __init__(self, left_limb: bool, config: BasicConfig):
         """Initialize the controller.
 
         :param bool reverse: Whether to reverse the motor command output (for mirrored wiring).
@@ -46,20 +46,30 @@ class WalkOnController:
 
         :return: None
         """
-        self.plot = plot
-        self.filtered = filtered
-        if plot:
+        self.filtered = config.filtered
+        if left_limb:
+            self.plot = config.left_limb_plot
+            self.amplitude_modulation = AmplitudeModulation(
+                reverse=config.left_limb_reverse
+            )
+        else:
+            self.plot = config.right_limb_plot
+            self.amplitude_modulation = AmplitudeModulation(
+                reverse=config.right_limb_reverse
+            )
+
+        if self.plot:
             from hip_controller.plotter.live_phase_portrait import PortraitWindow
 
             # Execute the Qt plot application.
-            self.plotter = PortraitWindow(left=not reverse)
+            self.plotter = PortraitWindow(left=left_limb)
             self.plotter.show()
 
-        self.pre_processor = SensorPreprocessor(PreprocessorConfig())
+        self.pre_processor = SensorPreprocessor(basic_config=config)
         self.gait_controller = GaitController()
 
         # due to different wire settings one of them might need to be reversed - mirrored with -1
-        self.amplitude_modulation = AmplitudeModulation(reverse=reverse)
+
         self.motion_reference_controller = MotionReferenceController()
 
         # Apply the LEVEL SOGI config at construction so the SOGI starts

@@ -11,9 +11,7 @@ from abc import ABC, abstractmethod
 
 from hip_controller.definitions import LowPassFilterConfig, NotchConfig
 from hip_controller.filters.notch_filter import NotchFilter
-from hip_controller.filters.second_order_low_pass_filter import (
-    SecondOrderLowPassFilter,
-)
+from hip_controller.filters.second_order_low_pass_filter import SecondOrderLowPassFilter
 
 
 class DriftRemovalStrategy(ABC):

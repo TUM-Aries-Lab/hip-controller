@@ -3,9 +3,8 @@
 import numpy as np
 from numpy.typing import NDArray
 
-from hip_controller.definitions import MEASUREMENT_NOISE, PROCESS_NOISE
+from hip_controller.definitions import KalmanFilterConfig
 from hip_controller.utils.math_utils import symmetrize_matrix
-from hip_controller.utils.state_space import StateSpaceLinear
 
 
 class KalmanFilter:
@@ -13,32 +12,19 @@ class KalmanFilter:
 
     def __init__(
         self,
-        state_space: StateSpaceLinear,
-        initial_x: np.ndarray,
-        initial_covariance: np.ndarray,
-        process_noise: NDArray | None = None,
-        measurement_noise: NDArray | None = None,
+        config: KalmanFilterConfig,
     ) -> None:
         """Initialize the Kalman Filter.
 
-        :param state_space: linear state space model
-        :param initial_x: Initial state estimate
-        :param initial_covariance: Initial error covariance
-        :param process_noise: Process noise covariance
-        :param measurement_noise: Measurement noise covariance
+        :param config: Kalman filter configuration.
         :return: None
         """
-        self.state_space = state_space
-        if process_noise is None:
-            process_noise = PROCESS_NOISE * np.eye(len(state_space.A))
-        self.Q: np.ndarray = process_noise
-
-        if measurement_noise is None:
-            measurement_noise = MEASUREMENT_NOISE * np.eye(len(state_space.C))
-        self.R: np.ndarray = measurement_noise
-
-        self.x: np.ndarray = initial_x
-        self.cov: np.ndarray = initial_covariance
+        self.config = config  # save initial state for resets
+        self.state_space = config.state_space
+        self.Q: NDArray = config.process_noise
+        self.R: NDArray = config.measurement_noise
+        self.x: NDArray = config.initial_state
+        self.cov: NDArray = config.initial_covariance
 
     def predict(self, u: NDArray | None = None) -> None:
         """Predict the next state and error covariance.
@@ -65,3 +51,24 @@ class KalmanFilter:
         self.cov = symmetrize_matrix(cov)
 
         return z - self.state_space.C @ self.x
+
+    def filter(self, angle_rad: float, time_difference: float) -> float:
+        """Execute one filter step, containing a prediction step and an update step.
+
+        :param angle_rad: Raw angle in rad.
+        :param time_difference: Difference dt between current timestamp and previous timestamp.
+        :return: Drift-compensated angle in rad.
+        """
+        # modify the state transition matrix with the given time step
+        self.state_space.A[0, 1] = time_difference
+        self.predict(u=None)
+        self.update(z=np.array([angle_rad]))
+        return float(self.x[0])
+
+    def reset(self) -> None:
+        """Reset the Kalman filter to its initial condition.
+
+        :return: None
+        """
+        self.x = self.config.initial_state
+        self.cov = self.config.initial_covariance
