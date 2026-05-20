@@ -128,18 +128,7 @@ docker build -t hip-controller .
 docker run hip-controller
 ```
 
-## How to Import
 
-Import the main module:
-```python
-from hip_controller import definitions
-```
-
-Import specific components:
-```python
-from hip_controller.control.app import AppController
-from hip_controller.control.signal_processing.kalman_filter import KalmanFilter
-from hip_controller.plotter.simulator import Simulator
 ```
 
 ## Architecture and Flow
@@ -161,12 +150,13 @@ The main entry point is `app.py` in the control module, which orchestrates the f
 Run the main application:
 ```python
 from hip_controller.control.app import WalkOnController
-from hip_controller.definitions import SensorSignal
+from hip_controller.definitions import SensorSignal, BasicConfig
+
 logger.info("Initializing the lower limb controller.")
 
-
-self.controller_left = WalkOnController(reverse=False, plot=False)
-self.controller_right = WalkOnController(reverse=True, plot=False)
+config = BasicConfig(filtered=False)
+self.controller_left = WalkOnController(left_limb=True, config=config)
+self.controller_right = WalkOnController(left_limb=False, config=config)
 
 while True:
     signal_left = SensorSignal(timestamp=timestamp_left, angle_rad=data_left.quat.to_euler(seq="xyz").z, velocity_rad_per_sec=data_left.device_data.gyro.z)

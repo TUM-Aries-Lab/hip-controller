@@ -22,9 +22,8 @@ class WalkOnController:
     def __init__(self, left_limb: bool, config: BasicConfig):
         """Initialize the controller.
 
-        :param bool reverse: Whether to reverse the motor command output (for mirrored wiring).
-        :param bool plot: Whether to enable live plotting of the controller's internal states.
-        :param bool filtered: Whether to use pre-filtered sensor signals instead of raw signals.
+        :param bool left_limb: True if the controller is for left lower limb, False if for right lower limb.
+        :param BasicConfig config: Configurations including whether to reverse the motor command output (for mirrored wiring), whether to enable live plotting of the controller's internal states, whether to use pre-filtered sensor signals instead of raw signals and so on.
 
         :return: None
         """
