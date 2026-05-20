@@ -14,7 +14,9 @@ else:
     try:
         import tomli as tomllib
     except ImportError as err:
-        raise ImportError("Python 3.10 requires the 'tomli' package: pip install tomli") from err
+        raise ImportError(
+            "Python 3.10 requires the 'tomli' package: pip install tomli"
+        ) from err
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 

@@ -38,7 +38,7 @@ uv publish  # make sure your version in pyproject.toml is updated
 
 or
 
-Update the version number in pyproject.toml and imu_module/__init__.py
+Update the version number in pyproject.toml and hip_controller/__init__.py
 Commit your changes and add a git tag v<new.version.number>
 Push the tag git push --tag
 
@@ -128,18 +128,7 @@ docker build -t hip-controller .
 docker run hip-controller
 ```
 
-## How to Import
 
-Import the main module:
-```python
-from hip_controller import definitions
-```
-
-Import specific components:
-```python
-from hip_controller.control.app import AppController
-from hip_controller.control.signal_processing.kalman_filter import KalmanFilter
-from hip_controller.plotter.simulator import Simulator
 ```
 
 ## Architecture and Flow
@@ -161,12 +150,13 @@ The main entry point is `app.py` in the control module, which orchestrates the f
 Run the main application:
 ```python
 from hip_controller.control.app import WalkOnController
-from hip_controller.definitions import SensorSignal
+from hip_controller.definitions import SensorSignal, BasicConfig
+
 logger.info("Initializing the lower limb controller.")
 
-
-self.controller_left = WalkOnController(reverse=False, plot=False)
-self.controller_right = WalkOnController(reverse=True, plot=False)
+config = BasicConfig(filtered=False)
+self.controller_left = WalkOnController(left_limb=True, config=config)
+self.controller_right = WalkOnController(left_limb=False, config=config)
 
 while True:
     signal_left = SensorSignal(timestamp=timestamp_left, angle_rad=data_left.quat.to_euler(seq="xyz").z, velocity_rad_per_sec=data_left.device_data.gyro.z)
@@ -314,6 +304,9 @@ motor_command = limb_controller.step(signal)
 The following tree shows the important permanent files. Run `make tree` to update.
 <!-- TREE-START -->
 ```
+├── .claude
+│   └── skills
+│       └── code-review-nathalie.md
 ├── data
 │   ├── evaluation_raw_data
 │   │   ├── incline_walk
@@ -793,7 +786,6 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   │           ├── AB11_turn_and_step_1_right-turn_angle.csv
 │   │           ├── AB12_turn_and_step_1_right-turn_angle.csv
 │   │           └── AB13_turn_and_step_1_right-turn_angle.csv
-│   ├── logs
 │   └── sensor_data
 │       ├── arduino2_2026_03_23.csv
 │       ├── arduino_2026_03_23.csv
@@ -809,17 +801,17 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │   ├── compare_all.py
 │   ├── compare_matlab.py
 │   ├── compare_matlab_module.py
+│   ├── controller_simulator.py
 │   ├── csv_converter.py
-│   ├── csv_utils.py
+│   ├── csv_player.py
 │   ├── evaluation_matplotlib.py
 │   ├── evaluation_record.py
 │   ├── live_comparison_plot.py
-│   ├── main.py
 │   ├── mat_to_csv.py
 │   ├── normalize_output_time.py
-│   ├── reference_versus_calculated.py
-│   ├── script.py
-│   └── simulator.py
+│   ├── plot_scenarios.py
+│   ├── readme.md
+│   └── reference_versus_calculated.py
 ├── src
 │   └── hip_controller
 │       ├── control
@@ -834,6 +826,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   │   └── pid_controller.py
 │       │   ├── signal_processing
 │       │   │   ├── drift_removal.py
+│       │   │   ├── filtering.py
 │       │   │   ├── sensor_preprocessor.py
 │       │   │   └── velocity_estimation.py
 │       │   ├── __init__.py
@@ -848,6 +841,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 │       │   ├── csv_player.py
 │       │   └── live_phase_portrait.py
 │       ├── utils
+│       │   ├── csv_utils.py
 │       │   ├── math_utils.py
 │       │   ├── state_space.py
 │       │   └── utils.py
@@ -892,6 +886,7 @@ The following tree shows the important permanent files. Run `make tree` to updat
 ├── .gitignore
 ├── .pre-commit-config.yaml
 ├── .python-version
+├── CLAUDE.md
 ├── CONTRIBUTING.md
 ├── Dockerfile
 ├── LICENSE

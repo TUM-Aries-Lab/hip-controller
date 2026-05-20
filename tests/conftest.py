@@ -2,8 +2,16 @@
 
 import os
 import sys
-from hip_controller.definitions import StrEnum
 from pathlib import Path
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+    from enum import Enum
+
+    class StrEnum(str, Enum):
+        """String enum backport for Python <3.11."""
+
 
 from hip_controller.definitions import TESTING_DIR
 

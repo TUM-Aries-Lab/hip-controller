@@ -9,17 +9,32 @@ The velocity estimation strategies include: ``SogifllVelocityEstimation``, ``Low
 
 from __future__ import annotations
 
+from loguru import logger
+
 from hip_controller.control.signal_processing.drift_removal import (
     DriftRemovalStrategy,
+    LowPassDriftRemoval,
+    NotchDriftRemoval,
 )
 from hip_controller.control.signal_processing.filtering import (
     FilteringStrategy,
+    LowPassFiltering,
     SogiFllFiltering,
 )
 from hip_controller.control.signal_processing.velocity_estimation import (
+    DiscreteDerivativeVelocityEstimation,
+    GyroscopeVelocityEstimation,
+    LowPassVelocityEstimation,
     VelocityEstimationStrategy,
 )
-from hip_controller.definitions import PreprocessorConfig, SensorSignal
+from hip_controller.definitions import (
+    BasicConfig,
+    DriftRemovalMethod,
+    FilteringMethod,
+    PreprocessorConfig,
+    SensorSignal,
+    VelocityEstimationMethod,
+)
 
 
 class SensorPreprocessor:
@@ -31,22 +46,21 @@ class SensorPreprocessor:
 
     """
 
-    def __init__(self, config: PreprocessorConfig) -> None:
+    def __init__(self, basic_config: BasicConfig) -> None:
         """Initialize the sensor pre-processor.
 
         :param PreprocessorConfig config: Preprocessor configuration.
         :return: None
         """
-        self.config = config
-        self._drift_removal: DriftRemovalStrategy = config.drift_removal_strategy
-        self._sogi_fll: FilteringStrategy = SogiFllFiltering(
-            config=config.filtering_sogifll_config
-        )
-        self._velocity_estimation: VelocityEstimationStrategy = (
-            config.velocity_estimation_strategy
-        )
+        self._basic_config: BasicConfig = basic_config
+
+        self._drift_removal: DriftRemovalStrategy
+        self._filtering: FilteringStrategy
+        self._velocity_estimation: VelocityEstimationStrategy
 
         self._prev_timestamp: float | None = None
+
+        self.__init_strategies__()
 
     def filter(self, raw_signal: SensorSignal) -> SensorSignal:
         """Run one preprocessing step and return a :class:`SensorSignal`.
@@ -65,9 +79,7 @@ class SensorPreprocessor:
 
         # check dt too big
         if time_difference > 1.0:
-            self._drift_removal = self.config.drift_removal_strategy
-            self._velocity_estimation = self.config.velocity_estimation_strategy
-            time_difference = 0.01
+            self.reset()
 
         self._prev_timestamp = raw_signal.timestamp
 
@@ -75,7 +87,7 @@ class SensorPreprocessor:
             raw_angle=raw_signal.angle_rad, time_difference=time_difference
         )
 
-        angle_out_rad = self._sogi_fll.filter(
+        angle_out_rad = self._filtering.filter(
             angle_rad=angle_no_drift_rad, time_difference=time_difference
         )
 
@@ -91,6 +103,56 @@ class SensorPreprocessor:
             velocity_rad_per_sec=velocity_out_rad_per_sec,
         )
 
+    def __init_strategies__(self):
+        """Get instance of different options of drift removal, filtering, and velocity estimation."""
+        if self._basic_config.drift_removal_method == DriftRemovalMethod.LOW_PASS:
+            self._drift_removal = LowPassDriftRemoval(
+                PreprocessorConfig.drift_removal_second_order_lpf_config
+            )
+
+        elif self._basic_config.drift_removal_method == DriftRemovalMethod.NOTCH:
+            self._drift_removal = NotchDriftRemoval(
+                PreprocessorConfig.drift_removal_notch_config
+            )
+        else:
+            logger.warning("Selected method does not exist.")
+
+        if self._basic_config.filtering_method == FilteringMethod.SOGI:
+            self._filtering = SogiFllFiltering(
+                PreprocessorConfig.filtering_sogifll_config
+            )
+
+        elif self._basic_config.filtering_method == FilteringMethod.LOW_PASS:
+            self._filtering = LowPassFiltering(
+                PreprocessorConfig.filtering_lowpass_config
+            )
+
+        else:
+            logger.warning("Selected method does not exist.")
+
+        if (
+            self._basic_config.velocity_estimation_method
+            == VelocityEstimationMethod.DISCRETE_DERIVATIVE
+        ):
+            self._velocity_estimation = DiscreteDerivativeVelocityEstimation()
+
+        elif (
+            self._basic_config.velocity_estimation_method
+            == VelocityEstimationMethod.LOW_PASS
+        ):
+            self._velocity_estimation = LowPassVelocityEstimation(
+                PreprocessorConfig.velocity_estimation_low_pass_config
+            )
+
+        elif (
+            self._basic_config.velocity_estimation_method
+            == VelocityEstimationMethod.GYROSCOPE
+        ):
+            self._velocity_estimation = GyroscopeVelocityEstimation()
+
+        else:
+            logger.warning("Selected method does not exist.")
+
     def reset(self) -> None:
         """Reset the Signal Preprocessor if exosuit is disconnected or timeout occured.
 
@@ -99,5 +161,5 @@ class SensorPreprocessor:
         self._prev_timestamp = None
 
         self._drift_removal.reset()
-        self._sogi_fll.reset()
+        self._filtering.reset()
         self._velocity_estimation.reset()
