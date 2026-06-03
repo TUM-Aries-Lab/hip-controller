@@ -331,6 +331,9 @@ class PreprocessorConfig:
     )
 
 
+# baseline removal using first N samples
+BASELINE_REMOVAL_SAMPLE_NUM = 10
+
 # centering & normalization
 VALUE_NEAR_ZERO = 1e-6
 

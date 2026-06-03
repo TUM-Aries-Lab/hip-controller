@@ -30,6 +30,7 @@ from hip_controller.control.signal_processing.velocity_estimation import (
     VelocityEstimationStrategy,
 )
 from hip_controller.definitions import (
+    BASELINE_REMOVAL_SAMPLE_NUM,
     BasicConfig,
     DriftRemovalMethod,
     FilteringMethod,
@@ -72,6 +73,9 @@ class SensorPreprocessor:
         self._velocity_input_angle: VelocityInputAngle = PreprocessorConfig.velocity_input_angle
         self._apply_velocity_drift_removal: bool = PreprocessorConfig.apply_velocity_drift_removal
         self._prev_timestamp: float | None = None
+        self._baseline: float = 0.0
+        self._baseline_count: int = 0
+        self._baseline_sum: float = 0.0
 
         self.__init_strategies__()
 
@@ -81,6 +85,17 @@ class SensorPreprocessor:
         :return: Preprocessed :class:`SensorSignal` with timestamp of the current sample [s], raw angle from the sensor [rad] and gyroscope angular rate [rad/s] read from sensor.
         :rtype: SensorSignal
         """
+        # Baseline capture by taking avg of first N samples
+        if self._baseline_count < BASELINE_REMOVAL_SAMPLE_NUM:
+            self._baseline_count += 1
+            self._baseline_sum += raw_signal.angle_rad
+            raw_signal.angle_rad = 0.0
+        elif self._baseline_count == BASELINE_REMOVAL_SAMPLE_NUM:
+            self._baseline = self._baseline_sum / BASELINE_REMOVAL_SAMPLE_NUM
+        else:
+            # normal operation: baseline removal
+            raw_signal.angle_rad -= self._baseline
+
         if self._prev_timestamp is None or raw_signal.timestamp is None:
             self._prev_timestamp = raw_signal.timestamp
             return raw_signal
