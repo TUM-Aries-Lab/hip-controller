@@ -76,9 +76,11 @@ class SensorPreprocessor:
         if self._baseline_count < BASELINE_REMOVAL_SAMPLE_NUM:
             self._baseline_count += 1
             self._baseline_sum += raw_signal.angle_rad
+
+            if self._baseline_count == BASELINE_REMOVAL_SAMPLE_NUM:
+                self._baseline = self._baseline_sum / BASELINE_REMOVAL_SAMPLE_NUM
+
             raw_signal.angle_rad = 0.0
-        elif self._baseline_count == BASELINE_REMOVAL_SAMPLE_NUM:
-            self._baseline = self._baseline_sum / BASELINE_REMOVAL_SAMPLE_NUM
         else:
             # normal operation: baseline removal
             raw_signal.angle_rad -= self._baseline
@@ -174,7 +176,9 @@ class SensorPreprocessor:
         :return: None
         """
         self._prev_timestamp = None
-
+        self._baseline: float = 0.0
+        self._baseline_count: int = 0
+        self._baseline_sum: float = 0.0
         self._drift_removal.reset()
         self._filtering.reset()
         self._velocity_estimation.reset()
