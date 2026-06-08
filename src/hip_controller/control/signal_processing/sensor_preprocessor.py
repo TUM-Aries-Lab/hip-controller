@@ -81,6 +81,26 @@ class SensorPreprocessor:
 
         self._init_strategies()
 
+        # SOGI-FLL quadrature output from the most recent filter() call.
+        # Reflects a smoothed velocity-like signal (90 deg phase-shifted from
+        # the SOGI in-phase angle). None until the first non-trivial filter()
+        # call. Exposed for logging by external code.
+        self.last_velocity_surrogate_rad_per_sec: float | None = None
+
+        # Angle as seen *inside* the velocity-estimation LPF, i.e. the LPF's
+        # smoothed output that is then differentiated to produce the velocity.
+        # For LowPassVelocityEstimation this is the second-order-LPF-filtered
+        # version of velocity_input_angle_rad; for other strategies it's the
+        # first element of their (angle, velocity) return tuple. Useful for
+        # diagnosing where velocity spikes come from. None on first call /
+        # after reset.
+        self.last_velocity_lpf_angle_rad: float | None = None
+
+        # Output of the drift-removal stage (LPF subtraction or notch),
+        # measured between drift removal and SOGI. None on first call /
+        # after reset.
+        self.last_drift_removed_angle_rad: float | None = None
+
     def filter(self, raw_signal: SensorSignal) -> SensorSignal:
         """Run one preprocessing step and return a :class:`SensorSignal`.
 

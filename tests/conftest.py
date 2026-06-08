@@ -4,16 +4,7 @@ import os
 import sys
 from pathlib import Path
 
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:
-    from enum import Enum
-
-    class StrEnum(str, Enum):
-        """String enum backport for Python <3.11."""
-
-
-from hip_controller.definitions import TESTING_DIR
+from hip_controller.definitions import TESTING_DIR, StrEnum
 
 # Add the src directory to the path so that the quaternion_ekf package can be imported
 my_path = os.path.dirname(os.path.abspath(__file__))

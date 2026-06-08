@@ -104,6 +104,7 @@ def main(  # noqa: PLR0915, C901
 
     controller_left = WalkOnController(left_limb=True, config=config)
     controller_right = WalkOnController(left_limb=False, config=config)
+    
     timer = QtCore.QTimer()
 
     # Track the previous main-switch state so we can reset the controllers on a

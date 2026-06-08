@@ -114,17 +114,13 @@ class BasicConfig:
     velocity_estimation_method: VelocityEstimationMethod = (
         VelocityEstimationMethod.DISCRETE_DERIVATIVE
     )
-    # cut-off frequency for the 2ndOrderLP filter
-    cut_off_freq_low_pass_rad_per_sec: float = 80.0
 
 
 @dataclass
 class LowPassFilterConfig:
     """Settings for the second-order low-pass filter containing cut_off_frequency, damping_ratio, initial_condition, solver_type."""
 
-    cut_off_frequency_rad_per_sec: float = (
-        BasicConfig.cut_off_freq_low_pass_rad_per_sec
-    )  # in rad/s
+    cut_off_frequency_rad_per_sec: float = 60.0  # in rad/s
     damping_ratio: float = 1.0  # 1.0 = critically damped
     initial_condition: float = 0.0
     solver_type: SolverType = (
@@ -314,7 +310,6 @@ class PreprocessorConfig:
     filtering_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
         cut_off_frequency_rad_per_sec=90.0, damping_ratio=1.0, initial_condition=0.0
     )
-
     velocity_estimation_low_pass_config: LowPassFilterConfig = LowPassFilterConfig(
         cut_off_frequency_rad_per_sec=20.0, damping_ratio=1.0, initial_condition=0.0
     )
