@@ -23,7 +23,10 @@ from pathlib import Path
 try:
     __version__ = version("hip-controller")
 except PackageNotFoundError:
-    # this path leads to: src/hip_controller/__init__.py → src/ → repo_root/ → pyproject.toml
-    pyproject = Path(__file__).resolve().parent.parent.parent / "pyproject.toml"
-    with open(pyproject, "rb") as f:
-        __version__ = dict(tomllib.load(f))["project"]["version"]
+    try:
+        # this path leads to: src/hip_controller/__init__.py → src/ → repo_root/ → pyproject.toml
+        pyproject = Path(__file__).resolve().parent.parent.parent / "pyproject.toml"
+        with open(pyproject, "rb") as f:
+            __version__ = dict(tomllib.load(f))["project"]["version"]
+    except FileNotFoundError:
+        __version__ = "0.0.0+unknown"

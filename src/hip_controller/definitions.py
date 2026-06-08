@@ -119,9 +119,7 @@ class BasicConfig:
 class LowPassFilterConfig:
     """Settings for the second-order low-pass filter containing cut_off_frequency, damping_ratio, initial_condition, solver_type."""
 
-    cut_off_frequency_rad_per_sec: float = (
-        BasicConfig.cut_off_freq_low_pass_rad_per_sec
-    )  # in rad/s
+    cut_off_frequency_rad_per_sec: float = 60.0  # in rad/s
     damping_ratio: float = 1.0  # 1.0 = critically damped
     initial_condition: float = 0.0
     solver_type: SolverType = (
@@ -174,36 +172,36 @@ class SogiFllConfig:
     """
 
     # cadence bounds (walking/running range)
-    lower_cadence_bound: float = 0.2
-    upper_cadence_bound: float = 4.0
+    lower_cadence_bound: float = 0.5  # 0.2 -> extremely slow walking
+    upper_cadence_bound: float = 1.8  # 4.0 -> very fast running
 
-    # Tune only if the portrait is ringy or too sluggish:
+    # Tune only if the portrait is ringy or too sluggish:s
     #   - increase to 1.2-1.4 if theta/theta_quad look underdamped / not tracking well
     #   - decrease to 0.8-0.9 if very noisy and jitter is observed
-    sogi_adaptation_gain: float = 1.0
+    sogi_adaptation_gain: float = 1.0  # 0.7 #1.0
     # Frequency adaptation speed:
     #   - increase to track speed changes faster
     #   - decrease if noisy/jittery (sensor/noise dependent)
-    fll_adaptation_gain: float = 1.0
+    fll_adaptation_gain: float = 1.0  # 1.0
 
     # lock thresholds (amplitude/noise dependent)
-    lower_energy_threshold: float = 1e-4
-    upper_energy_threshold: float = 1e-2
+    lower_energy_threshold: float = 1e-4  # 5e-4 #1e-4
+    upper_energy_threshold: float = 1e-2  # 5e-2 #1e-2
 
     # Tune only if internal frequency becomes jittery or too laggy:
     # - decrease to 0.2 for smoother (more lag)
     # - increase to 0.5 for faster (more jitter)
-    frequency_estimate_smoother_bandwidth: float = 0.30
+    frequency_estimate_smoother_bandwidth: float = 0.30  # 0.20 #0.30
 
     # Tune only if lock flickers or reacts too slowly:
     # - decrease (0.3) to reduce flicker
     # - increase (0.8-1.0) for faster start/stop response
-    lock_state_smoother_bandwidth: float = 0.50
+    lock_state_smoother_bandwidth: float = 0.50  # 0.30  #0.50
 
     # [Hz] initial guess (walking/running general default)
     # Tune only if you want faster lock at startup:
     # - set near typical cadence in your trials (walk ~1-2 Hz, run ~2-3 Hz)
-    initial_frequency_guess: float = 1.4
+    initial_frequency_guess: float = 1.0  # 1.0
 
     # % state decay when standing
     # Tune only if oscillator rings too long after stopping:
@@ -216,8 +214,27 @@ class SogiFllConfig:
     numerical_safety_floor: float = 1e-9
 
 
+
+class VelocityInputAngle(StrEnum):
+    """Which angle is fed to the velocity-estimation stage.
+
+    RAW             -- ``raw_signal.angle_rad`` straight from the sensor.
+    DRIFT_REMOVED   -- output of the drift-removal stage (LPF or notch).
+    FILTERED        -- output of the SOGI-FLL stage (current default).
+    """
+
+    RAW = auto()
+    DRIFT_REMOVED = auto()
+    FILTERED = auto()
+
+
 class PreprocessorConfig:
     """Configurations for the sensor preprocessor."""
+
+    # Selects which angle is fed into the velocity-estimation stage.
+    # See VelocityInputAngle for the options. Default keeps the historical
+    # behavior (use the SOGI-FLL filtered angle).
+    velocity_input_angle: VelocityInputAngle = VelocityInputAngle.FILTERED
 
     # Configurations for the filters
     drift_removal_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
@@ -230,9 +247,8 @@ class PreprocessorConfig:
     filtering_kalman_config: KalmanFilterConfig = KalmanFilterConfig()
 
     filtering_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
-        cut_off_frequency_rad_per_sec=80.0, damping_ratio=1.0, initial_condition=0.0
+        cut_off_frequency_rad_per_sec=90.0, damping_ratio=1.0, initial_condition=0.0
     )
-
     velocity_estimation_low_pass_config: LowPassFilterConfig = LowPassFilterConfig(
         cut_off_frequency_rad_per_sec=20.0, damping_ratio=1.0, initial_condition=0.0
     )
@@ -253,8 +269,9 @@ LAG_COMPENSATION = 0  # Lag correction
 
 # Amplitude modulation
 SCALE_LEVEL_MODE = 1
-SIGMOID_POWER = 50
-AMPLITUDE_GAIN = -6.5  # Motor position desidered amplitude (rad)
+SIGMOID_POWER = 50  # 50
+AMPLITUDE_GAIN = -7  # Motor position desidered amplitude (rad)
+
 
 
 # Cubic Spline Interpolation
@@ -333,6 +350,7 @@ class RecordedSensorData:
     vel_left: str = "vel_left (rad/s)"
     ang_right: str = "angle_right (rad)"
     vel_right: str = "vel_right (rad/s)"
+    main_switch: str = "main_switch"
 
     fake_frequency_hz: int = BasicConfig.frequency
 
@@ -341,7 +359,7 @@ class RecordedSensorData:
 class PIDConfig:
     """Configurations for PID controller."""
 
-    proportional_gain: float = 14.0
+    proportional_gain: float = 8.0
     integral_gain: float = 0.0
     derivative_gain: float = 0.02
     output_limits: tuple[float, float] | None = None

@@ -48,17 +48,22 @@ def test_csv_player_reads_rows_in_order(tmp_path):
 
     player = CSVPlayer(csv_path)
 
-    t0 = player.get_sensor_data_from_csv()
-    t1 = player.get_sensor_data_from_csv()
+    step0 = player.get_sensor_data_from_csv()
+    step1 = player.get_sensor_data_from_csv()
 
-    assert t0 == ExosuitData(
+    assert step0.sensor_data == ExosuitData(
         left=SensorSignal(timestamp=0.0, angle_rad=1.0, velocity_rad_per_sec=0.1),
         right=SensorSignal(timestamp=0.0, angle_rad=4.0, velocity_rad_per_sec=0.4),
     )
-    assert t1 == ExosuitData(
+    assert step1.sensor_data == ExosuitData(
         left=SensorSignal(timestamp=0.1, angle_rad=2.0, velocity_rad_per_sec=0.2),
         right=SensorSignal(timestamp=0.1, angle_rad=5.0, velocity_rad_per_sec=0.5),
     )
+    # Optional columns absent in fixture -> defaults applied.
+    assert step0.main_switch is True
+    assert step1.main_switch is True
+    assert step0.classification_left == 0
+    assert step0.classification_right == 0
 
 
 def test_csv_player_index_increments(tmp_path):
