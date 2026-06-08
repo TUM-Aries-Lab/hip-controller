@@ -15,6 +15,11 @@ class MotionReferenceController:
         # Initialize the mid-level controller with a 1-D Lookup Table for motion mapping.
         self.motion_mapping = MotionMapping()
 
+        # Most recent motion-mapping (cubic-spline) output, before amplitude
+        # scaling and saturation. None until the first compute_motor_command
+        # call or after a reset. Exposed for logging by external code.
+        self.last_mapping_value: float | None = None
+
     def compute_motor_command(self, gait_phase: float, amplitude: float) -> float:
         """Compute the motor command based on the gait phase and amplitude.
 
@@ -29,6 +34,7 @@ class MotionReferenceController:
         )
 
         mapping_value = self.motion_mapping.spline(value=sinusoidal_behavior_gait_phase)
+        self.last_mapping_value = float(mapping_value)
 
         motor_command = mapping_value * amplitude
 

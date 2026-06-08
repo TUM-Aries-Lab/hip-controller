@@ -59,6 +59,11 @@ class SogiFllFiltering(FilteringStrategy):
         """
         self._sogi_filter: SogiFllFilter = SogiFllFilter(config=config)
 
+        # Quadrature output of the inner SOGI on the most recent call. This is
+        # a smoothed proxy for velocity (90 deg phase-shifted from
+        # angle_surrogate). Exposed so external code can log or gate on it.
+        self.last_quadrature: float = 0.0
+
     def filter(self, angle_rad: float, time_difference: float) -> float:
         """Estimate velocity using SOGI phase-locked structure.
 
@@ -69,9 +74,10 @@ class SogiFllFiltering(FilteringStrategy):
         :return: (angle_surrogate, velocity_quadrature).
         :rtype: tuple[float, float]
         """
-        angle_surrogate, _ = self._sogi_filter.filter(
+        angle_surrogate, quadrature = self._sogi_filter.filter(
             raw_theta_rad=angle_rad, time_difference=time_difference
         )
+        self.last_quadrature = quadrature
         return angle_surrogate
 
     def reset(self) -> None:
@@ -80,6 +86,7 @@ class SogiFllFiltering(FilteringStrategy):
         :return: None
         """
         self._sogi_filter.reset()
+        self.last_quadrature = 0.0
 
 
 class LowPassFiltering(FilteringStrategy):
