@@ -12,25 +12,20 @@ from loguru import logger
 from matplotlib import ticker
 from pyqtgraph import QtCore, QtWidgets  # pragma: no cover
 
-
-from hip_controller.filters.second_order_low_pass_filter import (
-    SecondOrderLowPassFilter,
-)
+from hip_controller.control.app import WalkOnController
 from hip_controller.definitions import (
     DEFAULT_LOG_LEVEL,
     BasicConfig,
     LowPassFilterConfig,
     SolverType,
-    ExosuitData
 )
-
-from src.hip_controller.plotter.csv_player import CSVPlayer
-from dataclasses import dataclass
-from scripts.csv_player import ScriptPlayer, ComparisonData
-from hip_controller.control.app import WalkOnController
-from scripts.live_comparison_plot import TimePlotterComparisonWindow
+from hip_controller.filters.second_order_low_pass_filter import (
+    SecondOrderLowPassFilter,
+)
 from hip_controller.utils.utils import setup_logger
-
+from scripts.csv_player import ComparisonData, ScriptPlayer
+from scripts.live_comparison_plot import TimePlotterComparisonWindow
+from src.hip_controller.plotter.csv_player import CSVPlayer
 
 
 def simulate_comparison_dynamic(
@@ -125,9 +120,9 @@ def simulate_controller_with_data(
 
 
 
-        sensor_data : ExosuitData = player.get_sensor_data_from_csv()
-        controller_left.step(sensor_data.left)
-        controller_right.step(sensor_data.right)
+        step = player.get_sensor_data_from_csv()
+        controller_left.step(step.sensor_data.left)
+        controller_right.step(step.sensor_data.right)
 
         # setInterval in miliseconds. Update each 10ms
         timer.setInterval(10)
@@ -275,7 +270,9 @@ if __name__ == "__main__":
         if __name__ == "__main__":
             simulate(input_name="x", expected_output_name="y", func=lpf.step, path=TESTING_DIR / "controller_test/low_level_testing/low_level_testing_data/second_order_lpf_2026_03_06.csv")
     """
-    from hip_controller.control.signal_processing.sensor_preprocessor import SensorPreprocessor
+    from hip_controller.control.signal_processing.sensor_preprocessor import (
+        SensorPreprocessor,
+    )
     from hip_controller.definitions import PreprocessorConfig
     preprocessor = SensorPreprocessor(PreprocessorConfig())
 

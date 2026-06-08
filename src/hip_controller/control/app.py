@@ -46,6 +46,15 @@ class WalkOnController:
 
         self._prev_timestamp: float | None = None
 
+        # Most recent signal passed downstream from the preprocessor (raw input
+        # when filtered=True, otherwise the filtered angle + derived velocity).
+        # Exposed so external code (e.g. the simulator) can log it.
+        self.last_filtered_signal: SensorSignal | None = None
+
+        # Most recent gait phase produced by the gait controller (rad). None
+        # until the first step or after a reset.
+        self.last_gait_phase_rad: float | None = None
+
     def step(self, curr_signal: SensorSignal) -> float:
         """Step the controller ahead.
 
@@ -59,11 +68,13 @@ class WalkOnController:
             filtered_signal = curr_signal
         else:
             filtered_signal = self.pre_processor.filter(raw_signal=curr_signal)
+        self.last_filtered_signal = filtered_signal
 
         # Gait phase calculation
         gait_phase = self.gait_controller.update_and_compute(
             curr_signal=filtered_signal
         )
+        self.last_gait_phase_rad = gait_phase
 
         # Apply amplitude modulation
         amplitude = self.amplitude_modulation.compute_amplitude(signal=filtered_signal)
@@ -72,6 +83,13 @@ class WalkOnController:
         motor_command = self.motion_reference_controller.compute_motor_command(
             gait_phase=gait_phase, amplitude=amplitude
         )
+
+        # Safety gate: only assist during hip flexion (positive angle).
+        # Negative filtered angle indicates extension / unclean signal -- in
+        # both cases driving the tendon further would be wrong, so cut the
+        # command to zero.
+        if filtered_signal.angle_rad < 0:
+            motor_command = 0.0
 
         # Plotting
         if self.plot and curr_signal.timestamp is not None:
@@ -91,3 +109,7 @@ class WalkOnController:
         """
         # TODO add reset functions for gait controller, motor controller and so on..
         self.pre_processor.reset()
+        self.last_filtered_signal = None
+        self.last_gait_phase_rad = None
+        self.amplitude_modulation.last_intermediates = None
+        self.motion_reference_controller.last_mapping_value = None

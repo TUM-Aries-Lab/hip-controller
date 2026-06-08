@@ -23,6 +23,28 @@ class ModeParameters:
     gain: float
 
 
+@dataclass
+class AmplitudeIntermediates:
+    """Per-sample intermediate values produced inside ``compute_amplitude``.
+
+    Exposed so external code (e.g. the simulator) can log the full pipeline:
+    portrait radius -> scaled portrait radius -> sigmoid -> scaled sigmoid ->
+    final amplitude.
+
+    :portrait_radius: ``sqrt(angle**2 + velocity**2)`` of the input signal.
+    :scaled_portrait_radius: ``portrait_radius * mode.scale``.
+    :sigmoid_scaling: Sigmoid output in [0, 1] (before gain/reverse).
+    :scaled_sigmoid_scaling: ``sigmoid_scaling * mode.gain`` (before reverse).
+    :amplitude: Final amplitude (``scaled_sigmoid_scaling * reverse``).
+    """
+
+    portrait_radius: float
+    scaled_portrait_radius: float
+    sigmoid_scaling: float
+    scaled_sigmoid_scaling: float
+    amplitude: float
+
+
 class ModeStrategy(ABC):
     """Abstract mode class."""
 
@@ -49,8 +71,8 @@ class AscendStairsMode(ModeStrategy):
     def get_parameters(self) -> ModeParameters:
         """Get parameters for ascending stairs."""
         return ModeParameters(
-            scale=SCALE_LEVEL_MODE - 0.6,
-            sigmoid_power=SIGMOID_POWER + 100,
+            scale=SCALE_LEVEL_MODE - 0,  # -0.6
+            sigmoid_power=SIGMOID_POWER + 50,  # +100
             gain=AMPLITUDE_GAIN - 2,
         )
 
@@ -61,8 +83,8 @@ class DescendStairsMode(ModeStrategy):
     def get_parameters(self) -> ModeParameters:
         """Get parameters for descending stairs."""
         return ModeParameters(
-            scale=SCALE_LEVEL_MODE - 0.5,
-            sigmoid_power=SIGMOID_POWER + 100,
+            scale=SCALE_LEVEL_MODE + 2.0,  # -0.5
+            sigmoid_power=SIGMOID_POWER + 50,  # +100
             gain=AMPLITUDE_GAIN + 0.5,
         )
 
@@ -79,6 +101,10 @@ class AmplitudeModulation:
             self.reverse_amplitude: int = -1
         else:
             self.reverse_amplitude: int = 1
+
+        # Most recent per-stage values from compute_amplitude(); None until the
+        # first call. Exposed for logging by external code.
+        self.last_intermediates: AmplitudeIntermediates | None = None
 
     def set_mode(self, mode: ModeStrategy):
         """Switch mode at runtime."""
@@ -104,14 +130,23 @@ class AmplitudeModulation:
         """
         params = self._mode.get_parameters()
 
-        scaled_portrait_radius = (
-            self._compute_portrait_radius(signal=signal) * params.scale
-        )
+        portrait_radius = self._compute_portrait_radius(signal=signal)
+        scaled_portrait_radius = portrait_radius * params.scale
 
-        amplitude = self.apply_sigmoid_scaling(
+        sigmoid_scaling = self.apply_sigmoid_scaling(
             value=scaled_portrait_radius, power=params.sigmoid_power
         )
-        return (amplitude * params.gain) * self.reverse_amplitude
+        scaled_sigmoid_scaling = sigmoid_scaling * params.gain
+        amplitude = scaled_sigmoid_scaling * self.reverse_amplitude
+
+        self.last_intermediates = AmplitudeIntermediates(
+            portrait_radius=portrait_radius,
+            scaled_portrait_radius=scaled_portrait_radius,
+            sigmoid_scaling=sigmoid_scaling,
+            scaled_sigmoid_scaling=scaled_sigmoid_scaling,
+            amplitude=amplitude,
+        )
+        return amplitude
 
     @staticmethod
     def apply_sigmoid_scaling(value: float, power: int) -> float:

@@ -2,10 +2,9 @@
 
 import os
 import sys
-from hip_controller.definitions import StrEnum
 from pathlib import Path
 
-from hip_controller.definitions import TESTING_DIR
+from hip_controller.definitions import TESTING_DIR, StrEnum
 
 # Add the src directory to the path so that the quaternion_ekf package can be imported
 my_path = os.path.dirname(os.path.abspath(__file__))
