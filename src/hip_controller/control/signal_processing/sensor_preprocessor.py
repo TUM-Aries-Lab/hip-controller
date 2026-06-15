@@ -112,6 +112,7 @@ class SensorPreprocessor:
         # check dt too big
         if time_difference > 1.0:
             self.reset()
+            return raw_signal
 
         self._prev_timestamp = raw_signal.timestamp
 
