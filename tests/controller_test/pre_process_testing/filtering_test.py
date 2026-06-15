@@ -3,7 +3,9 @@
 from numpy import testing
 from pandas import read_csv
 
-from hip_controller.control.signal_processing.filtering import SogiFllFiltering
+from hip_controller.control.signal_processing.filtering import (
+    SogiFllFiltering,
+)
 from hip_controller.control.signal_processing.velocity_estimation import (
     DiscreteDerivativeVelocityEstimation,
 )
