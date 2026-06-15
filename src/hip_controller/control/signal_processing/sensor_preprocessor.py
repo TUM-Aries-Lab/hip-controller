@@ -1,15 +1,16 @@
-"""Two-stage sensor preprocessing pipeline: drift removal followed by velocity estimation.
+"""Three-stage sensor preprocessing pipeline: drift removal, filtering, and velocity estimation.
 
-There are two strategies for drift removal and four strategies for velocity estimation implemented in the control module, which can be selected and configured in the :class:`PreprocessorConfig` when initializing the :class:`WalkOnController`.
+There are two strategies for drift removal, three strategies for filtering, and three strategies for velocity estimation
+implemented in the control module, which can be selected and configured in the :class:`PreprocessorConfig` when initializing the :class:`WalkOnController`.
 
 The drift removal strategies include: ``LowPassDriftRemoval`` and ``NotchDriftRemoval``.
 
-The velocity estimation strategies include: ``SogifllVelocityEstimation``, ``LowPassVelocityEstimation``, ``DiscreteDerivativeVelocityEstimation``, and ``GyroscopeVelocityEstimation``.
+The filtering strategies include: ``LowPassFiltering``, ``SogiFllFiltering``, and ``KalmanFiltering``.
+
+The velocity estimation strategies include: ``LowPassVelocityEstimation``, ``DiscreteDerivativeVelocityEstimation``, and ``GyroscopeVelocityEstimation``.
 """
 
 from __future__ import annotations
-
-from loguru import logger
 
 from hip_controller.control.signal_processing.drift_removal import (
     DriftRemovalStrategy,
@@ -18,6 +19,7 @@ from hip_controller.control.signal_processing.drift_removal import (
 )
 from hip_controller.control.signal_processing.filtering import (
     FilteringStrategy,
+    KalmanFiltering,
     LowPassFiltering,
     SogiFllFiltering,
 )
@@ -28,6 +30,7 @@ from hip_controller.control.signal_processing.velocity_estimation import (
     VelocityEstimationStrategy,
 )
 from hip_controller.definitions import (
+    BASELINE_REMOVAL_SAMPLE_NUM,
     BasicConfig,
     DriftRemovalMethod,
     FilteringMethod,
@@ -49,7 +52,7 @@ class SensorPreprocessor:
     def __init__(self, basic_config: BasicConfig) -> None:
         """Initialize the sensor pre-processor.
 
-        :param PreprocessorConfig config: Preprocessor configuration.
+        :param basic_config: controller configuration.
         :return: None
         """
         self._basic_config: BasicConfig = basic_config
@@ -59,8 +62,11 @@ class SensorPreprocessor:
         self._velocity_estimation: VelocityEstimationStrategy
 
         self._prev_timestamp: float | None = None
+        self._baseline: float = 0.0
+        self._baseline_count: int = 0
+        self._baseline_sum: float = 0.0
 
-        self.__init_strategies__()
+        self._init_strategies()
 
     def filter(self, raw_signal: SensorSignal) -> SensorSignal:
         """Run one preprocessing step and return a :class:`SensorSignal`.
@@ -68,6 +74,19 @@ class SensorPreprocessor:
         :return: Preprocessed :class:`SensorSignal` with timestamp of the current sample [s], raw angle from the sensor [rad] and gyroscope angular rate [rad/s] read from sensor.
         :rtype: SensorSignal
         """
+        # Baseline capture by taking avg of first N samples
+        if self._baseline_count < BASELINE_REMOVAL_SAMPLE_NUM:
+            self._baseline_count += 1
+            self._baseline_sum += raw_signal.angle_rad
+
+            if self._baseline_count == BASELINE_REMOVAL_SAMPLE_NUM:
+                self._baseline = self._baseline_sum / BASELINE_REMOVAL_SAMPLE_NUM
+
+            raw_signal.angle_rad = 0.0
+        else:
+            # normal operation: baseline removal
+            raw_signal.angle_rad -= self._baseline
+
         if self._prev_timestamp is None or raw_signal.timestamp is None:
             self._prev_timestamp = raw_signal.timestamp
             return raw_signal
@@ -80,6 +99,7 @@ class SensorPreprocessor:
         # check dt too big
         if time_difference > 1.0:
             self.reset()
+            return raw_signal
 
         self._prev_timestamp = raw_signal.timestamp
 
@@ -103,7 +123,7 @@ class SensorPreprocessor:
             velocity_rad_per_sec=velocity_out_rad_per_sec,
         )
 
-    def __init_strategies__(self):
+    def _init_strategies(self):
         """Get instance of different options of drift removal, filtering, and velocity estimation."""
         if self._basic_config.drift_removal_method == DriftRemovalMethod.LOW_PASS:
             self._drift_removal = LowPassDriftRemoval(
@@ -115,7 +135,9 @@ class SensorPreprocessor:
                 PreprocessorConfig.drift_removal_notch_config
             )
         else:
-            logger.warning("Selected method does not exist.")
+            raise ValueError(
+                f"Unrecognized drift-removal method: {self._basic_config.drift_removal_method}"
+            )
 
         if self._basic_config.filtering_method == FilteringMethod.SOGI:
             self._filtering = SogiFllFiltering(
@@ -127,8 +149,15 @@ class SensorPreprocessor:
                 PreprocessorConfig.filtering_lowpass_config
             )
 
+        elif self._basic_config.filtering_method == FilteringMethod.KALMAN:
+            self._filtering = KalmanFiltering(
+                PreprocessorConfig.filtering_kalman_config
+            )
+
         else:
-            logger.warning("Selected method does not exist.")
+            raise ValueError(
+                f"Unrecognized filtering method: {self._basic_config.filtering_method}"
+            )
 
         if (
             self._basic_config.velocity_estimation_method
@@ -151,7 +180,9 @@ class SensorPreprocessor:
             self._velocity_estimation = GyroscopeVelocityEstimation()
 
         else:
-            logger.warning("Selected method does not exist.")
+            raise ValueError(
+                f"Unrecognized velocity-estimation method: {self._basic_config.velocity_estimation_method}"
+            )
 
     def reset(self) -> None:
         """Reset the Signal Preprocessor if exosuit is disconnected or timeout occured.
@@ -159,7 +190,9 @@ class SensorPreprocessor:
         :return: None
         """
         self._prev_timestamp = None
-
+        self._baseline: float = 0.0
+        self._baseline_count: int = 0
+        self._baseline_sum: float = 0.0
         self._drift_removal.reset()
         self._filtering.reset()
         self._velocity_estimation.reset()

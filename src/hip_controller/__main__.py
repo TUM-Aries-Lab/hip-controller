@@ -25,6 +25,7 @@ def main(
     log_level: str = DEFAULT_LOG_LEVEL,
     stderr_level: str = DEFAULT_LOG_LEVEL,
     csv_path: Path = BasicConfig.read_data_from_path,
+    show_plot: bool = False,
 ) -> None:  # pragma: no cover
     """Run the main pipeline.
 
@@ -41,7 +42,9 @@ def main(
     app = QtWidgets.QApplication([])
 
     player = CSVPlayer(csv_path)
-    config = BasicConfig(filtered=True)
+    config = BasicConfig(
+        filtered=True, left_limb_plot=show_plot, right_limb_plot=show_plot
+    )
 
     controller_left = WalkOnController(left_limb=True, config=config)
     controller_right = WalkOnController(left_limb=False, config=config)
@@ -102,10 +105,19 @@ if __name__ == "__main__":  # pragma: no cover
         required=False,
         type=Path,
     )
+
+    parser.add_argument(
+        "--graph-plot",
+        "-g",
+        help="Show PyQT6 plots.",
+        action="store_true",
+    )
+
     args = parser.parse_args()
 
     main(
         log_level=args.log_level,
         stderr_level=args.stderr_level,
         csv_path=args.file_path,
+        show_plot=args.graph_plot,
     )

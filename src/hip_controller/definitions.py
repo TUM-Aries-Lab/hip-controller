@@ -1,7 +1,9 @@
 """Common definitions for this module."""
 
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
+
+from numpy.typing import NDArray
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum, auto
@@ -16,6 +18,8 @@ from math import pi
 from pathlib import Path
 
 import numpy as np
+
+from hip_controller.utils.state_space import StateSpaceLinear
 
 np.set_printoptions(precision=3, floatmode="fixed", suppress=True)
 
@@ -125,6 +129,21 @@ class LowPassFilterConfig:
     )  # SolverType enum of numerical integration strategy
 
 
+@dataclass(frozen=True)
+class KalmanFilterConfig:
+    """Settings for the Kalman filter."""
+
+    process_noise: NDArray = field(default_factory=lambda: 2e-2 * np.eye(2))
+    measurement_noise: NDArray = field(default_factory=lambda: 0.75 * np.eye(1))
+    state_space: StateSpaceLinear = field(
+        default_factory=lambda: StateSpaceLinear(
+            A=np.array([[1.0, 0.01], [0.0, 1.0]]), C=np.array([[1.0, 0.0]])
+        )
+    )
+    initial_state: NDArray = field(default_factory=lambda: np.array([0.0, 0.0]))
+    initial_covariance: NDArray = field(default_factory=lambda: 10 * np.eye(2))
+
+
 # Pre processing
 
 
@@ -208,6 +227,7 @@ class PreprocessorConfig:
 
     filtering_sogifll_config: SogiFllConfig = SogiFllConfig()
     filtering_lowpass_config: LowPassFilterConfig = LowPassFilterConfig()
+    filtering_kalman_config: KalmanFilterConfig = KalmanFilterConfig()
 
     filtering_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
         cut_off_frequency_rad_per_sec=80.0, damping_ratio=1.0, initial_condition=0.0
@@ -217,6 +237,9 @@ class PreprocessorConfig:
         cut_off_frequency_rad_per_sec=20.0, damping_ratio=1.0, initial_condition=0.0
     )
 
+
+# baseline removal using first N samples
+BASELINE_REMOVAL_SAMPLE_NUM = 10
 
 # centering & normalization
 VALUE_NEAR_ZERO = 1e-6
@@ -232,10 +255,6 @@ LAG_COMPENSATION = 0  # Lag correction
 SCALE_LEVEL_MODE = 1
 SIGMOID_POWER = 50
 AMPLITUDE_GAIN = -6.5  # Motor position desidered amplitude (rad)
-
-# Kalman filter definitions
-PROCESS_NOISE = 2e-2
-MEASUREMENT_NOISE = 0.75
 
 
 # Cubic Spline Interpolation

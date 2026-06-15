@@ -51,7 +51,7 @@ def test_low_pass_drift_removal() -> None:
 
 
 def test_notch_drift_removal() -> None:
-    """Test LowPassDriftRemoval against expected outputs."""
+    """Test NotchDriftRemoval against expected outputs."""
     # Load test data
     df = pd.read_csv(DATA_PRE_PROCESSING)
 
