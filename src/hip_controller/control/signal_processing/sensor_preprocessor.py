@@ -1,15 +1,16 @@
-"""Two-stage sensor preprocessing pipeline: drift removal followed by velocity estimation.
+"""Three-stage sensor preprocessing pipeline: drift removal, filtering, and velocity estimation.
 
-There are two strategies for drift removal and four strategies for velocity estimation implemented in the control module, which can be selected and configured in the :class:`PreprocessorConfig` when initializing the :class:`WalkOnController`.
+There are two strategies for drift removal, three strategies for filtering, and three strategies for velocity estimation
+implemented in the control module, which can be selected and configured in the :class:`PreprocessorConfig` when initializing the :class:`WalkOnController`.
 
 The drift removal strategies include: ``LowPassDriftRemoval`` and ``NotchDriftRemoval``.
 
-The velocity estimation strategies include: ``SogifllVelocityEstimation``, ``LowPassVelocityEstimation``, ``DiscreteDerivativeVelocityEstimation``, and ``GyroscopeVelocityEstimation``.
+The filtering strategies include: ``LowPassFiltering``, ``SogiFllFiltering``, and ``KalmanFiltering``.
+
+The velocity estimation strategies include: ``LowPassVelocityEstimation``, ``DiscreteDerivativeVelocityEstimation``, and ``GyroscopeVelocityEstimation``.
 """
 
 from __future__ import annotations
-
-from loguru import logger
 
 from hip_controller.control.signal_processing.drift_removal import (
     DriftRemovalStrategy,
@@ -18,6 +19,7 @@ from hip_controller.control.signal_processing.drift_removal import (
 )
 from hip_controller.control.signal_processing.filtering import (
     FilteringStrategy,
+    KalmanFiltering,
     LowPassFiltering,
     SogiFllFiltering,
     KalmanFiltering,
@@ -53,7 +55,7 @@ class SensorPreprocessor:
     def __init__(self, basic_config: BasicConfig) -> None:
         """Initialize the sensor pre-processor.
 
-        :param PreprocessorConfig config: Preprocessor configuration.
+        :param basic_config: controller configuration.
         :return: None
         """
         self._basic_config = basic_config
@@ -77,7 +79,7 @@ class SensorPreprocessor:
         self._baseline_count: int = 0
         self._baseline_sum: float = 0.0
 
-        self.__init_strategies__()
+        self._init_strategies()
 
     def filter(self, raw_signal: SensorSignal) -> SensorSignal:
         """Run one preprocessing step and return a :class:`SensorSignal`.
@@ -181,7 +183,7 @@ class SensorPreprocessor:
             velocity_rad_per_sec=velocity_out_rad_per_sec,
         )
 
-    def __init_strategies__(self):
+    def _init_strategies(self):
         """Get instance of different options of drift removal, filtering, and velocity estimation."""
         # drift removal
         if self._basic_config.drift_removal_method == DriftRemovalMethod.LOW_PASS:
@@ -194,7 +196,9 @@ class SensorPreprocessor:
                 PreprocessorConfig.drift_removal_notch_config
             )
         else:
-            logger.warning("Selected method does not exist.")
+            raise ValueError(
+                f"Unrecognized drift-removal method: {self._basic_config.drift_removal_method}"
+            )
 
         # filtering
         if self._basic_config.filtering_method == FilteringMethod.SOGI:
@@ -212,8 +216,15 @@ class SensorPreprocessor:
                 PreprocessorConfig.filtering_kalman_config
             )
 
+        elif self._basic_config.filtering_method == FilteringMethod.KALMAN:
+            self._filtering = KalmanFiltering(
+                PreprocessorConfig.filtering_kalman_config
+            )
+
         else:
-            logger.warning("Selected method does not exist.")
+            raise ValueError(
+                f"Unrecognized filtering method: {self._basic_config.filtering_method}"
+            )
 
         # velocity estimation
         if (
@@ -243,7 +254,9 @@ class SensorPreprocessor:
             self._velocity_estimation = GyroscopeVelocityEstimation()
 
         else:
-            logger.warning("Selected method does not exist.")
+            raise ValueError(
+                f"Unrecognized velocity-estimation method: {self._basic_config.velocity_estimation_method}"
+            )
 
         # velocity drift removal
         self._velocity_drift_removal = NotchDriftRemoval(PreprocessorConfig.velocity_drift_removal_notch_config)

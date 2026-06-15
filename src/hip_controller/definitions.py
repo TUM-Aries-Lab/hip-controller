@@ -21,6 +21,8 @@ from pathlib import Path
 
 import numpy as np
 
+from hip_controller.utils.state_space import StateSpaceLinear
+
 np.set_printoptions(precision=3, floatmode="fixed", suppress=True)
 
 

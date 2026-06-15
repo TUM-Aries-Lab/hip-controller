@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from hip_controller.definitions import KalmanFilterConfig
 from hip_controller.filters.kalman_filter import KalmanFilter
 from hip_controller.utils.state_space import StateSpaceLinear
 
@@ -22,12 +23,14 @@ def test_kalman_filter_initialization() -> None:
     C = np.eye(2)
     ss = StateSpaceLinear(A=A, C=C)
 
-    # Act
-    kf = KalmanFilter(
+    config = KalmanFilterConfig(
         state_space=ss,
-        initial_x=np.zeros((2, 1)),
+        initial_state=np.zeros((2, 1)),
         initial_covariance=np.eye(2),
     )
+
+    # Act
+    kf = KalmanFilter(config=config)
     for _i in range(10):
         kf.predict()
         _ = kf.update(z=np.array([[0.0]]))
