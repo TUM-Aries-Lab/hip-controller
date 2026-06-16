@@ -3,6 +3,10 @@
 from hip_controller.control.gait_phase_control.gait_controller import GaitController
 from hip_controller.control.motor_reference_control.amplitude_modulation import (
     AmplitudeModulation,
+    AscendStairsMode,
+    DescendStairsMode,
+    LevelGroundMode,
+    ModeStrategy,
 )
 from hip_controller.control.motor_reference_control.motor_reference_controller import (
     MotionReferenceController,
@@ -11,6 +15,20 @@ from hip_controller.control.signal_processing.sensor_preprocessor import (
     SensorPreprocessor,
 )
 from hip_controller.definitions import PreprocessorConfig, SensorSignal
+
+# Pause-detection thresholds for the SOGI/FLL walking-mode gate. The envelope
+# is an exponential moving average of |raw velocity| with time constant
+# 1 / PAUSE_DETECT_ENVELOPE_ALPHA samples (at 100 Hz default loop).
+#
+# Hysteresis (envelope rad/s):
+#   below PAUSE_ENTER_THRESHOLD -> declare paused, freeze FLL
+#   above PAUSE_EXIT_THRESHOLD  -> declare walking, resume FLL
+#
+# Defaults tuned for a healthy walking velocity peak ~2-3 rad/s. If walking
+# velocity stays well below 1 rad/s in your setup, drop these accordingly.
+PAUSE_DETECT_ENVELOPE_ALPHA = 0.10  # EMA weight per sample (= ~100 ms time constant)
+PAUSE_ENTER_THRESHOLD = 0.2  # rad/s -- below this for sustained time = pause
+PAUSE_EXIT_THRESHOLD = 0.5  # rad/s -- above this = walking again
 
 
 class WalkOnController:
@@ -44,6 +62,13 @@ class WalkOnController:
         self.amplitude_modulation = AmplitudeModulation(reverse=reverse)
         self.motion_reference_controller = MotionReferenceController()
 
+        # Apply the LEVEL SOGI config at construction so the SOGI starts
+        # with the level-walking tuning (cadence bounds, gains, smoother
+        # BWs) rather than the bare-default `filtering_sogifll_config`.
+        # The amplitude modulation already defaults to LevelGroundMode in
+        # its own __init__, so this aligns both halves.
+        self.pre_processor.set_locomotion_mode(0)
+
         self._prev_timestamp: float | None = None
 
         # Most recent signal passed downstream from the preprocessor (raw input
@@ -55,6 +80,14 @@ class WalkOnController:
         # until the first step or after a reset.
         self.last_gait_phase_rad: float | None = None
 
+        # Pause-detection state. `_raw_vel_envelope` is an EMA of
+        # |raw velocity| in rad/s. `_is_walking_mode` tracks the hysteretic
+        # walking/paused state and is mirrored into the SOGI/FLL via
+        # `pre_processor.set_walking_mode()` so the FLL frequency does not
+        # drift during stand-still periods.
+        self._raw_vel_envelope: float = 0.0
+        self._is_walking_mode: bool = True
+
     def step(self, curr_signal: SensorSignal) -> float:
         """Step the controller ahead.
 
@@ -63,6 +96,28 @@ class WalkOnController:
         :return: Motor velocity command in radians per second for motion reference.
         :rtype: float
         """
+        # ---- Stand-still detection ------------------------------------------
+        # Update an EMA envelope of |raw velocity| and apply hysteresis to
+        # decide whether the user is actively walking. When the user pauses,
+        # tell the SOGI/FLL to freeze its frequency tracking so it does not
+        # drift toward the lower clamp under noise-only input. When walking
+        # resumes, re-enable adaptation -- the frequency estimate is preserved
+        # from before the pause, so the SOGI is correctly tuned from sample
+        # one of the next stride.
+        self._raw_vel_envelope = (
+            1.0 - PAUSE_DETECT_ENVELOPE_ALPHA
+        ) * self._raw_vel_envelope + PAUSE_DETECT_ENVELOPE_ALPHA * abs(
+            curr_signal.velocity_rad_per_sec
+        )
+        if self._is_walking_mode and self._raw_vel_envelope < PAUSE_ENTER_THRESHOLD:
+            self._is_walking_mode = False
+            self.pre_processor.set_walking_mode(False)
+        elif (
+            not self._is_walking_mode
+        ) and self._raw_vel_envelope > PAUSE_EXIT_THRESHOLD:
+            self._is_walking_mode = True
+            self.pre_processor.set_walking_mode(True)
+
         # Pre-processing
         if self.filtered:
             filtered_signal = curr_signal
@@ -79,17 +134,21 @@ class WalkOnController:
         # Apply amplitude modulation
         amplitude = self.amplitude_modulation.compute_amplitude(signal=filtered_signal)
 
-        # Compute motor command velocity
+        # Compute motor command velocity. The angle-sign safety gate that used
+        # to zero motor_command whenever filtered angle < 0 has been removed:
+        # the asymmetric LookUp table in MotionMapping already produces the
+        # intended shape (strong assist during flexion, small counter-pull
+        # during extension, smooth transition through zero). The gate was
+        # destroying the designed extension counter-pull AND turning every
+        # zero-crossing into a step input the motor could not follow. Keeping
+        # flexion_active=True lets the natural shape through; LAG_COMPENSATION
+        # phase advance now actually fires before flexion onset.
         motor_command = self.motion_reference_controller.compute_motor_command(
-            gait_phase=gait_phase, amplitude=amplitude
+            gait_phase=gait_phase,
+            amplitude=amplitude,
+            timestamp=curr_signal.timestamp,
+            flexion_active=True,
         )
-
-        # Safety gate: only assist during hip flexion (positive angle).
-        # Negative filtered angle indicates extension / unclean signal -- in
-        # both cases driving the tendon further would be wrong, so cut the
-        # command to zero.
-        if filtered_signal.angle_rad < 0:
-            motor_command = 0.0
 
         # Plotting
         if self.plot and curr_signal.timestamp is not None:
@@ -102,6 +161,32 @@ class WalkOnController:
 
         return motor_command
 
+    def set_locomotion_mode(self, class_id: int) -> None:
+        """Apply per-mode tuning across the whole controller for one limb.
+
+        ``class_id`` is the TCN classifier output: 0=Level, 1=Ascend,
+        2=Descend. Fans out to:
+
+        * :class:`AmplitudeModulation`: switches the per-mode amplitude
+          parameters (scale, sigmoid_power, gain, velocity_weight) via the
+          existing ``set_mode`` API.
+        * :class:`SensorPreprocessor`: swaps the active ``SogiFllConfig`` to
+          the variant tuned for this mode (cadence bounds, FLL/SOGI gains,
+          smoother bandwidths, initial frequency guess). SOGI state is
+          preserved so the lock continues smoothly across the boundary.
+
+        Unknown class_ids fall back to Level Ground.
+        """
+        mode: ModeStrategy
+        if class_id == 1:
+            mode = AscendStairsMode()
+        elif class_id == 2:
+            mode = DescendStairsMode()
+        else:
+            mode = LevelGroundMode()
+        self.amplitude_modulation.set_mode(mode)
+        self.pre_processor.set_locomotion_mode(class_id)
+
     def reset(self) -> None:
         """Reset the WalkOnController if exosuit is disconnected or timeout occured.
 
@@ -111,5 +196,10 @@ class WalkOnController:
         self.pre_processor.reset()
         self.last_filtered_signal = None
         self.last_gait_phase_rad = None
-        self.amplitude_modulation.last_intermediates = None
-        self.motion_reference_controller.last_mapping_value = None
+        self.amplitude_modulation.reset()
+        self.motion_reference_controller.reset()
+        # Clear pause-detection state and resume in walking mode so the next
+        # session does not start in a frozen FLL state.
+        self._raw_vel_envelope = 0.0
+        self._is_walking_mode = True
+        self.pre_processor.set_walking_mode(True)

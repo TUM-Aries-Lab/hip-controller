@@ -117,7 +117,7 @@ class SogiFllConfig:
     """
 
     # cadence bounds (walking/running range)
-    lower_cadence_bound: float = 0.5  # 0.2 -> extremely slow walking
+    lower_cadence_bound: float = 0.3  # 0.2 -> extremely slow walking
     upper_cadence_bound: float = 1.8  # 4.0 -> very fast running
 
     # Tune only if the portrait is ringy or too sluggish:s
@@ -127,26 +127,26 @@ class SogiFllConfig:
     # Frequency adaptation speed:
     #   - increase to track speed changes faster
     #   - decrease if noisy/jittery (sensor/noise dependent)
-    fll_adaptation_gain: float = 1.0  # 1.0
+    fll_adaptation_gain: float = 5.0  # 15.0#1.0
 
     # lock thresholds (amplitude/noise dependent)
     lower_energy_threshold: float = 1e-4  # 5e-4 #1e-4
-    upper_energy_threshold: float = 1e-2  # 5e-2 #1e-2
+    upper_energy_threshold: float = 1e-1  # 5e-2 #1e-2
 
     # Tune only if internal frequency becomes jittery or too laggy:
     # - decrease to 0.2 for smoother (more lag)
     # - increase to 0.5 for faster (more jitter)
-    frequency_estimate_smoother_bandwidth: float = 0.30  # 0.20 #0.30
+    frequency_estimate_smoother_bandwidth: float = 0.8  # 2.0  # 0.20 #0.30
 
     # Tune only if lock flickers or reacts too slowly:
     # - decrease (0.3) to reduce flicker
     # - increase (0.8-1.0) for faster start/stop response
-    lock_state_smoother_bandwidth: float = 0.50  # 0.30  #0.50
+    lock_state_smoother_bandwidth: float = 1.50  # 0.30  #0.50
 
     # [Hz] initial guess (walking/running general default)
     # Tune only if you want faster lock at startup:
     # - set near typical cadence in your trials (walk ~1-2 Hz, run ~2-3 Hz)
-    initial_frequency_guess: float = 1.0  # 1.0
+    initial_frequency_guess: float = 0.7  # 1.0
 
     # % state decay when standing
     # Tune only if oscillator rings too long after stopping:
@@ -193,13 +193,13 @@ class PreprocessorConfig:
 
     # Select methods for drift removal and velocity estimation filtering
     drift_removal_method: DriftRemovalMethod = DriftRemovalMethod.LOW_PASS
-    velocity_estimation_method: VelocityEstimationMethod = (
-        VelocityEstimationMethod.DISCRETE_DERIVATIVE
-    )
+    velocity_estimation_method: VelocityEstimationMethod = VelocityEstimationMethod.SOGI
 
     # Selects which angle is fed into the velocity-estimation stage.
     # See VelocityInputAngle for the options. Default keeps the historical
-    # behavior (use the SOGI-FLL filtered angle).
+    # behavior (use the SOGI-FLL filtered angle). Ignored when
+    # velocity_estimation_method == SOGI (the quadrature is taken directly
+    # from the angle-stage SOGI-FLL filter).
     velocity_input_angle: VelocityInputAngle = VelocityInputAngle.FILTERED
 
     # Configurations for the filters
@@ -209,9 +209,67 @@ class PreprocessorConfig:
     drift_removal_notch_config: NotchConfig = NotchConfig(
         center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=BasicConfig.frequency
     )
+    # SOGI-FLL config used at construction time -- the SogiFllFilter is
+    # initialized with this config. The active config can then be swapped
+    # at runtime via ``SensorPreprocessor.set_locomotion_mode(class_id)``,
+    # which selects from the per-mode configs below (level/ascend/descend).
+    # State (in-phase, quadrature, omega_est, frequency_estimate,
+    # confidence_state) is preserved across swaps; only the parameter
+    # values change. The FLL re-adapts to the new mode's cadence over
+    # 1-2 strides.
     filtering_sogifll_config: SogiFllConfig = SogiFllConfig()
+
+    # Per-locomotion-mode SOGI configs. Selected by class_id:
+    #   0 -> LEVEL   (default level-walking tuning -- matches the global
+    #                 ``filtering_sogifll_config`` so cold-start = level)
+    #   1 -> ASCEND  (slower cadence bounds; k_sogi bumped slightly because
+    #                 stair-ascend has sharper angle transitions; gentler
+    #                 fll adaptation because stair gait has more harmonics
+    #                 that perturb the FLL gradient)
+    #   2 -> DESCEND (same slower cadence; k_sogi at level value)
+    # Adjust empirically. Starting values are intentionally conservative.
+    filtering_sogifll_config_level: SogiFllConfig = SogiFllConfig(
+        lower_cadence_bound=0.3,
+        upper_cadence_bound=1.8,
+        sogi_adaptation_gain=1.0,
+        fll_adaptation_gain=5.0,
+        frequency_estimate_smoother_bandwidth=0.8,
+        lock_state_smoother_bandwidth=1.50,
+        initial_frequency_guess=0.7,
+    )
+    filtering_sogifll_config_ascend: SogiFllConfig = SogiFllConfig(
+        lower_cadence_bound=0.25,
+        upper_cadence_bound=1.2,
+        sogi_adaptation_gain=1.2,
+        fll_adaptation_gain=4.5,
+        frequency_estimate_smoother_bandwidth=0.6,
+        lock_state_smoother_bandwidth=1.50,
+        initial_frequency_guess=0.55,
+    )
+    filtering_sogifll_config_descend: SogiFllConfig = SogiFllConfig(
+        lower_cadence_bound=0.25,
+        upper_cadence_bound=1.2,
+        sogi_adaptation_gain=1.0,
+        fll_adaptation_gain=4.5,
+        frequency_estimate_smoother_bandwidth=0.6,
+        lock_state_smoother_bandwidth=1.50,
+        initial_frequency_guess=0.55,
+    )
+
     filtering_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
         cut_off_frequency_rad_per_sec=90.0, damping_ratio=1.0, initial_condition=0.0
+    )
+    # Toggle the DC-notch drift removal applied to the estimated velocity,
+    # independent of which velocity_estimation_method is selected.
+    # True  -> notch is applied (default).
+    # False -> velocity is passed through unfiltered.
+    apply_velocity_drift_removal: bool = True
+
+    # Notch-at-DC applied to the estimated velocity (SOGI quadrature, discrete
+    # derivative, LPF derivative, or gyroscope) when apply_velocity_drift_removal
+    # is True. Surgical DC-bias removal on the velocity signal.
+    velocity_drift_removal_notch_config: NotchConfig = NotchConfig(
+        center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=BasicConfig.frequency
     )
 
     @property
@@ -229,13 +287,20 @@ class PreprocessorConfig:
 
     @property
     def velocity_estimation_strategy(self):
-        """Get instance of different options of velocity estimation."""
+        """Get instance of different options of velocity estimation.
+
+        Returns ``None`` when ``velocity_estimation_method == SOGI``: the SOGI
+        path does not run a separate estimator — the preprocessor reads the
+        cached quadrature from the angle-stage SOGI-FLL filter instead.
+        """
         from hip_controller.control.signal_processing.velocity_estimation import (
             DiscreteDerivativeVelocityEstimation,
             GyroscopeVelocityEstimation,
             LowPassVelocityEstimation,
         )
 
+        if self.velocity_estimation_method == VelocityEstimationMethod.SOGI:
+            return None
         if (
             self.velocity_estimation_method
             == VelocityEstimationMethod.DISCRETE_DERIVATIVE
@@ -245,6 +310,15 @@ class PreprocessorConfig:
             return LowPassVelocityEstimation(self.filtering_second_order_lpf_config)
         else:
             return GyroscopeVelocityEstimation()
+
+    @property
+    def velocity_drift_removal_strategy(self):
+        """Get the drift-removal filter applied to the SOGI quadrature velocity."""
+        from hip_controller.control.signal_processing.drift_removal import (
+            NotchDriftRemoval,
+        )
+
+        return NotchDriftRemoval(self.velocity_drift_removal_notch_config)
 
 
 # centering & normalization
@@ -258,9 +332,15 @@ STRIDE_EVENT_HIT_CROSSING_OFFSET = -0.1
 LAG_COMPENSATION = 0  # Lag correction
 
 # Amplitude modulation
-SCALE_LEVEL_MODE = 1
-SIGMOID_POWER = 50  # 50
-AMPLITUDE_GAIN = -7  # Motor position desidered amplitude (rad)
+SCALE_LEVEL_MODE = 2  # Needed if the SOGI-FLL quadrature is taken as velocity output
+SIGMOID_POWER = 30  # 50
+AMPLITUDE_GAIN = -6.5  # Motor position desidered amplitude (rad)
+# Per-component weight applied to velocity inside the portrait radius:
+#   r = sqrt(angle^2 + (VELOCITY_WEIGHT_LEVEL_MODE * velocity)^2).
+# 1.0 -> identical to the historical symmetric radius.
+# >1  -> velocity contributes more (the sigmoid trips earlier on fast motion).
+# <1  -> velocity contributes less (more sensitive to angle).
+VELOCITY_WEIGHT_LEVEL_MODE = 2.0  # 1.0
 
 # Kalman filter definitions
 PROCESS_NOISE = 2e-2
