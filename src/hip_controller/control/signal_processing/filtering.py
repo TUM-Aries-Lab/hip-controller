@@ -41,6 +41,14 @@ class FilteringStrategy(ABC):
         :return: None
         """
 
+    def set_walking(self, walking: bool) -> None:
+        """Toggle walking/paused mode (no-op for strategies that don't track gait state)."""
+        return
+
+    def set_config(self, config: SogiFllConfig) -> None:
+        """Swap parameter set at runtime (no-op for strategies without per-mode config)."""
+        return
+
 
 class SogiFllFiltering(FilteringStrategy):
     """Velocity estimation via Second-Order Generalized Integrator (SOGI).
@@ -87,6 +95,31 @@ class SogiFllFiltering(FilteringStrategy):
         """
         self._sogi_filter.reset()
         self.last_quadrature = 0.0
+
+    def set_walking(self, walking: bool) -> None:
+        """Toggle SOGI/FLL between walking-adapt and paused-decay mode.
+
+        Used by stand-still detection upstream so the FLL frequency does
+        not drift toward the lower clamp during pauses.
+        """
+        if walking:
+            self._sogi_filter.start_walking()
+        else:
+            self._sogi_filter.stop_walking()
+
+    def set_config(self, config: SogiFllConfig) -> None:
+        """Swap the SOGI-FLL parameter set without resetting state.
+
+        Pass-through to ``SogiFllFilter.set_config()``. Used by
+        ``SensorPreprocessor.set_locomotion_mode()`` to switch per-mode
+        SOGI tuning at runtime.
+        """
+        self._sogi_filter.set_config(config)
+
+    @property
+    def is_walking(self) -> bool:
+        """Pass-through of the inner SOGI filter walking flag."""
+        return self._sogi_filter.is_walking
 
 
 class LowPassFiltering(FilteringStrategy):

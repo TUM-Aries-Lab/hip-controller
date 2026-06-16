@@ -13,6 +13,31 @@ from numpy import clip
 
 from hip_controller.definitions import SogiFllConfig
 
+# Number of samples (at the loop rate) after each ``start_walking()`` during
+# which the FLL adaptation is skipped. The SOGI oscillator state is also
+# zeroed at start_walking, so for the first ~0.8 s the SOGI rebuilds its
+# in-phase / quadrature components from zero. During the rebuild, ``energy``
+# is tiny but above ``lower_energy_threshold``, ``lock`` is small but
+# non-zero, and the ratio ``(phase_error * quadrature) / energy`` is
+# ill-conditioned -- the FLL would drift down by ~0.25 Hz before things
+# stabilize. Holding adaptation off for this brief window keeps the FLL
+# tuned to the preserved pre-pause frequency until the SOGI is locked, at
+# which point the next stride's clean signal lets the FLL adapt to the
+# user's actual cadence within a single cycle.
+POST_RESUME_FLL_COOLDOWN_TICKS = 80
+
+# Number of samples after each set_config() (i.e. every locomotion-mode swap)
+# during which the FLL adaptation is held off. Unlike start_walking() the SOGI
+# state is intentionally preserved across mode swaps, but the in-phase /
+# quadrature components accumulated during the previous mode carry harmonic
+# content tuned to that gait. Right after a swap the SOGI core still needs a
+# few hundred ms to re-lock at the new k_sogi / fmin / fmax, and during that
+# window the (phase_error * quadrature) / energy term can point the wrong way
+# (observed empirically on DESCEND -> LEVEL, where the FLL drifted down ~50 mHz
+# over 1.5 s before recovering). Holding adaptation off briefly lets the SOGI
+# re-lock first, then the FLL adapts on a clean signal.
+POST_MODE_SWITCH_FLL_COOLDOWN_TICKS = 50
+
 
 class SogiFllFilter:
     """Second-Order Generalized Integrator (SOGI) + Frequency-Locked Loop (FLL).
@@ -41,9 +66,58 @@ class SogiFllFilter:
         # Lock confidence state (energy-based)
         self._confidence_state: float = 0.0
 
+        # FLL adaptation cooldown counter. Set to POST_RESUME_FLL_COOLDOWN_TICKS
+        # on every start_walking() so the FLL holds its frequency estimate
+        # for the duration of the SOGI rebuild. See the constant's docstring.
+        self._fll_cooldown_ticks: int = 0
+
     def stop_walking(self) -> None:
         """Transition filter to non-walking mode (decay instead of tracking)."""
         self._walking = False
+
+    def set_config(self, config: SogiFllConfig) -> None:
+        """Swap the SOGI-FLL parameter set (used for per-locomotion-mode tuning).
+
+        Only the configuration is replaced; the SOGI's state (in-phase,
+        quadrature, omega_est, frequency_estimate, confidence_state) is
+        preserved. The new bounds and gains take effect on the next sample.
+        Crossing a mode boundary mid-walk therefore reuses the existing
+        FLL lock rather than restarting from `initial_frequency_guess`.
+
+        FLL adaptation is gated for ``POST_MODE_SWITCH_FLL_COOLDOWN_TICKS``
+        samples after the swap so the SOGI core can re-lock at the new
+        gains/bounds before the FLL starts chasing the new cadence. We
+        ``max(...)`` rather than overwrite so an in-progress longer cooldown
+        (e.g. POST_RESUME from a recent start_walking) isn't shortened.
+        """
+        self._config = config
+        self._fll_cooldown_ticks = max(
+            self._fll_cooldown_ticks, POST_MODE_SWITCH_FLL_COOLDOWN_TICKS
+        )
+
+    def start_walking(self) -> None:
+        """Transition filter back to walking mode (resume tracking).
+
+        Mirror of :meth:`stop_walking`. The frequency estimate is preserved
+        (so the FLL re-engages already tuned to the user's cadence) but the
+        SOGI oscillator state and confidence state are cleared. The FLL
+        adaptation is also held off for ``POST_RESUME_FLL_COOLDOWN_TICKS``
+        samples while the SOGI rebuilds -- otherwise the ill-conditioned
+        ``(phase_error * vb) / energy`` term during rebuild aggressively
+        drags the frequency estimate down. Once the cooldown elapses and
+        the SOGI is locked, the FLL adapts on a clean, properly-phased
+        signal and converges to the user's actual cadence within a cycle.
+        """
+        self._walking = True
+        self._inphase = 0.0
+        self._quadrature = 0.0
+        self._confidence_state = 0.0
+        self._fll_cooldown_ticks = POST_RESUME_FLL_COOLDOWN_TICKS
+
+    @property
+    def is_walking(self) -> bool:
+        """True when SOGI/FLL is actively tracking; False during paused decay."""
+        return self._walking
 
     def filter(
         self, raw_theta_rad: float, time_difference: float
@@ -105,7 +179,7 @@ class SogiFllFilter:
         )
 
         # ---- FLL frequency adaptation -------------------------------------------
-        if self._walking:
+        if self._walking and self._fll_cooldown_ticks == 0:
             adaptation_error = (phase_error * quadrature_output) / (
                 energy + self._config.numerical_safety_floor
             )
@@ -131,12 +205,20 @@ class SogiFllFilter:
                     a_max=self._config.upper_cadence_bound,
                 )
             )
+        elif self._walking:
+            # In post-resume cooldown: SOGI updates were already applied above,
+            # but the FLL adaptation is held off so the frequency estimate
+            # stays at its preserved pre-pause value while the SOGI rebuilds.
+            self._fll_cooldown_ticks -= 1
         else:
-            self._frequency_estimate = (
-                0.995 * self._frequency_estimate
-                + 0.005 * self._config.initial_frequency_guess
-            )
-            self._omega_est = 2.0 * pi * self._frequency_estimate
+            # FREEZE the frequency estimate during pause. The original
+            # behavior here was a slow drift toward ``initial_frequency_guess``
+            # (0.995 * current + 0.005 * f_init), which over multi-second
+            # pauses pulled the FLL away from the user's actual cadence and
+            # caused a mistuned re-lock on resume. With this freeze, the FLL
+            # comes back online tuned to whatever frequency the user was
+            # walking at just before they stopped.
+            pass
 
         return inphase_output, quadrature_output
 
@@ -151,8 +233,9 @@ class SogiFllFilter:
         self._frequency_estimate: float = self._config.initial_frequency_guess
         self._confidence_state: float = 0.0
 
-        # walking
+        # walking + cooldown
         self._walking: bool = True
+        self._fll_cooldown_ticks: int = 0
 
     @property
     def estimated_frequency_hz(self) -> float:

@@ -3,8 +3,26 @@
 from loguru import logger
 from scipy.interpolate import CubicSpline
 
-from hip_controller.definitions import LAG_COMPENSATION, LookUpTable, PositionLimitation
+from hip_controller.definitions import (
+    LAG_COMPENSATION,
+    LookUpTable,
+    LowPassFilterConfig,
+    PositionLimitation,
+)
+from hip_controller.filters.second_order_low_pass_filter import SecondOrderLowPassFilter
 from hip_controller.utils.math_utils import transform_to_cyclic
+
+# Cutoff for the motor-command low-pass filter. Originally added to smooth a
+# step input created by the angle-sign safety gate in app.py; that gate has
+# since been removed and the raw lookup*amplitude signal is naturally smooth.
+# The LPF now serves only as a light noise filter on top of the SOGI/gait
+# phase outputs, so we use a higher cutoff (less lag) than the colleague's
+# wn=40 amplitude-path LPF (FLEX_EXT.slx -> HL_Contr/Subsystem/Subsystem2).
+# Drop to 40 if you re-enable the gate; raise toward 100 (or remove the LPF
+# entirely in compute_motor_command) for an even snappier response.
+MOTOR_CMD_LPF_WN_RAD_PER_SEC = 60.0
+MOTOR_CMD_LPF_ZT = 1.0
+MOTOR_CMD_LPF_DT_FALLBACK = 0.01
 
 
 class MotionReferenceController:
@@ -20,11 +38,34 @@ class MotionReferenceController:
         # call or after a reset. Exposed for logging by external code.
         self.last_mapping_value: float | None = None
 
-    def compute_motor_command(self, gait_phase: float, amplitude: float) -> float:
+        # 2nd-order LPF on the motor command. See MOTOR_CMD_LPF_WN_RAD_PER_SEC.
+        self._motor_cmd_lpf = SecondOrderLowPassFilter(
+            LowPassFilterConfig(
+                cut_off_frequency_rad_per_sec=MOTOR_CMD_LPF_WN_RAD_PER_SEC,
+                damping_ratio=MOTOR_CMD_LPF_ZT,
+                initial_condition=0.0,
+            )
+        )
+        self._prev_timestamp: float | None = None
+
+    def compute_motor_command(
+        self,
+        gait_phase: float,
+        amplitude: float,
+        timestamp: float | None = None,
+        flexion_active: bool = True,
+    ) -> float:
         """Compute the motor command based on the gait phase and amplitude.
 
         :param gait_phase: current gait phase in radians.
         :param amplitude: current amplitude modulation factor.
+        :param timestamp: optional current sample time [s]. When provided the
+            LPF uses the actual dt from the previous sample; otherwise it
+            falls back to ``MOTOR_CMD_LPF_DT_FALLBACK`` (100 Hz default loop).
+        :param flexion_active: when False, the raw lookup*amplitude product is
+            forced to 0 BEFORE the LPF so the safety-gate transition is itself
+            smoothed by the LPF instead of stepping the output. Caller should
+            pass ``filtered_signal.angle_rad >= 0`` (the existing safety gate).
         :return: Reference motion command for the motor.
         :rtype: float
         """
@@ -36,7 +77,24 @@ class MotionReferenceController:
         mapping_value = self.motion_mapping.spline(value=sinusoidal_behavior_gait_phase)
         self.last_mapping_value = float(mapping_value)
 
-        motor_command = mapping_value * amplitude
+        raw_command = float(mapping_value * amplitude)
+        # Safety gate folded INTO the LPF input: when the limb is in extension
+        # the input drops to 0 and the LPF smoothly decays the command toward
+        # zero, instead of the outer caller snapping it to 0 (which would
+        # bypass the LPF and re-introduce the step we are trying to avoid).
+        if not flexion_active:
+            raw_command = 0.0
+
+        # Smooth the command so motor velocity stays within physical V_MAX.
+        if timestamp is not None and self._prev_timestamp is not None:
+            dt = timestamp - self._prev_timestamp
+            if dt <= 0.0 or dt > 1.0:
+                dt = MOTOR_CMD_LPF_DT_FALLBACK
+        else:
+            dt = MOTOR_CMD_LPF_DT_FALLBACK
+        if timestamp is not None:
+            self._prev_timestamp = timestamp
+        motor_command, _ = self._motor_cmd_lpf.step(x=raw_command, time_difference=dt)
 
         # Saturation
         if motor_command < PositionLimitation.lower:
@@ -47,6 +105,12 @@ class MotionReferenceController:
             return PositionLimitation.upper
         else:
             return motor_command
+
+    def reset(self) -> None:
+        """Reset the motor-command LPF state (call on session start)."""
+        self._motor_cmd_lpf.reset()
+        self._prev_timestamp = None
+        self.last_mapping_value = None
 
 
 class MotionMapping:
