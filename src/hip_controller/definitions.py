@@ -356,7 +356,6 @@ VELOCITY_WEIGHT_LEVEL_MODE = 2.0  # 1.0
 PROCESS_NOISE = 2e-2
 MEASUREMENT_NOISE = 0.75
 
-
 # Cubic Spline Interpolation
 @dataclass(frozen=True)
 class LookUpTable:

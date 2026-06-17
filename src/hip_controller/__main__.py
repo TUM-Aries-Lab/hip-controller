@@ -100,11 +100,15 @@ def main(  # noqa: PLR0915, C901
 
     player = CSVPlayer(csv_path)
     plot = not fast
-    config = BasicConfig(left_limb_plot=plot, right_limb_plot=plot)
+    config = BasicConfig(
+        filtered=False,
+        left_limb_plot=plot,
+        right_limb_plot=plot,
+    )
 
     controller_left = WalkOnController(left_limb=True, config=config)
     controller_right = WalkOnController(left_limb=False, config=config)
-    
+
     timer = QtCore.QTimer()
 
     # Track the previous main-switch state so we can reset the controllers on a
