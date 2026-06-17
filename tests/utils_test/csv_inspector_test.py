@@ -7,13 +7,22 @@ same reason as ``live_phase_portrait.py``.
 
 from __future__ import annotations
 
+import os
+import sys
+
 import numpy as np
 import pandas as pd
+import pytest
 from pytest import raises
 
 from hip_controller.plotter.csv_inspector import (
     discover_plottable_columns,
     synthesize_time_vector,
+)
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "linux" and not os.getenv("DISPLAY"),
+    reason="GUI tests require display server",
 )
 
 
