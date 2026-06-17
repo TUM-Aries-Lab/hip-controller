@@ -87,7 +87,7 @@ jobs:
         run: make init
 
       - name: Run Pytest
-        run: make test
+        run: uv run pytest --cov=src --cov-report=term-missing --no-cov-on-fail --cov-report=xml --cov-fail-under=80 --ignore=tests/utils_test/csv_inspector_test.py --ignore=tests/utils_test/csv_player_test.py
 
       - name: Upload coverage XML artifact
         if: ${{ matrix.python-version == '3.12' }}

@@ -1,22 +1,14 @@
 """Test for the csv player module."""
 
-import os
-import sys
 from pathlib import Path
 
 import pandas as pd
-import pytest
 from pandas import DataFrame, ExcelWriter, read_csv, testing
 from pytest import raises
 
 from hip_controller.definitions import ExosuitData, RecordedSensorData, SensorSignal
 from hip_controller.plotter.csv_player import CSVPlayer
 from hip_controller.utils.csv_utils import convert_xlsx_to_csv
-
-pytestmark = pytest.mark.skipif(
-    sys.platform == "linux" and not os.getenv("DISPLAY"),
-    reason="GUI tests require display server",
-)
 
 
 def create_test_csv(path: Path):
