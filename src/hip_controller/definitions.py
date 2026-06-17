@@ -214,7 +214,6 @@ class SogiFllConfig:
     numerical_safety_floor: float = 1e-9
 
 
-
 class VelocityInputAngle(StrEnum):
     """Which angle is fed to the velocity-estimation stage.
 
@@ -271,7 +270,6 @@ LAG_COMPENSATION = 0  # Lag correction
 SCALE_LEVEL_MODE = 1
 SIGMOID_POWER = 50  # 50
 AMPLITUDE_GAIN = -7  # Motor position desidered amplitude (rad)
-
 
 
 # Cubic Spline Interpolation

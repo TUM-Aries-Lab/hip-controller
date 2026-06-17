@@ -234,7 +234,7 @@ class SensorPreprocessor:
         self._prev_timestamp = None
         self._baseline: float = 0.0
         self._baseline_count: int = 0
-        self._baseline_sum: float = 0.0        
+        self._baseline_sum: float = 0.0
         self.last_velocity_surrogate_rad_per_sec = None
         self.last_velocity_lpf_angle_rad = None
         self.last_drift_removed_angle_rad = None
