@@ -334,7 +334,7 @@ LAG_COMPENSATION = 0  # Lag correction
 # Amplitude modulation
 SCALE_LEVEL_MODE = 2  # Needed if the SOGI-FLL quadrature is taken as velocity output
 SIGMOID_POWER = 30  # 50
-AMPLITUDE_GAIN = -6.5  # Motor position desidered amplitude (rad)
+AMPLITUDE_GAIN = -6  # 6.5  # Motor position desidered amplitude (rad)
 # Per-component weight applied to velocity inside the portrait radius:
 #   r = sqrt(angle^2 + (VELOCITY_WEIGHT_LEVEL_MODE * velocity)^2).
 # 1.0 -> identical to the historical symmetric radius.
@@ -350,7 +350,12 @@ MEASUREMENT_NOISE = 0.75
 # Cubic Spline Interpolation
 @dataclass(frozen=True)
 class LookUpTable:
-    """Stores breakpoint and table data of the motion mapping."""
+    """Stores breakpoint and table data of the motion mapping.
+
+    Held for backward compatibility / external callers. The active
+    per-mode tabledata is selected at runtime by ``MotionMapping`` via
+    the ``LOOKUP_TABLEDATA_*`` constants below.
+    """
 
     breakpoints = np.array(
         [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0.1, 0.2, 0.4, 0.6, 0.8, 1],
@@ -361,6 +366,43 @@ class LookUpTable:
         [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0, 0.005, 0.01, 0.015, 0.02, 0.025],
         dtype=np.float64,
     )
+
+
+# Per-locomotion-mode motion-mapping table data. Same breakpoints as
+# ``LookUpTable.breakpoints``; only the y-values differ per mode.
+#
+# The FLEXION half (indices 0..6, breakpoints from -1 to 0) is identical
+# across modes -- the flexion-assist shape stays the same; per-mode
+# `ModeParameters.gain` scales its strength.
+#
+# The EXTENSION half (indices 7..12, breakpoints from 0.1 to 1) is
+# zeroed for ASC and DSC. Empirical drift tracking (see
+# ``add_drift_tracking.py`` in the application repo) showed the motor's
+# REST position drifts ~0.20 rad negative (left) per ASC/DSC bout,
+# meaning the motor was structurally paying out ~0.16-0.21 rad of cable
+# per stride between flexions on stair modes (= lookup value 0.025 *
+# gain). That pay-out accumulates as cable slack that produces "late
+# assist" right after coming off stairs. With the extension half zeroed
+# on ASC/DSC, the motor holds its rest position between strides on stairs
+# instead of unwinding -- the per-stride slack contribution is removed
+# at the source.
+#
+# Level Ground keeps the original asymmetric table because (a) the drift
+# diagnostic shows MP rest median stays approximately flat during steady
+# LG walking, so LG is not the culprit, and (b) the small extension-side
+# counter-pull on LG was tuned for natural-feeling swing-through.
+LOOKUP_TABLEDATA_LEVEL: np.ndarray = np.array(
+    [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0, 0.005, 0.01, 0.015, 0.02, 0.025],
+    dtype=np.float64,
+)
+LOOKUP_TABLEDATA_ASCEND: np.ndarray = np.array(
+    [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0, 0, 0, 0, 0, 0],
+    dtype=np.float64,
+)
+LOOKUP_TABLEDATA_DESCEND: np.ndarray = np.array(
+    [-1, -0.8, -0.6, -0.4, -0.2, -0.1, 0, 0, 0, 0, 0, 0, 0],
+    dtype=np.float64,
+)
 
 
 # S Gait stopping threshold

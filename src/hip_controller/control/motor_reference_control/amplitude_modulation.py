@@ -26,7 +26,7 @@ from hip_controller.filters.second_order_low_pass_filter import SecondOrderLowPa
 #   wn = 2  : 1.5 s full engagement (colleague default, strong stand-still rejection)
 #   wn = 5  : 0.6 s engagement (still rejects sub-200ms wiggles)
 #   wn = 10 : 0.3 s engagement (filters only very brief blips)
-SIGMOID_LPF_WN_RAD_PER_SEC = 10.0
+SIGMOID_LPF_WN_RAD_PER_SEC = 30.0  # 10.0
 SIGMOID_LPF_ZT = 1.0
 SIGMOID_LPF_DT_FALLBACK = 0.01
 
@@ -102,7 +102,7 @@ class AscendStairsMode(ModeStrategy):
         return ModeParameters(
             scale=SCALE_LEVEL_MODE - 0,  # -0.6
             sigmoid_power=SIGMOID_POWER + 50,  # +100
-            gain=AMPLITUDE_GAIN - 2,
+            gain=AMPLITUDE_GAIN - 3,
             velocity_weight=VELOCITY_WEIGHT_LEVEL_MODE,
         )
 

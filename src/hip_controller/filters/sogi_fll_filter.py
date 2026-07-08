@@ -237,6 +237,25 @@ class SogiFllFilter:
         self._walking: bool = True
         self._fll_cooldown_ticks: int = 0
 
+    def clear_state_keep_frequency(self) -> None:
+        """Wipe SOGI oscillator state but preserve the FLL frequency lock.
+
+        Use this when the SOGI's stored in-phase / quadrature have been
+        loaded by a gait pattern whose shape no longer matches the
+        incoming signal -- specifically the DESCEND -> LEVEL transition,
+        where the descent's harmonic content persists in the oscillator
+        for 1-2 strides after the user steps onto flat ground and
+        produces a phantom oscillation the motor reference tracks.
+
+        Unlike :meth:`start_walking`, this method does NOT arm the
+        post-resume FLL cooldown. The user is still moving across the
+        mode boundary, the FLL cadence estimate is correct, and freezing
+        adaptation for 800 ms would just trade one mistiming for another.
+        """
+        self._inphase = 0.0
+        self._quadrature = 0.0
+        self._confidence_state = 0.0
+
     @property
     def estimated_frequency_hz(self) -> float:
         """Current FLL frequency estimate [Hz]."""
