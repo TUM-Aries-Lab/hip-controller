@@ -49,6 +49,10 @@ class FilteringStrategy(ABC):
         """Swap parameter set at runtime (no-op for strategies without per-mode config)."""
         return
 
+    def clear_state_keep_frequency(self) -> None:
+        """Wipe SOGI oscillator state but keep FLL freq (no-op for non-SOGI strategies)."""
+        return
+
 
 class SogiFllFiltering(FilteringStrategy):
     """Velocity estimation via Second-Order Generalized Integrator (SOGI).
@@ -115,6 +119,10 @@ class SogiFllFiltering(FilteringStrategy):
         SOGI tuning at runtime.
         """
         self._sogi_filter.set_config(config)
+
+    def clear_state_keep_frequency(self) -> None:
+        """Pass-through to ``SogiFllFilter.clear_state_keep_frequency``."""
+        self._sogi_filter.clear_state_keep_frequency()
 
     @property
     def is_walking(self) -> bool:

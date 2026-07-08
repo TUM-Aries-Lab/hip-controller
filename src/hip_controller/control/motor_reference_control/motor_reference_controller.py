@@ -5,6 +5,9 @@ from scipy.interpolate import CubicSpline
 
 from hip_controller.definitions import (
     LAG_COMPENSATION,
+    LOOKUP_TABLEDATA_ASCEND,
+    LOOKUP_TABLEDATA_DESCEND,
+    LOOKUP_TABLEDATA_LEVEL,
     LookUpTable,
     LowPassFilterConfig,
     PositionLimitation,
@@ -112,18 +115,42 @@ class MotionReferenceController:
         self._prev_timestamp = None
         self.last_mapping_value = None
 
+    def set_locomotion_mode(self, class_id: int) -> None:
+        """Forward per-mode lookup-table swap to ``MotionMapping``."""
+        self.motion_mapping.set_locomotion_mode(class_id)
+
 
 class MotionMapping:
-    """1-D Lookup Table for motion mapping with cubic spline interpolation and extrapolation."""
+    """1-D Lookup Table for motion mapping with cubic spline interpolation.
 
-    """Evaluate lookup table for an input each time stamp value."""
+    Per-locomotion-mode tables: the flexion half is identical across
+    modes (only ``ModeParameters.gain`` scales flexion-assist strength).
+    The extension half differs:
+      0 (Level)   -> small positive counter-pull (table values up to 0.025).
+      1 (Ascend)  -> zero (motor holds rest position between strides).
+      2 (Descend) -> zero (motor holds rest position between strides).
+
+    This prevents the motor from paying out cable between strides on
+    stair modes; see ``definitions.py:LOOKUP_TABLEDATA_*`` for the full
+    rationale. At construction all three splines are built and Level is
+    selected by default; ``set_locomotion_mode(class_id)`` switches
+    which spline ``spline()`` evaluates.
+    """
 
     def __init__(self):
-        """Initialize the table."""
-        self._cubic_spline = CubicSpline(
-            x=LookUpTable.breakpoints, y=LookUpTable.tabledata, extrapolate=True
-        )
+        """Build all three per-mode splines; start in Level Ground."""
+        bp = LookUpTable.breakpoints
+        self._splines = {
+            0: CubicSpline(x=bp, y=LOOKUP_TABLEDATA_LEVEL, extrapolate=True),
+            1: CubicSpline(x=bp, y=LOOKUP_TABLEDATA_ASCEND, extrapolate=True),
+            2: CubicSpline(x=bp, y=LOOKUP_TABLEDATA_DESCEND, extrapolate=True),
+        }
+        self._cubic_spline = self._splines[0]
+
+    def set_locomotion_mode(self, class_id: int) -> None:
+        """Activate the per-mode spline. Unknown class_ids fall back to Level."""
+        self._cubic_spline = self._splines.get(class_id, self._splines[0])
 
     def spline(self, value: float):
-        """Evaluate lookup table for an input each time stamp value."""
+        """Evaluate the currently-active per-mode lookup table at value."""
         return self._cubic_spline(value)

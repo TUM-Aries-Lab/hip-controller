@@ -186,6 +186,10 @@ class WalkOnController:
             mode = LevelGroundMode()
         self.amplitude_modulation.set_mode(mode)
         self.pre_processor.set_locomotion_mode(class_id)
+        # Per-mode motion-mapping table: zeroes the extension-side
+        # counter-pull on ASC and DSC so the motor doesn't pay out cable
+        # between strides on stair modes (the source of cumulative slack).
+        self.motion_reference_controller.set_locomotion_mode(class_id)
 
     def reset(self) -> None:
         """Reset the WalkOnController if exosuit is disconnected or timeout occured.

@@ -88,6 +88,12 @@ class SensorPreprocessor:
         # strategy. None on first call / after reset.
         self.last_velocity_pre_drift_removal_rad_per_sec: float | None = None
 
+        # Last applied locomotion-mode class_id (0=Level, 1=Ascend, 2=Descend).
+        # Tracked so set_locomotion_mode() can detect the DSC -> non-DSC
+        # transition specifically and wipe the SOGI's descent-charged
+        # in-phase / quadrature -- see set_locomotion_mode() docstring.
+        self._current_mode_id: int = 0
+
     def filter(self, raw_signal: SensorSignal) -> SensorSignal:
         """Run one preprocessing step and return a :class:`SensorSignal`.
 
@@ -218,6 +224,18 @@ class SensorPreprocessor:
         preserved; only the parameter values change, so the FLL re-adapts
         smoothly across a mode change rather than re-locking from scratch.
         Unknown class_ids fall back to the LEVEL config.
+
+        DESCEND -> non-DESCEND exception: the in-phase / quadrature get
+        cleared via ``clear_state_keep_frequency()``. The descent gait
+        shape (brief flexion peak + long controlled-descent slope) charges
+        the SOGI oscillator with harmonics that don't match LG/ASC
+        kinematics; preserved as-is, those harmonics drive a phantom
+        oscillation for 1-2 strides after stepping onto flat ground and
+        time the motor command against the wrong phase of the user's
+        actual stride. Frequency estimate is intentionally kept so the
+        FLL stays locked on the cadence; only the SOGI oscillator state
+        is wiped. See raw-vs-filtered IMU overlays on
+        savedData_Thu_Jun_25_15-42-00_2026.csv for the diagnostic.
         """
         if not hasattr(self._sogi_fll, "set_config"):
             return
@@ -227,3 +245,8 @@ class SensorPreprocessor:
             self._sogi_fll.set_config(self.config.filtering_sogifll_config_descend)
         else:
             self._sogi_fll.set_config(self.config.filtering_sogifll_config_level)
+
+        if self._current_mode_id == 2 and class_id != 2:
+            self._sogi_fll.clear_state_keep_frequency()
+
+        self._current_mode_id = class_id
