@@ -255,6 +255,20 @@ class PreprocessorConfig:
         lock_state_smoother_bandwidth=1.50,
         initial_frequency_guess=0.55,
     )
+    # Demo (classification-free assist). Wider SOGI bandwidth + faster FLL
+    # for lower phase lag between IMU angle and the filtered signal the
+    # demo LUT consumes. Same cadence bounds as level. Trade-off: more
+    # sensor noise reaches the motor -- if the motor feels jittery on the
+    # demo, dial the gains back toward the level config.
+    filtering_sogifll_config_demo: SogiFllConfig = SogiFllConfig(
+        lower_cadence_bound=0.3,
+        upper_cadence_bound=3.5,
+        sogi_adaptation_gain=1.0,
+        fll_adaptation_gain=1.0,
+        frequency_estimate_smoother_bandwidth=0.3,
+        lock_state_smoother_bandwidth=0.5,
+        initial_frequency_guess=1.4,
+    )
 
     filtering_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
         cut_off_frequency_rad_per_sec=90.0, damping_ratio=1.0, initial_condition=0.0

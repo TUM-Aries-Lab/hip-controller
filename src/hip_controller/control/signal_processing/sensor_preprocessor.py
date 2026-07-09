@@ -250,3 +250,22 @@ class SensorPreprocessor:
             self._sogi_fll.clear_state_keep_frequency()
 
         self._current_mode_id = class_id
+
+    def set_demo_mode(self) -> None:
+        """Swap the SOGI-FLL config to the demo (classification-free) tuning.
+
+        Demo mode bypasses the TCN and applies assist via a fixed
+        LUT-and-gain pipeline. Because there is no locomotion class,
+        ``set_locomotion_mode()`` isn't called during demo runs and the
+        SOGI would otherwise stay on whatever config was last applied
+        (typically LEVEL from ``WalkOnController.__init__``). This
+        method pushes the demo-tuned ``filtering_sogifll_config_demo``
+        into the filter for lower phase lag on the demo signal path.
+
+        SOGI state (in-phase, quadrature, omega_est, frequency_estimate,
+        confidence_state) is preserved. Idempotent -- safe to call on
+        every demo re-entry.
+        """
+        if not hasattr(self._sogi_fll, "set_config"):
+            return
+        self._sogi_fll.set_config(self.config.filtering_sogifll_config_demo)
