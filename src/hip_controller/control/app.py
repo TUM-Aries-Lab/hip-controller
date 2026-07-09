@@ -191,6 +191,18 @@ class WalkOnController:
         # between strides on stair modes (the source of cumulative slack).
         self.motion_reference_controller.set_locomotion_mode(class_id)
 
+    def set_demo_mode(self) -> None:
+        """Apply the demo-mode SOGI tuning to this limb's pre-processor.
+
+        Delegates to :meth:`SensorPreprocessor.set_demo_mode`, which
+        swaps in ``filtering_sogifll_config_demo`` for lower phase lag
+        on the classification-free demo signal path. The amplitude
+        modulation and motion-reference-controller modes are left
+        untouched -- demo mode uses its own downstream mapping in the
+        caller, not the WalkOn per-locomotion modes.
+        """
+        self.pre_processor.set_demo_mode()
+
     def reset(self) -> None:
         """Reset the WalkOnController if exosuit is disconnected or timeout occured.
 
