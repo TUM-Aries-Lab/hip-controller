@@ -183,3 +183,6 @@ src/matlab-files/slprj
 .vscode
 
 # evaluation files
+# Raw recording / training data CSVs (kept out of git)
+*.csv
+savedData*
