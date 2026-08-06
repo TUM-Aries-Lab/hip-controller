@@ -340,7 +340,15 @@ class BasicConfig:
         VelocityEstimationMethod.DISCRETE_DERIVATIVE
     )
 
-    preprocessor_config = PreprocessorConfig(sample_rate_hz=frequency)
+    preprocessor_config: PreprocessorConfig = field(init=False)
+
+    def __post_init__(self):
+        """Initialize preprocessor_config with set frequency."""
+        object.__setattr__(
+            self,
+            "preprocessor_config",
+            PreprocessorConfig(sample_rate_hz=self.frequency),
+        )
 
 
 # baseline removal using first N samples
