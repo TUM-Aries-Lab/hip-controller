@@ -321,8 +321,8 @@ class BasicConfig:
     right_limb_plot: bool = False
 
     # if the wiring settings are reversed or not
-    left_limb_reverse: bool = True
-    right_limb_reverse: bool = False
+    left_limb_reverse: bool = False
+    right_limb_reverse: bool = True
 
     # either read data from imu or read data from csv file using csv player
     read_from_imu: bool = False
