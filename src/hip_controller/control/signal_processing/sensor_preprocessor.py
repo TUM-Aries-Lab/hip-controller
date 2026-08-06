@@ -102,6 +102,18 @@ class SensorPreprocessor:
         # after reset.
         self.last_drift_removed_angle_rad: float | None = None
 
+        # Velocity *before* the optional post-estimation drift-removal notch.
+        # For the SOGI path this equals last_velocity_surrogate_rad_per_sec;
+        # for other methods this is the raw output of the velocity-estimation
+        # strategy. None on first call / after reset.
+        self.last_velocity_pre_drift_removal_rad_per_sec: float | None = None
+
+        # Last applied locomotion-mode class_id (0=Level, 1=Ascend, 2=Descend).
+        # Tracked so set_locomotion_mode() can detect the DSC -> non-DSC
+        # transition specifically and wipe the SOGI's descent-charged
+        # in-phase / quadrature -- see set_locomotion_mode() docstring.
+        self._current_mode_id: int = 0
+
     def filter(self, raw_signal: SensorSignal) -> SensorSignal:
         """Run one preprocessing step and return a :class:`SensorSignal`.
 
