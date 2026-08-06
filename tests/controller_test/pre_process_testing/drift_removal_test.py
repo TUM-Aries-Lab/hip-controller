@@ -7,7 +7,7 @@ from hip_controller.control.signal_processing.drift_removal import (
     LowPassDriftRemoval,
     NotchDriftRemoval,
 )
-from hip_controller.definitions import PreprocessorConfig
+from hip_controller.definitions import BasicConfig
 from tests.conftest import DATA_PRE_PROCESSING, KinematicsDataColumnName
 
 
@@ -18,7 +18,7 @@ def test_low_pass_drift_removal() -> None:
 
     # Configure the low-pass filter for drift removal (slow cutoff)
     drift_removal = LowPassDriftRemoval(
-        PreprocessorConfig.drift_removal_second_order_lpf_config
+        BasicConfig.preprocessor_config.drift_removal_second_order_lpf_config
     )
 
     # Test each row
@@ -56,7 +56,9 @@ def test_notch_drift_removal() -> None:
     df = pd.read_csv(DATA_PRE_PROCESSING)
 
     # Configure the notch filter for drift removal
-    drift_removal = NotchDriftRemoval(PreprocessorConfig.drift_removal_notch_config)
+    drift_removal = NotchDriftRemoval(
+        BasicConfig.preprocessor_config.drift_removal_notch_config
+    )
 
     # Test each row
     prev_timestamp = None

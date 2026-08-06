@@ -22,8 +22,6 @@ from hip_controller.control.signal_processing.filtering import (
     KalmanFiltering,
     LowPassFiltering,
     SogiFllFiltering,
-    KalmanFiltering,
-    
 )
 from hip_controller.control.signal_processing.velocity_estimation import (
     DiscreteDerivativeVelocityEstimation,
@@ -36,7 +34,6 @@ from hip_controller.definitions import (
     BasicConfig,
     DriftRemovalMethod,
     FilteringMethod,
-    PreprocessorConfig,
     SensorSignal,
     VelocityEstimationMethod,
     VelocityInputAngle,
@@ -62,7 +59,7 @@ class SensorPreprocessor:
         self._filtering: FilteringStrategy
         self._drift_removal: DriftRemovalStrategy
         self._sogi_fll: SogiFllFiltering = SogiFllFiltering(
-            config=PreprocessorConfig.filtering_sogifll_config
+            config=basic_config.preprocessor_config.filtering_sogifll_config
         )
         self._use_sogi_velocity: bool = (
             basic_config.velocity_estimation_method == VelocityEstimationMethod.SOGI
@@ -72,8 +69,12 @@ class SensorPreprocessor:
         # active. Always constructed so reset() and config switches at runtime
         # remain consistent.
         self._velocity_drift_removal: DriftRemovalStrategy
-        self._velocity_input_angle: VelocityInputAngle = PreprocessorConfig.velocity_input_angle
-        self._apply_velocity_drift_removal: bool = PreprocessorConfig.apply_velocity_drift_removal
+        self._velocity_input_angle: VelocityInputAngle = (
+            basic_config.preprocessor_config.velocity_input_angle
+        )
+        self._apply_velocity_drift_removal: bool = (
+            basic_config.preprocessor_config.apply_velocity_drift_removal
+        )
         self._prev_timestamp: float | None = None
         self._baseline: float = 0.0
         self._baseline_count: int = 0
@@ -104,32 +105,20 @@ class SensorPreprocessor:
     def filter(self, raw_signal: SensorSignal) -> SensorSignal:
         """Run one preprocessing step and return a :class:`SensorSignal`.
 
-        :return: Preprocessed :class:`SensorSignal` with timestamp of the current sample [s], raw angle from the sensor [rad] and gyroscope angular rate [rad/s] read from sensor.
+        :return: Preprocessed :class:`SensorSignal` with timestamp of the current sample [s],
+            raw angle from the sensor [rad] and gyroscope angular rate [rad/s] read from sensor.
         :rtype: SensorSignal
         """
-        # Baseline capture by taking avg of first N samples
-        if self._baseline_count < BASELINE_REMOVAL_SAMPLE_NUM:
-            self._baseline_count += 1
-            self._baseline_sum += raw_signal.angle_rad
-
-            if self._baseline_count == BASELINE_REMOVAL_SAMPLE_NUM:
-                self._baseline = self._baseline_sum / BASELINE_REMOVAL_SAMPLE_NUM
-
-            raw_signal.angle_rad = 0.0
-        else:
-            # normal operation: baseline removal
-            raw_signal.angle_rad -= self._baseline
+        self._remove_baseline(raw_signal)
 
         if self._prev_timestamp is None or raw_signal.timestamp is None:
             self._prev_timestamp = raw_signal.timestamp
             return raw_signal
 
         time_difference = raw_signal.timestamp - self._prev_timestamp
-
         if time_difference <= 0.0:
             raise ValueError(f"Non-positive time_difference: {time_difference}")
 
-        # check dt too big
         if time_difference > 1.0:
             self.reset()
             return raw_signal
@@ -152,51 +141,16 @@ class SensorPreprocessor:
             self._sogi_fll, "last_quadrature", None
         )
 
-        if self._use_sogi_velocity:
-            # SOGI path: take the quadrature already produced by the angle-stage
-            # SOGI-FLL. No second SOGI runs.
-            velocity_pre_drift_rad_per_sec = (
-                self.last_velocity_surrogate_rad_per_sec or 0.0
-            )
-            self.last_velocity_lpf_angle_rad = None
-        else:
-            # See PreprocessorConfig.velocity_input_angle for the trade-off
-            # between latency / smoothness (more filtering) and freshness
-            # (less filtering).
-            if self._velocity_input_angle == VelocityInputAngle.RAW:
-                velocity_input_angle_rad = raw_signal.angle_rad
-            elif self._velocity_input_angle == VelocityInputAngle.DRIFT_REMOVED:
-                velocity_input_angle_rad = angle_no_drift_rad
-            else:
-                velocity_input_angle_rad = angle_out_rad
-
-            # Outside the SOGI path, a velocity-estimation strategy must be
-            # configured (the `else` branch above is only reached when
-            # _use_sogi_velocity is False, which in turn requires the config
-            # to provide a strategy at construction time).
-            assert self._velocity_estimation is not None
-            velocity_lpf_angle_rad, velocity_pre_drift_rad_per_sec = (
-                self._velocity_estimation.filter(
-                    angle_rad=velocity_input_angle_rad,
-                    time_difference=time_difference,
-                    gyro_velocity_rad_per_sec=raw_signal.velocity_rad_per_sec,
-                )
-            )
-            self.last_velocity_lpf_angle_rad = velocity_lpf_angle_rad
-
+        velocity_pre_drift_rad_per_sec = self._estimate_velocity(
+            raw_signal, angle_no_drift_rad, angle_out_rad, time_difference
+        )
         self.last_velocity_pre_drift_removal_rad_per_sec = (
             velocity_pre_drift_rad_per_sec
         )
 
-        # Optional post-estimation drift removal applied uniformly to every
-        # velocity_estimation_method.
-        if self._apply_velocity_drift_removal:
-            velocity_out_rad_per_sec = self._velocity_drift_removal.filter(
-                raw_angle=velocity_pre_drift_rad_per_sec,
-                time_difference=time_difference,
-            )
-        else:
-            velocity_out_rad_per_sec = velocity_pre_drift_rad_per_sec
+        velocity_out_rad_per_sec = self._remove_velocity_drift(
+            velocity_pre_drift_rad_per_sec, time_difference
+        )
 
         return SensorSignal(
             timestamp=raw_signal.timestamp,
@@ -204,83 +158,135 @@ class SensorPreprocessor:
             velocity_rad_per_sec=velocity_out_rad_per_sec,
         )
 
+    def _remove_baseline(self, raw_signal: SensorSignal) -> None:
+        """Capture the sensor baseline over the first N samples and subtract it thereafter."""
+        if self._baseline_count < BASELINE_REMOVAL_SAMPLE_NUM:
+            self._baseline_count += 1
+            self._baseline_sum += raw_signal.angle_rad
+
+            if self._baseline_count == BASELINE_REMOVAL_SAMPLE_NUM:
+                self._baseline = self._baseline_sum / BASELINE_REMOVAL_SAMPLE_NUM
+
+            raw_signal.angle_rad = 0.0
+        else:
+            raw_signal.angle_rad -= self._baseline
+
+    def _select_velocity_input_angle(
+        self, raw_angle_rad: float, angle_no_drift_rad: float, angle_out_rad: float
+    ) -> float:
+        """Pick which angle stage feeds the velocity estimator, per config.
+
+        See PreprocessorConfig.velocity_input_angle for the trade-off between
+        latency / smoothness (more filtering) and freshness (less filtering).
+        """
+        if self._velocity_input_angle == VelocityInputAngle.RAW:
+            return raw_angle_rad
+        if self._velocity_input_angle == VelocityInputAngle.DRIFT_REMOVED:
+            return angle_no_drift_rad
+        return angle_out_rad
+
+    def _estimate_velocity(
+        self,
+        raw_signal: SensorSignal,
+        angle_no_drift_rad: float,
+        angle_out_rad: float,
+        time_difference: float,
+    ) -> float:
+        """Estimate angular velocity via the SOGI quadrature or a configured strategy."""
+        if self._use_sogi_velocity:
+            # SOGI path: take the quadrature already produced by the angle-stage
+            # SOGI-FLL. No second SOGI runs.
+            self.last_velocity_lpf_angle_rad = None
+            return self.last_velocity_surrogate_rad_per_sec or 0.0
+
+        velocity_input_angle_rad = self._select_velocity_input_angle(
+            raw_signal.angle_rad, angle_no_drift_rad, angle_out_rad
+        )
+
+        # Outside the SOGI path, a velocity-estimation strategy must be configured
+        # (this branch only runs when _use_sogi_velocity is False, which in turn
+        # requires the config to provide a strategy at construction time).
+        assert self._velocity_estimation is not None
+        velocity_lpf_angle_rad, velocity_pre_drift_rad_per_sec = (
+            self._velocity_estimation.filter(
+                angle_rad=velocity_input_angle_rad,
+                time_difference=time_difference,
+                gyro_velocity_rad_per_sec=raw_signal.velocity_rad_per_sec,
+            )
+        )
+        self.last_velocity_lpf_angle_rad = velocity_lpf_angle_rad
+        return velocity_pre_drift_rad_per_sec
+
+    def _remove_velocity_drift(
+        self, velocity_pre_drift_rad_per_sec: float, time_difference: float
+    ) -> float:
+        """Optionally apply post-estimation drift removal, uniformly across velocity methods."""
+        if not self._apply_velocity_drift_removal:
+            return velocity_pre_drift_rad_per_sec
+        return self._velocity_drift_removal.filter(
+            raw_angle=velocity_pre_drift_rad_per_sec,
+            time_difference=time_difference,
+        )
+
     def _init_strategies(self):
         """Get instance of different options of drift removal, filtering, and velocity estimation."""
-        # drift removal
-        if self._basic_config.drift_removal_method == DriftRemovalMethod.LOW_PASS:
-            self._drift_removal = LowPassDriftRemoval(
-                PreprocessorConfig.drift_removal_second_order_lpf_config
-            )
-
-        elif self._basic_config.drift_removal_method == DriftRemovalMethod.NOTCH:
-            self._drift_removal = NotchDriftRemoval(
-                PreprocessorConfig.drift_removal_notch_config
-            )
-        else:
-            raise ValueError(
-                f"Unrecognized drift-removal method: {self._basic_config.drift_removal_method}"
-            )
-
-        # filtering
-        if self._basic_config.filtering_method == FilteringMethod.SOGI:
-            self._filtering = SogiFllFiltering(
-                PreprocessorConfig.filtering_sogifll_config
-            )
-
-        elif self._basic_config.filtering_method == FilteringMethod.LOW_PASS:
-            self._filtering = LowPassFiltering(
-                PreprocessorConfig.filtering_second_order_lpf_config
-            )
-
-        elif self._basic_config.filtering_method == FilteringMethod.KALMAN:
-            self._filtering = KalmanFiltering(
-                PreprocessorConfig.filtering_kalman_config
-            )
-
-        elif self._basic_config.filtering_method == FilteringMethod.KALMAN:
-            self._filtering = KalmanFiltering(
-                PreprocessorConfig.filtering_kalman_config
-            )
-
-        else:
-            raise ValueError(
-                f"Unrecognized filtering method: {self._basic_config.filtering_method}"
-            )
-
-        # velocity estimation
-        if (
+        self._drift_removal = self._build_drift_removal(
+            self._basic_config.drift_removal_method
+        )
+        self._filtering = self._build_filtering(self._basic_config.filtering_method)
+        self._velocity_estimation = self._build_velocity_estimation(
             self._basic_config.velocity_estimation_method
-            == VelocityEstimationMethod.SOGI
-        ):
-            self._velocity_estimation = None
+        )
+        self._velocity_drift_removal = NotchDriftRemoval(
+            self._basic_config.preprocessor_config.velocity_drift_removal_notch_config
+        )
 
-        elif (
-            self._basic_config.velocity_estimation_method
-            == VelocityEstimationMethod.DISCRETE_DERIVATIVE
-        ):
-            self._velocity_estimation = DiscreteDerivativeVelocityEstimation()
+    def _build_drift_removal(self, method: DriftRemovalMethod):
+        cfg = self._basic_config.preprocessor_config
+        builders = {
+            DriftRemovalMethod.LOW_PASS: lambda: LowPassDriftRemoval(
+                cfg.drift_removal_second_order_lpf_config
+            ),
+            DriftRemovalMethod.NOTCH: lambda: NotchDriftRemoval(
+                cfg.drift_removal_notch_config
+            ),
+        }
+        if method not in builders:
+            raise ValueError(f"Unrecognized drift-removal method: {method}")
+        return builders[method]()
 
-        elif (
-            self._basic_config.velocity_estimation_method
-            == VelocityEstimationMethod.LOW_PASS
-        ):
-            self._velocity_estimation = LowPassVelocityEstimation(
-                PreprocessorConfig.velocity_estimation_low_pass_config
-            )
+    def _build_filtering(self, method: FilteringMethod):
+        cfg = self._basic_config.preprocessor_config
+        builders = {
+            FilteringMethod.SOGI: lambda: SogiFllFiltering(
+                cfg.filtering_sogifll_config
+            ),
+            FilteringMethod.LOW_PASS: lambda: LowPassFiltering(
+                cfg.filtering_second_order_lpf_config
+            ),
+            FilteringMethod.KALMAN: lambda: KalmanFiltering(
+                cfg.filtering_kalman_config
+            ),
+        }
+        if method not in builders:
+            raise ValueError(f"Unrecognized filtering method: {method}")
+        return builders[method]()
 
-        elif (
-            self._basic_config.velocity_estimation_method
-            == VelocityEstimationMethod.GYROSCOPE
-        ):
-            self._velocity_estimation = GyroscopeVelocityEstimation()
-
-        else:
-            raise ValueError(
-                f"Unrecognized velocity-estimation method: {self._basic_config.velocity_estimation_method}"
-            )
-
-        # velocity drift removal
-        self._velocity_drift_removal = NotchDriftRemoval(PreprocessorConfig.velocity_drift_removal_notch_config)
+    def _build_velocity_estimation(self, method: VelocityEstimationMethod):
+        cfg = self._basic_config.preprocessor_config
+        builders = {
+            VelocityEstimationMethod.SOGI: lambda: None,
+            VelocityEstimationMethod.DISCRETE_DERIVATIVE: lambda: (
+                DiscreteDerivativeVelocityEstimation()
+            ),
+            VelocityEstimationMethod.LOW_PASS: lambda: LowPassVelocityEstimation(
+                cfg.velocity_estimation_low_pass_config
+            ),
+            VelocityEstimationMethod.GYROSCOPE: lambda: GyroscopeVelocityEstimation(),
+        }
+        if method not in builders:
+            raise ValueError(f"Unrecognized velocity-estimation method: {method}")
+        return builders[method]()
 
     def reset(self) -> None:
         """Reset the Signal Preprocessor if exosuit is disconnected or timeout occured.
@@ -339,11 +345,17 @@ class SensorPreprocessor:
         if not hasattr(self._sogi_fll, "set_config"):
             return
         if class_id == 1:
-            self._sogi_fll.set_config(PreprocessorConfig.filtering_sogifll_config_ascend)
+            self._sogi_fll.set_config(
+                self._basic_config.preprocessor_config.filtering_sogifll_config_ascend
+            )
         elif class_id == 2:
-            self._sogi_fll.set_config(PreprocessorConfig.filtering_sogifll_config_descend)
+            self._sogi_fll.set_config(
+                self._basic_config.preprocessor_config.filtering_sogifll_config_descend
+            )
         else:
-            self._sogi_fll.set_config(PreprocessorConfig.filtering_sogifll_config_level)
+            self._sogi_fll.set_config(
+                self._basic_config.preprocessor_config.filtering_sogifll_config_level
+            )
 
         if self._current_mode_id == 2 and class_id != 2:
             self._sogi_fll.clear_state_keep_frequency()
@@ -367,4 +379,6 @@ class SensorPreprocessor:
         """
         if not hasattr(self._sogi_fll, "set_config"):
             return
-        self._sogi_fll.set_config(PreprocessorConfig.filtering_sogifll_config_demo)
+        self._sogi_fll.set_config(
+            self._basic_config.preprocessor_config.filtering_sogifll_config_demo
+        )

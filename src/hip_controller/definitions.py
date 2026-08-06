@@ -21,8 +21,6 @@ from pathlib import Path
 
 import numpy as np
 
-from hip_controller.utils.state_space import StateSpaceLinear
-
 np.set_printoptions(precision=3, floatmode="fixed", suppress=True)
 
 
@@ -81,41 +79,6 @@ class SolverType(StrEnum):
     RUNGE_KUTTA = auto()
 
 
-@dataclass(frozen=True)
-class BasicConfig:
-    """Basic configurations for the hip controller."""
-
-    # general frequency
-    frequency: int = 100
-
-    # if data is pre filtered - skip the pre processing
-    filtered: bool = False
-
-    # if the graph is displayed or not
-    left_limb_plot: bool = False
-    right_limb_plot: bool = False
-
-    # if the wiring settings are reversed or not
-    left_limb_reverse: bool = True
-    right_limb_reverse: bool = False
-
-    # either read data from imu or read data from csv file using csv player
-    read_from_imu: bool = False
-
-    # the path where data is read from
-    read_data_from_path: Path = (
-        DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
-    )
-
-    # select which DriftRemovalMethod, VelocityEstimationMethod
-    drift_removal_method: DriftRemovalMethod = DriftRemovalMethod.LOW_PASS
-
-    filtering_method: FilteringMethod = FilteringMethod.SOGI
-    velocity_estimation_method: VelocityEstimationMethod = (
-        VelocityEstimationMethod.DISCRETE_DERIVATIVE
-    )
-
-
 @dataclass
 class LowPassFilterConfig:
     """Settings for the second-order low-pass filter containing cut_off_frequency, damping_ratio, initial_condition, solver_type."""
@@ -126,6 +89,7 @@ class LowPassFilterConfig:
     solver_type: SolverType = (
         SolverType.RUNGE_KUTTA
     )  # SolverType enum of numerical integration strategy
+
 
 @dataclass(frozen=True)
 class KalmanFilterConfig:
@@ -140,7 +104,8 @@ class KalmanFilterConfig:
     )
     initial_state: NDArray = field(default_factory=lambda: np.array([0.0, 0.0]))
     initial_covariance: NDArray = field(default_factory=lambda: 10 * np.eye(2))
-    
+
+
 # Pre processing
 
 
@@ -148,9 +113,9 @@ class KalmanFilterConfig:
 class NotchConfig:
     """Configurations for the notch function."""
 
+    sample_rate_hz: float
     center_freq_hz: float = 0.0
     bandwidth_3db_hz: float = 0.1
-    sample_rate_hz: float = BasicConfig.frequency
 
 
 @dataclass(frozen=True)
@@ -229,103 +194,153 @@ class VelocityInputAngle(StrEnum):
 class PreprocessorConfig:
     """Configurations for the sensor preprocessor."""
 
-    # Selects which angle is fed into the velocity-estimation stage.
-    # See VelocityInputAngle for the options. Default keeps the historical
-    # behavior (use the SOGI-FLL filtered angle). Ignored when
-    # velocity_estimation_method == SOGI (the quadrature is taken directly
-    # from the angle-stage SOGI-FLL filter).
-    velocity_input_angle: VelocityInputAngle = VelocityInputAngle.FILTERED
+    def __init__(self, sample_rate_hz: int) -> None:
+        # Selects which angle is fed into the velocity-estimation stage.
+        # See VelocityInputAngle for the options. Default keeps the historical
+        # behavior (use the SOGI-FLL filtered angle). Ignored when
+        # velocity_estimation_method == SOGI (the quadrature is taken directly
+        # from the angle-stage SOGI-FLL filter).
+        self.velocity_input_angle: VelocityInputAngle = VelocityInputAngle.FILTERED
 
-    # Configurations for the filters
-    drift_removal_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
-        cut_off_frequency_rad_per_sec=1.25, damping_ratio=1.0, initial_condition=0.0
-    )
-    drift_removal_notch_config: NotchConfig = NotchConfig(
-        center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=BasicConfig.frequency
+        # Configurations for the filters
+        self.drift_removal_second_order_lpf_config: LowPassFilterConfig = (
+            LowPassFilterConfig(
+                cut_off_frequency_rad_per_sec=1.25,
+                damping_ratio=1.0,
+                initial_condition=0.0,
+            )
+        )
+        self.drift_removal_notch_config: NotchConfig = NotchConfig(
+            center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=sample_rate_hz
+        )
+
+        self.filtering_kalman_config: KalmanFilterConfig = KalmanFilterConfig()
+
+        # SOGI-FLL config used at construction time -- the SogiFllFilter is
+        # initialized with this config. The active config can then be swapped
+        # at runtime via ``SensorPreprocessor.set_locomotion_mode(class_id)``,
+        # which selects from the per-mode configs below (level/ascend/descend).
+        # State (in-phase, quadrature, omega_est, frequency_estimate,
+        # confidence_state) is preserved across swaps; only the parameter
+        # values change. The FLL re-adapts to the new mode's cadence over
+        # 1-2 strides.
+        self.filtering_sogifll_config: SogiFllConfig = SogiFllConfig()
+
+        # Per-locomotion-mode SOGI configs. Selected by class_id:
+        #   0 -> LEVEL   (default level-walking tuning -- matches the global
+        #                 ``filtering_sogifll_config`` so cold-start = level)
+        #   1 -> ASCEND  (slower cadence bounds; k_sogi bumped slightly because
+        #                 stair-ascend has sharper angle transitions; gentler
+        #                 fll adaptation because stair gait has more harmonics
+        #                 that perturb the FLL gradient)
+        #   2 -> DESCEND (same slower cadence; k_sogi at level value)
+        # Adjust empirically. Starting values are intentionally conservative.
+        self.filtering_sogifll_config_level: SogiFllConfig = SogiFllConfig(
+            lower_cadence_bound=0.3,
+            upper_cadence_bound=1.8,
+            sogi_adaptation_gain=1.0,
+            fll_adaptation_gain=5.0,
+            frequency_estimate_smoother_bandwidth=0.8,
+            lock_state_smoother_bandwidth=1.50,
+            initial_frequency_guess=0.7,
+        )
+        self.filtering_sogifll_config_ascend: SogiFllConfig = SogiFllConfig(
+            lower_cadence_bound=0.25,
+            upper_cadence_bound=1.2,
+            sogi_adaptation_gain=1.2,
+            fll_adaptation_gain=4.5,
+            frequency_estimate_smoother_bandwidth=0.6,
+            lock_state_smoother_bandwidth=1.50,
+            initial_frequency_guess=0.55,
+        )
+        self.filtering_sogifll_config_descend: SogiFllConfig = SogiFllConfig(
+            lower_cadence_bound=0.25,
+            upper_cadence_bound=1.2,
+            sogi_adaptation_gain=1.0,
+            fll_adaptation_gain=4.5,
+            frequency_estimate_smoother_bandwidth=0.6,
+            lock_state_smoother_bandwidth=1.50,
+            initial_frequency_guess=0.55,
+        )
+        # Demo (classification-free assist). Wider SOGI bandwidth + faster FLL
+        # for lower phase lag between IMU angle and the filtered signal the
+        # demo LUT consumes. Same cadence bounds as level. Trade-off: more
+        # sensor noise reaches the motor -- if the motor feels jittery on the
+        # demo, dial the gains back toward the level config.
+        self.filtering_sogifll_config_demo: SogiFllConfig = SogiFllConfig(
+            lower_cadence_bound=0.3,
+            upper_cadence_bound=3.5,
+            sogi_adaptation_gain=1.0,
+            fll_adaptation_gain=1.0,
+            frequency_estimate_smoother_bandwidth=0.3,
+            lock_state_smoother_bandwidth=0.5,
+            initial_frequency_guess=1.4,
+        )
+
+        self.filtering_second_order_lpf_config: LowPassFilterConfig = (
+            LowPassFilterConfig(
+                cut_off_frequency_rad_per_sec=90.0,
+                damping_ratio=1.0,
+                initial_condition=0.0,
+            )
+        )
+        self.velocity_estimation_low_pass_config: LowPassFilterConfig = (
+            LowPassFilterConfig(
+                cut_off_frequency_rad_per_sec=20.0,
+                damping_ratio=1.0,
+                initial_condition=0.0,
+            )
+        )
+
+        # Toggle the DC-notch drift removal applied to the estimated velocity,
+        # independent of which velocity_estimation_method is selected.
+        # True  -> notch is applied (default).
+        # False -> velocity is passed through unfiltered.
+        self.apply_velocity_drift_removal: bool = True
+
+        # Notch-at-DC applied to the estimated velocity (SOGI quadrature, discrete
+        # derivative, LPF derivative, or gyroscope) when apply_velocity_drift_removal
+        # is True. Surgical DC-bias removal on the velocity signal.
+        self.velocity_drift_removal_notch_config: NotchConfig = NotchConfig(
+            center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=sample_rate_hz
+        )
+
+
+@dataclass(frozen=True)
+class BasicConfig:
+    """Basic configurations for the hip controller."""
+
+    # general frequency
+    frequency: int = 100
+
+    # if data is pre filtered - skip the pre processing
+    filtered: bool = False
+
+    # if the graph is displayed or not
+    left_limb_plot: bool = False
+    right_limb_plot: bool = False
+
+    # if the wiring settings are reversed or not
+    left_limb_reverse: bool = True
+    right_limb_reverse: bool = False
+
+    # either read data from imu or read data from csv file using csv player
+    read_from_imu: bool = False
+
+    # the path where data is read from
+    read_data_from_path: Path = (
+        DATA_DIR / "sensor_data" / "data_input_filtered_2026_01_09.csv"
     )
 
-    filtering_kalman_config: KalmanFilterConfig = KalmanFilterConfig()
+    # select which DriftRemovalMethod, VelocityEstimationMethod
+    drift_removal_method: DriftRemovalMethod = DriftRemovalMethod.LOW_PASS
 
-    # SOGI-FLL config used at construction time -- the SogiFllFilter is
-    # initialized with this config. The active config can then be swapped
-    # at runtime via ``SensorPreprocessor.set_locomotion_mode(class_id)``,
-    # which selects from the per-mode configs below (level/ascend/descend).
-    # State (in-phase, quadrature, omega_est, frequency_estimate,
-    # confidence_state) is preserved across swaps; only the parameter
-    # values change. The FLL re-adapts to the new mode's cadence over
-    # 1-2 strides.
-    filtering_sogifll_config: SogiFllConfig = SogiFllConfig()
-
-    # Per-locomotion-mode SOGI configs. Selected by class_id:
-    #   0 -> LEVEL   (default level-walking tuning -- matches the global
-    #                 ``filtering_sogifll_config`` so cold-start = level)
-    #   1 -> ASCEND  (slower cadence bounds; k_sogi bumped slightly because
-    #                 stair-ascend has sharper angle transitions; gentler
-    #                 fll adaptation because stair gait has more harmonics
-    #                 that perturb the FLL gradient)
-    #   2 -> DESCEND (same slower cadence; k_sogi at level value)
-    # Adjust empirically. Starting values are intentionally conservative.
-    filtering_sogifll_config_level: SogiFllConfig = SogiFllConfig(
-        lower_cadence_bound=0.3,
-        upper_cadence_bound=1.8,
-        sogi_adaptation_gain=1.0,
-        fll_adaptation_gain=5.0,
-        frequency_estimate_smoother_bandwidth=0.8,
-        lock_state_smoother_bandwidth=1.50,
-        initial_frequency_guess=0.7,
-    )
-    filtering_sogifll_config_ascend: SogiFllConfig = SogiFllConfig(
-        lower_cadence_bound=0.25,
-        upper_cadence_bound=1.2,
-        sogi_adaptation_gain=1.2,
-        fll_adaptation_gain=4.5,
-        frequency_estimate_smoother_bandwidth=0.6,
-        lock_state_smoother_bandwidth=1.50,
-        initial_frequency_guess=0.55,
-    )
-    filtering_sogifll_config_descend: SogiFllConfig = SogiFllConfig(
-        lower_cadence_bound=0.25,
-        upper_cadence_bound=1.2,
-        sogi_adaptation_gain=1.0,
-        fll_adaptation_gain=4.5,
-        frequency_estimate_smoother_bandwidth=0.6,
-        lock_state_smoother_bandwidth=1.50,
-        initial_frequency_guess=0.55,
-    )
-    # Demo (classification-free assist). Wider SOGI bandwidth + faster FLL
-    # for lower phase lag between IMU angle and the filtered signal the
-    # demo LUT consumes. Same cadence bounds as level. Trade-off: more
-    # sensor noise reaches the motor -- if the motor feels jittery on the
-    # demo, dial the gains back toward the level config.
-    filtering_sogifll_config_demo: SogiFllConfig = SogiFllConfig(
-        lower_cadence_bound=0.3,
-        upper_cadence_bound=3.5,
-        sogi_adaptation_gain=1.0,
-        fll_adaptation_gain=1.0,
-        frequency_estimate_smoother_bandwidth=0.3,
-        lock_state_smoother_bandwidth=0.5,
-        initial_frequency_guess=1.4,
+    filtering_method: FilteringMethod = FilteringMethod.SOGI
+    velocity_estimation_method: VelocityEstimationMethod = (
+        VelocityEstimationMethod.DISCRETE_DERIVATIVE
     )
 
-    filtering_second_order_lpf_config: LowPassFilterConfig = LowPassFilterConfig(
-        cut_off_frequency_rad_per_sec=90.0, damping_ratio=1.0, initial_condition=0.0
-    )
-    velocity_estimation_low_pass_config: LowPassFilterConfig = LowPassFilterConfig(
-        cut_off_frequency_rad_per_sec=20.0, damping_ratio=1.0, initial_condition=0.0
-    )
-
-    # Toggle the DC-notch drift removal applied to the estimated velocity,
-    # independent of which velocity_estimation_method is selected.
-    # True  -> notch is applied (default).
-    # False -> velocity is passed through unfiltered.
-    apply_velocity_drift_removal: bool = True
-
-    # Notch-at-DC applied to the estimated velocity (SOGI quadrature, discrete
-    # derivative, LPF derivative, or gyroscope) when apply_velocity_drift_removal
-    # is True. Surgical DC-bias removal on the velocity signal.
-    velocity_drift_removal_notch_config: NotchConfig = NotchConfig(
-        center_freq_hz=0.0, bandwidth_3db_hz=0.1, sample_rate_hz=BasicConfig.frequency
-    )
+    preprocessor_config = PreprocessorConfig(sample_rate_hz=frequency)
 
 
 # baseline removal using first N samples
@@ -355,6 +370,7 @@ VELOCITY_WEIGHT_LEVEL_MODE = 2.0  # 1.0
 # Kalman filter definitions
 PROCESS_NOISE = 2e-2
 MEASUREMENT_NOISE = 0.75
+
 
 # Cubic Spline Interpolation
 @dataclass(frozen=True)

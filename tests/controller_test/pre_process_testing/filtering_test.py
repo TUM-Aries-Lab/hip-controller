@@ -9,7 +9,7 @@ from hip_controller.control.signal_processing.filtering import (
 from hip_controller.control.signal_processing.velocity_estimation import (
     DiscreteDerivativeVelocityEstimation,
 )
-from hip_controller.definitions import PreprocessorConfig
+from hip_controller.definitions import BasicConfig
 from tests.conftest import DATA_PRE_PROCESSING, KinematicsDataColumnName
 
 
@@ -19,7 +19,9 @@ def test_filtering_sogifll() -> None:
     df = read_csv(DATA_PRE_PROCESSING)
 
     # Configure the sogi filter for filtering
-    filtering = SogiFllFiltering(PreprocessorConfig.filtering_sogifll_config)
+    filtering = SogiFllFiltering(
+        BasicConfig.preprocessor_config.filtering_sogifll_config
+    )
 
     # Test each row
     prev_timestamp = None
