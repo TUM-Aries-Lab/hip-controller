@@ -348,7 +348,7 @@ LAG_COMPENSATION = 0  # Lag correction
 # Amplitude modulation
 SCALE_LEVEL_MODE = 2  # Needed if the SOGI-FLL quadrature is taken as velocity output
 SIGMOID_POWER = 30  # 50
-AMPLITUDE_GAIN = -6  # 6.5  # Motor position desidered amplitude (rad)
+AMPLITUDE_GAIN = -6.5  # Motor position desired amplitude (rad)
 # Per-component weight applied to velocity inside the portrait radius:
 #   r = sqrt(angle^2 + (VELOCITY_WEIGHT_LEVEL_MODE * velocity)^2).
 # 1.0 -> identical to the historical symmetric radius.
