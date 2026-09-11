@@ -1,10 +1,11 @@
 """Code to help initialize pytest."""
 
+import math
 import os
 import sys
 from pathlib import Path
 
-from hip_controller.definitions import TESTING_DIR, StrEnum
+from hip_controller.definitions import TESTING_DIR, SensorSignal, StrEnum
 
 # Add the src directory to the path so that the quaternion_ekf package can be imported
 my_path = os.path.dirname(os.path.abspath(__file__))
@@ -127,3 +128,49 @@ class KinematicsDataColumnName(StrEnum):
 
     FILTERED_ANG_LPF = "angle_filtered_lpf"
     FILTERED_VEL_LPF = "vel_derivative_lpf"
+
+
+# ---------------------------------------------------------------------------
+# Synthetic-signal helpers for property-based tests.
+#
+# Property tests assert invariants that survive retuning, so they drive the
+# controller with generated signals rather than recorded traces. Recorded
+# traces stay in use only where the expected value follows from a mathematical
+# specification rather than from a tuning constant.
+# ---------------------------------------------------------------------------
+
+SAMPLE_RATE_HZ: int = 100
+
+
+def synthetic_gait(
+    frequency_hz: float = 0.9,
+    amplitude_rad: float = 0.4,
+    duration_s: float = 6.0,
+    sample_rate_hz: int = SAMPLE_RATE_HZ,
+    phase_offset_rad: float = 0.0,
+) -> list[SensorSignal]:
+    """Build a clean sinusoidal hip trace standing in for steady walking.
+
+    Velocity is the analytic derivative of the angle, so angle and velocity are
+    mutually consistent the way a real (well-filtered) sensor pair would be.
+
+    :param float frequency_hz: Stride frequency [Hz].
+    :param float amplitude_rad: Peak hip angle [rad].
+    :param float duration_s: Length of the generated trace [s].
+    :param int sample_rate_hz: Sampling rate [Hz].
+    :param float phase_offset_rad: Constant phase added to the sine [rad].
+    :return: Consecutive samples spanning ``duration_s``.
+    :rtype: list[SensorSignal]
+    """
+    omega = 2.0 * math.pi * frequency_hz
+    return [
+        SensorSignal(
+            timestamp=i / sample_rate_hz,
+            angle_rad=amplitude_rad
+            * math.sin(omega * i / sample_rate_hz + phase_offset_rad),
+            velocity_rad_per_sec=amplitude_rad
+            * omega
+            * math.cos(omega * i / sample_rate_hz + phase_offset_rad),
+        )
+        for i in range(int(duration_s * sample_rate_hz))
+    ]
