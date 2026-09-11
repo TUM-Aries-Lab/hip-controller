@@ -1,8 +1,10 @@
-"""Tests for the pure helpers in :mod:`hip_controller.plotter.csv_inspector`.
+"""Tests for the pure helpers in :mod:`hip_controller.plotter.column_utils`.
 
-The GUI itself (``CSVInspectorWindow``) is not unit-tested because it requires
-a Qt event loop and a display; it is annotated ``# pragma: no cover`` for the
-same reason as ``live_phase_portrait.py``.
+These helpers deliberately live outside ``csv_inspector`` so they can be
+imported without PyQt6 and therefore exercised on a headless CI runner. The
+GUI itself (``CSVInspectorWindow``) is not unit-tested because it requires a Qt
+event loop and a display; it is annotated ``# pragma: no cover`` for the same
+reason as ``live_phase_portrait.py``.
 """
 
 from __future__ import annotations
@@ -11,7 +13,7 @@ import numpy as np
 import pandas as pd
 from pytest import raises
 
-from hip_controller.plotter.csv_inspector import (
+from hip_controller.plotter.column_utils import (
     discover_plottable_columns,
     synthesize_time_vector,
 )
