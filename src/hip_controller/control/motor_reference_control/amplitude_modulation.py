@@ -100,8 +100,8 @@ class AscendStairsMode(ModeStrategy):
     def get_parameters(self) -> ModeParameters:
         """Get parameters for ascending stairs."""
         return ModeParameters(
-            scale=SCALE_LEVEL_MODE - 0,  # -0.6
-            sigmoid_power=SIGMOID_POWER + 50,  # +100
+            scale=SCALE_LEVEL_MODE,
+            sigmoid_power=SIGMOID_POWER + 50,
             gain=AMPLITUDE_GAIN - 3,
             velocity_weight=VELOCITY_WEIGHT_LEVEL_MODE,
         )
@@ -113,9 +113,9 @@ class DescendStairsMode(ModeStrategy):
     def get_parameters(self) -> ModeParameters:
         """Get parameters for descending stairs."""
         return ModeParameters(
-            scale=SCALE_LEVEL_MODE + 2.0,  # -0.5
-            sigmoid_power=SIGMOID_POWER + 50,  # +100
-            gain=AMPLITUDE_GAIN + 0.5,
+            scale=SCALE_LEVEL_MODE + 2.0,
+            sigmoid_power=SIGMOID_POWER + 50,
+            gain=AMPLITUDE_GAIN + 1.0,
             velocity_weight=VELOCITY_WEIGHT_LEVEL_MODE,
         )
 
