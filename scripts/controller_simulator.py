@@ -107,8 +107,9 @@ def simulate_controller_with_data(
     app = QtWidgets.QApplication([])
 
     player = CSVPlayer(csv_path)
-    controller_left = WalkOnController(reverse=False,plot=True, filtered=True)
-    controller_right = WalkOnController(reverse=True,plot=True, filtered=True)
+    config = BasicConfig(filtered=True, left_limb_plot=True, right_limb_plot=True)
+    controller_left = WalkOnController(left_limb=True, config=config)
+    controller_right = WalkOnController(left_limb=False, config=config)
     timer = QtCore.QTimer()
 
     def update() -> None:
@@ -273,7 +274,6 @@ if __name__ == "__main__":
     from hip_controller.control.signal_processing.sensor_preprocessor import (
         SensorPreprocessor,
     )
-    from hip_controller.definitions import PreprocessorConfig
-    preprocessor = SensorPreprocessor(PreprocessorConfig())
+    preprocessor = SensorPreprocessor(BasicConfig())
 
     #simulate_comparison_dynamic(input_name="angle_right (rad)", expected_output_name="filtered_velocity_right (rad/s)", func=preprocessor.filter, path=Path"/home/minz/thesisproject/hip-controller/scripts/evaluation_output/normal_walk/normal_walk_1_2/AB06_normal_walk_1_1-2_angle.csv"))
