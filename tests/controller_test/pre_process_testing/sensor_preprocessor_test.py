@@ -22,7 +22,7 @@ import pytest
 from hip_controller.control.signal_processing.sensor_preprocessor import (
     SensorPreprocessor,
 )
-from hip_controller.definitions import PreprocessorConfig, SensorSignal
+from hip_controller.definitions import BasicConfig, SensorSignal
 from tests.conftest import SAMPLE_RATE_HZ, synthetic_gait
 
 # Long enough for the SOGI-FLL to lock and the drift-removal LPF to settle.
@@ -83,7 +83,7 @@ def test_preprocessor_outputs_a_moving_velocity_for_a_moving_input() -> None:
     The single most valuable assertion in this module: it is what a dead or
     unstepped filter in the velocity path fails.
     """
-    preprocessor = SensorPreprocessor(PreprocessorConfig())
+    preprocessor = SensorPreprocessor(BasicConfig())
     steady = _steady(_run(preprocessor, synthetic_gait(duration_s=WARMUP_S)))
 
     peak_velocity = max(abs(signal.velocity_rad_per_sec) for signal in steady)
@@ -101,7 +101,7 @@ def test_preprocessor_velocity_follows_the_true_derivative() -> None:
     magnitude.
     """
     signals = synthetic_gait(duration_s=WARMUP_S)
-    preprocessor = SensorPreprocessor(PreprocessorConfig())
+    preprocessor = SensorPreprocessor(BasicConfig())
     outputs = _run(preprocessor, signals)
 
     start = int(len(outputs) * TRANSIENT_FRACTION)
@@ -114,7 +114,7 @@ def test_preprocessor_velocity_follows_the_true_derivative() -> None:
 def test_preprocessor_angle_follows_the_input_angle() -> None:
     """The filtered angle stays in phase with the raw angle."""
     signals = synthetic_gait(duration_s=WARMUP_S)
-    preprocessor = SensorPreprocessor(PreprocessorConfig())
+    preprocessor = SensorPreprocessor(BasicConfig())
     outputs = _run(preprocessor, signals)
 
     start = int(len(outputs) * TRANSIENT_FRACTION)
@@ -135,7 +135,7 @@ def test_preprocessor_removes_a_constant_offset() -> None:
         )
         for signal in synthetic_gait(duration_s=WARMUP_S)
     ]
-    preprocessor = SensorPreprocessor(PreprocessorConfig())
+    preprocessor = SensorPreprocessor(BasicConfig())
     steady = _steady(_run(preprocessor, biased))
 
     mean_angle = sum(signal.angle_rad for signal in steady) / len(steady)
@@ -151,11 +151,11 @@ def test_set_locomotion_mode_changes_the_filtered_output() -> None:
     """
     signals = synthetic_gait(duration_s=WARMUP_S)
 
-    level = SensorPreprocessor(PreprocessorConfig())
+    level = SensorPreprocessor(BasicConfig())
     level.set_locomotion_mode(0)
     level_out = _steady(_run(level, signals))
 
-    descend = SensorPreprocessor(PreprocessorConfig())
+    descend = SensorPreprocessor(BasicConfig())
     descend.set_locomotion_mode(2)
     descend_out = _steady(_run(descend, signals))
 
@@ -173,10 +173,10 @@ def test_set_demo_mode_changes_the_filtered_output() -> None:
     """Demo mode swaps in a wider-bandwidth SOGI config, so output must change."""
     signals = synthetic_gait(duration_s=WARMUP_S)
 
-    default = SensorPreprocessor(PreprocessorConfig())
+    default = SensorPreprocessor(BasicConfig())
     default_out = _steady(_run(default, signals))
 
-    demo = SensorPreprocessor(PreprocessorConfig())
+    demo = SensorPreprocessor(BasicConfig())
     demo.set_demo_mode()
     demo_out = _steady(_run(demo, signals))
 
@@ -192,7 +192,7 @@ def test_set_demo_mode_changes_the_filtered_output() -> None:
 
 def test_pausing_walking_mode_decays_the_filtered_angle() -> None:
     """The stand-still gate must reach the SOGI and quiet its oscillator."""
-    preprocessor = SensorPreprocessor(PreprocessorConfig())
+    preprocessor = SensorPreprocessor(BasicConfig())
     walking = _steady(_run(preprocessor, synthetic_gait(duration_s=WARMUP_S)))
     peak_walking = max(abs(signal.angle_rad) for signal in walking)
 
@@ -213,13 +213,13 @@ def test_preprocessor_reset_restores_initial_response() -> None:
     """After reset the preprocessor behaves as a freshly constructed one."""
     signals = synthetic_gait(duration_s=5.0)
 
-    used = SensorPreprocessor(PreprocessorConfig())
+    used = SensorPreprocessor(BasicConfig())
     _run(used, signals)
     used.reset()
     assert used.last_velocity_surrogate_rad_per_sec is None
     assert used.last_drift_removed_angle_rad is None
 
-    fresh = SensorPreprocessor(PreprocessorConfig())
+    fresh = SensorPreprocessor(BasicConfig())
     for from_used, from_fresh in zip(
         _run(used, signals), _run(fresh, signals), strict=True
     ):
@@ -229,7 +229,7 @@ def test_preprocessor_reset_restores_initial_response() -> None:
 
 def test_preprocessor_output_is_finite_for_extreme_input() -> None:
     """Implausible sensor values never produce NaN or infinity."""
-    preprocessor = SensorPreprocessor(PreprocessorConfig())
+    preprocessor = SensorPreprocessor(BasicConfig())
     extremes = [
         SensorSignal(
             timestamp=i / SAMPLE_RATE_HZ,
@@ -247,7 +247,7 @@ def test_preprocessor_output_is_finite_for_extreme_input() -> None:
 
 def test_preprocessor_rejects_non_monotonic_timestamps() -> None:
     """A backwards or repeated timestamp is an error, not silently absorbed."""
-    preprocessor = SensorPreprocessor(PreprocessorConfig())
+    preprocessor = SensorPreprocessor(BasicConfig())
     preprocessor.filter(
         raw_signal=SensorSignal(timestamp=0.0, angle_rad=0.0, velocity_rad_per_sec=0.0)
     )
@@ -264,7 +264,7 @@ def test_preprocessor_rejects_non_monotonic_timestamps() -> None:
 
 def test_preprocessor_first_sample_passes_through() -> None:
     """The first sample has no dt available, so it is returned unchanged."""
-    preprocessor = SensorPreprocessor(PreprocessorConfig())
+    preprocessor = SensorPreprocessor(BasicConfig())
     first = SensorSignal(timestamp=0.0, angle_rad=0.3, velocity_rad_per_sec=0.7)
     out = preprocessor.filter(raw_signal=first)
     assert out.angle_rad == first.angle_rad

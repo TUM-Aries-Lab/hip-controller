@@ -20,12 +20,13 @@ from hip_controller.control.signal_processing.filtering import SogiFllFiltering
 from hip_controller.control.signal_processing.velocity_estimation import (
     DiscreteDerivativeVelocityEstimation,
 )
-from hip_controller.definitions import PreprocessorConfig
+from hip_controller.definitions import BasicConfig
 from hip_controller.filters.sogi_fll_filter import SogiFllFilter
 from tests.conftest import DATA_PRE_PROCESSING, KinematicsDataColumnName
 
-LEVEL_CONFIG = PreprocessorConfig.filtering_sogifll_config_level
-DESCEND_CONFIG = PreprocessorConfig.filtering_sogifll_config_descend
+PREPROCESSOR_CONFIG = BasicConfig().preprocessor_config
+LEVEL_CONFIG = PREPROCESSOR_CONFIG.filtering_sogifll_config_level
+DESCEND_CONFIG = PREPROCESSOR_CONFIG.filtering_sogifll_config_descend
 
 SAMPLE_PERIOD_S = 0.01
 INPUT_AMPLITUDE_RAD = 0.4

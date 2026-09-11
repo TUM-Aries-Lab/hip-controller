@@ -15,7 +15,7 @@ from pathlib import Path
 
 # ── ADJUST THESE IMPORTS TO MATCH YOUR PROJECT ─────────────────────────────
 from hip_controller.control.app import WalkOnController   # your controller class
-from hip_controller.definitions import SensorSignal
+from hip_controller.definitions import BasicConfig, SensorSignal
 from loguru import logger
 # ───────────────────────────────────────────────────────────────────────────
 
@@ -173,8 +173,9 @@ def process_evaluation()->None:
     logger.info(f"Found {len(csv_files)} CSV files — processing…\n")
 
     for input_path in csv_files:
-        ctrl_left  = WalkOnController(reverse=False, filtered=False)   # add constructor args as needed
-        ctrl_right = WalkOnController(reverse=True, filtered=False)
+        cfg = BasicConfig(filtered=False)
+        ctrl_left  = WalkOnController(left_limb=True, config=cfg)
+        ctrl_right = WalkOnController(left_limb=False, config=cfg)
 
         # Mirror subfolder structure: evaluation_raw_data/a/b.csv → evaluation_data/a/b.csv
         relative   = input_path.relative_to(ZWISCHEN_ROOT)

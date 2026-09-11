@@ -153,10 +153,11 @@ def _infer_unit(col_name: str) -> str:
 # ============================================================================
 
 if __name__ == "__main__":
-    from hip_controller.control.signal_processing.sensor_preprocessor import SensorPreprocessor, PreprocessorConfig
+    from hip_controller.control.signal_processing.sensor_preprocessor import SensorPreprocessor
+    from hip_controller.definitions import BasicConfig
     from hip_controller.definitions import SensorSignal
 
-    preprocessor = SensorPreprocessor(PreprocessorConfig())
+    preprocessor = SensorPreprocessor(BasicConfig())
 
     plot_preprocessor_comparison(
         csv_path            = "hip-controller/scripts/evaluation_output/normal_walk/normal_walk_1_2/AB06_normal_walk_1_1-2_angle.csv",

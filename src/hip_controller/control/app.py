@@ -14,7 +14,7 @@ from hip_controller.control.motor_reference_control.motor_reference_controller i
 from hip_controller.control.signal_processing.sensor_preprocessor import (
     SensorPreprocessor,
 )
-from hip_controller.definitions import PreprocessorConfig, SensorSignal
+from hip_controller.definitions import BasicConfig, SensorSignal
 
 # Pause-detection thresholds for the SOGI/FLL walking-mode gate. The envelope
 # is an exponential moving average of |raw velocity| with time constant
@@ -37,28 +37,36 @@ class WalkOnController:
     This controller implements a gait phase-based control strategy for a single limb, which can be used for both unilateral and bilateral hip flexion exosuits. The controller processes raw sensor signals to compute the current gait phase, applies amplitude modulation based on the sensor signals, and generates motor velocity commands for the exosuit's actuators.
     """
 
-    def __init__(self, reverse: bool, plot: bool = False, filtered=False):
+    def __init__(self, left_limb: bool, config: BasicConfig):
         """Initialize the controller.
 
-        :param bool reverse: Whether to reverse the motor command output (for mirrored wiring).
-        :param bool plot: Whether to enable live plotting of the controller's internal states.
-        :param bool filtered: Whether to use pre-filtered sensor signals instead of raw signals.
+        :param bool left_limb: True for the left lower limb, False for the right.
+            Selects which half of the per-limb settings on ``config`` applies
+            (plotting and wiring reversal).
+        :param BasicConfig config: Controller configuration: plotting, wiring
+            reversal, whether the incoming signal is already preprocessed, and
+            the preprocessing strategy selection.
 
         :return: None
         """
-        self.plot = plot
-        self.filtered = filtered
-        if plot:
+        self.config = config
+        self.left_limb = left_limb
+        self.filtered = config.filtered
+        self.plot = config.left_limb_plot if left_limb else config.right_limb_plot
+
+        # due to different wire settings one of them might need to be reversed - mirrored with -1
+        reverse = config.left_limb_reverse if left_limb else config.right_limb_reverse
+
+        if self.plot:
             from hip_controller.plotter.live_phase_portrait import PortraitWindow
 
             # Execute the Qt plot application.
-            self.plotter = PortraitWindow(left=not reverse)
+            self.plotter = PortraitWindow(left=left_limb)
             self.plotter.show()
 
-        self.pre_processor = SensorPreprocessor(PreprocessorConfig())
+        self.pre_processor = SensorPreprocessor(basic_config=config)
         self.gait_controller = GaitController()
 
-        # due to different wire settings one of them might need to be reversed - mirrored with -1
         self.amplitude_modulation = AmplitudeModulation(reverse=reverse)
         self.motion_reference_controller = MotionReferenceController()
 
