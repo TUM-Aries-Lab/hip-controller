@@ -30,51 +30,17 @@ import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 from loguru import logger
-from pandas.api.types import is_numeric_dtype
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from hip_controller.definitions import BasicConfig
+from hip_controller.plotter.column_utils import (
+    discover_plottable_columns,
+    synthesize_time_vector,
+)
 
-# Column names matched case-insensitively against these prefixes are treated
-# as timestamp columns and excluded from the plottable signal list, because
-# the X axis is synthesized from the sample frequency.
-_TIME_COLUMN_PREFIXES: tuple[str, ...] = ("time", "timestamp", "t (")
-
-
-def discover_plottable_columns(dataframe: pd.DataFrame) -> list[str]:
-    """Return the subset of CSV columns that should appear as selectable signals.
-
-    Keeps only numeric columns and drops anything whose header looks like a
-    timestamp, because the time axis is synthesized from the sample frequency
-    rather than read from the file.
-
-    :param pandas.DataFrame dataframe: parsed CSV.
-    :return: ordered list of plottable column names.
-    :rtype: list[str]
-    """
-    plottable: list[str] = []
-    for col in dataframe.columns:
-        if not is_numeric_dtype(dataframe[col]):
-            continue
-        lowered = str(col).lower().strip()
-        if any(lowered.startswith(prefix) for prefix in _TIME_COLUMN_PREFIXES):
-            continue
-        plottable.append(str(col))
-    return plottable
-
-
-def synthesize_time_vector(n_samples: int, frequency_hz: int) -> np.ndarray:
-    """Synthesize a uniform time vector (seconds) from a sample count and frequency.
-
-    :param int n_samples: number of rows in the CSV.
-    :param int frequency_hz: sampling frequency (samples per second).
-    :return: 1-D array of timestamps in seconds, length ``n_samples``.
-    :rtype: numpy.ndarray
-    :raises ValueError: if ``frequency_hz`` is non-positive.
-    """
-    if frequency_hz <= 0:
-        raise ValueError(f"frequency_hz must be positive, got {frequency_hz}.")
-    return np.arange(n_samples, dtype=np.float64) / float(frequency_hz)
+# Re-exported so existing callers of this module keep working; the
+# implementations live in the Qt-free column_utils module.
+__all__ = ["discover_plottable_columns", "plot", "synthesize_time_vector"]
 
 
 class _ColorSwatch(QtWidgets.QPushButton):  # pragma: no cover
