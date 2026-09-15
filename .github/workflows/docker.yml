@@ -1,14 +1,26 @@
 name: Docker Build & Publish
 
 on:
+  # Publish path. Narrowed from ["**"] to main so that a branch with an open PR
+  # is not built twice -- once for the branch push and once for the PR. The
+  # concurrency group is keyed on github.ref, which differs between those two
+  # events, so they would not even cancel each other.
   push:
-    branches: ["**"]
+    branches: [main]
     tags: ["v*"]
     paths-ignore:
       - "**/*.md"
       - "**/*.rst"
       - "docs/**"
       - ".github/ISSUE_TEMPLATE/**"
+  # Validation path, deliberately WITHOUT paths-ignore. `build-and-push` is a
+  # required status check, and a required check that is skipped is never
+  # reported -- it sits at "Expected - Waiting for status to be reported" and
+  # blocks the merge forever. That is what happened to the docs-only PR #42.
+  # Running on every pull request costs one build-only run and keeps the check
+  # satisfiable whatever the PR touches. IS_MAIN/IS_TAG are both false here
+  # (github.ref is refs/pull/N/merge), so this path builds without publishing.
+  pull_request:
   workflow_dispatch: {}
 
 permissions:
