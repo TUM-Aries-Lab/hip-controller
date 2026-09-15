@@ -76,6 +76,45 @@ class NotchConfig:
     bandwidth_3db_hz: float = 0.1
 
 
+# Baseline removal (hip angle offset).
+#
+# The IMU angle carries a subject- and mounting-dependent DC offset. It is
+# removed by averaging the angle over a short window and subtracting the mean
+# from every later sample, exactly as the deployed Simulink implementation does
+# (``getHipKinematics_IMU.m``: ``hip_angle = hip_angle_cont - angle_offset``).
+#
+# The window is anchored to an explicit trigger -- on the exosuit, the main
+# switch (motor enable) -- not to process start-up, so the offset is captured
+# at a moment the operator controls rather than at whatever the leg happened to
+# be doing when the controller booted.
+BASELINE_REMOVAL_WINDOW_S: float = 0.2
+# A window is only accepted while the limb is still: any sample whose raw
+# velocity magnitude exceeds this restarts the window. Matches the stand-still
+# notion already used by the pause detector in ``control/app.py``.
+BASELINE_REMOVAL_MAX_VELOCITY_RAD_PER_SEC: float = 0.2
+
+
+@dataclass(frozen=True)
+class BaselineRemovalConfig:
+    """Settings for baseline removal (hip angle offset).
+
+    :param int window_sample_count: Number of still samples averaged into one
+        offset. Derived from :data:`BASELINE_REMOVAL_WINDOW_S` and the
+        controller loop frequency, so the averaged *duration* is rate-independent.
+    :param float max_velocity_rad_per_sec: Raw velocity magnitude above which the
+        limb counts as moving and the collection window restarts [rad/s].
+
+    There is deliberately no "take a baseline at start-up" option. The main
+    switch is recorded alongside the sensor data, so the offline paths replay the
+    real trigger rather than inventing a moment the operator never chose. A
+    caller that genuinely wants an offset from the first samples asks for it
+    explicitly via :meth:`BaselineRemoval.set_trigger`.
+    """
+
+    window_sample_count: int
+    max_velocity_rad_per_sec: float = BASELINE_REMOVAL_MAX_VELOCITY_RAD_PER_SEC
+
+
 @dataclass(frozen=True)
 class SogiFllConfig:
     """SOGI-FLL parameter set.
@@ -293,6 +332,15 @@ class PreprocessorConfig:
             sample_rate_hz=sample_rate_hz, center_freq_hz=0.0, bandwidth_3db_hz=0.1
         )
 
+        # Baseline removal. The averaged window is specified in seconds and
+        # converted here, so the same configuration means the same duration at
+        # any controller rate.
+        self.baseline_removal_config: BaselineRemovalConfig = BaselineRemovalConfig(
+            window_sample_count=max(
+                1, round(BASELINE_REMOVAL_WINDOW_S * sample_rate_hz)
+            )
+        )
+
 
 @dataclass(frozen=True)
 class BasicConfig:
@@ -496,6 +544,9 @@ class RecordedSensorData:
     vel_left: str = "vel_left (rad/s)"
     ang_right: str = "angle_right (rad)"
     vel_right: str = "vel_right (rad/s)"
+    # Doubles as the baseline-removal trigger: it is the switch the operator
+    # flips when the subject is standing ready, which is exactly the moment the
+    # angle offset should be taken.
     main_switch: str = "main_switch"
 
     fake_frequency_hz: int = BasicConfig.frequency
