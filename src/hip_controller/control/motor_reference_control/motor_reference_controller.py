@@ -8,6 +8,7 @@ from hip_controller.definitions import (
     LOOKUP_TABLEDATA_ASCEND,
     LOOKUP_TABLEDATA_DESCEND,
     LOOKUP_TABLEDATA_LEVEL,
+    AssistMode,
     LookUpTable,
     LowPassFilterConfig,
     PositionLimitation,
@@ -126,30 +127,46 @@ class MotionMapping:
     Per-locomotion-mode tables: the flexion half is identical across
     modes (only ``ModeParameters.gain`` scales flexion-assist strength).
     The extension half differs:
-      0 (Level)   -> small positive counter-pull (table values up to 0.025).
-      1 (Ascend)  -> zero (motor holds rest position between strides).
-      2 (Descend) -> zero (motor holds rest position between strides).
+      0 (Level)     -> small positive counter-pull (table values up to 0.025).
+      1 (Ascend)    -> zero (motor holds rest position between strides).
+      2 (Descend)   -> zero (motor holds rest position between strides).
+      3 (Ramp 2.5%) -> the level table.
+      4 (Ramp 5%)   -> the level table.
 
     This prevents the motor from paying out cable between strides on
     stair modes; see ``definitions.py:LOOKUP_TABLEDATA_*`` for the full
-    rationale. At construction all three splines are built and Level is
-    selected by default; ``set_locomotion_mode(class_id)`` switches
-    which spline ``spline()`` evaluates.
+    rationale. The ramps take the level table because ramp walking is
+    continuous gait with a swing phase, unlike stair climbing -- no
+    ramp-specific table has been measured yet. At construction every
+    per-mode spline is built and Level is selected by default;
+    ``set_locomotion_mode(class_id)`` switches which spline ``spline()``
+    evaluates.
     """
 
     def __init__(self):
-        """Build all three per-mode splines; start in Level Ground."""
+        """Build every per-mode spline; start in Level Ground."""
         bp = LookUpTable.breakpoints
-        self._splines = {
-            0: CubicSpline(x=bp, y=LOOKUP_TABLEDATA_LEVEL, extrapolate=True),
-            1: CubicSpline(x=bp, y=LOOKUP_TABLEDATA_ASCEND, extrapolate=True),
-            2: CubicSpline(x=bp, y=LOOKUP_TABLEDATA_DESCEND, extrapolate=True),
+        level = CubicSpline(x=bp, y=LOOKUP_TABLEDATA_LEVEL, extrapolate=True)
+        # Keyed by int, not AssistMode: callers pass the classifier's raw
+        # integer, and unknown ids must reach the .get() fallback below.
+        self._splines: dict[int, CubicSpline] = {
+            AssistMode.LEVEL: level,
+            AssistMode.ASCEND_STAIRS: CubicSpline(
+                x=bp, y=LOOKUP_TABLEDATA_ASCEND, extrapolate=True
+            ),
+            AssistMode.DESCEND_STAIRS: CubicSpline(
+                x=bp, y=LOOKUP_TABLEDATA_DESCEND, extrapolate=True
+            ),
+            AssistMode.RAMP_2_5: level,
+            AssistMode.RAMP_5: level,
         }
-        self._cubic_spline = self._splines[0]
+        self._cubic_spline = self._splines[AssistMode.LEVEL]
 
     def set_locomotion_mode(self, class_id: int) -> None:
         """Activate the per-mode spline. Unknown class_ids fall back to Level."""
-        self._cubic_spline = self._splines.get(class_id, self._splines[0])
+        self._cubic_spline = self._splines.get(
+            class_id, self._splines[AssistMode.LEVEL]
+        )
 
     def spline(self, value: float):
         """Evaluate the currently-active per-mode lookup table at value."""

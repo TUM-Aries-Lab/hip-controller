@@ -2,7 +2,7 @@
 
 import sys
 from dataclasses import asdict, dataclass, field
-from enum import auto
+from enum import IntEnum, auto
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum
@@ -31,6 +31,30 @@ DATA_DIR: Path = ROOT_DIR / "data"
 TESTING_DIR: Path = ROOT_DIR / "tests"
 RECORDINGS_DIR: Path = DATA_DIR / "recordings"
 LOG_DIR: Path = DATA_DIR / "logs"
+
+
+class AssistMode(IntEnum):
+    """Which tuned parameter set the controller runs.
+
+    One axis, because the contexts are mutually exclusive: nobody descends
+    stairs while on a 5% treadmill ramp. Values 0-2 are locomotion modes,
+    normally produced by the TCN classifier (and selected by hand on the
+    exosuit's mode switches); 3-4 are treadmill ramp inclinations, for the
+    ramp project.
+
+    The value is passed to :meth:`WalkOnController.set_locomotion_mode` as a
+    plain ``int`` -- the classifier emits integers, so this enum documents and
+    names them without constraining callers. Every consumer falls back to
+    :attr:`LEVEL` for a value it does not recognise, so a project may use only
+    the subset it cares about and older code stays safe against newer ids.
+    """
+
+    LEVEL = 0
+    ASCEND_STAIRS = 1
+    DESCEND_STAIRS = 2
+    # Uphill treadmill ramps, named for their inclination in percent.
+    RAMP_2_5 = 3
+    RAMP_5 = 4
 
 
 class SolverType(StrEnum):
@@ -309,6 +333,17 @@ class PreprocessorConfig:
             frequency_estimate_smoother_bandwidth=0.3,
             lock_state_smoother_bandwidth=0.5,
             initial_frequency_guess=1.4,
+        )
+
+        # Treadmill ramps. No ramp-specific SOGI tuning has been measured yet,
+        # so both reuse the level parameters -- ramp gait is continuous like
+        # level walking, unlike the stair modes. Named fields rather than a
+        # fallback so the tuned values have an obvious home once they exist.
+        self.filtering_sogifll_config_ramp_2_5: SogiFllConfig = (
+            self.filtering_sogifll_config_level
+        )
+        self.filtering_sogifll_config_ramp_5: SogiFllConfig = (
+            self.filtering_sogifll_config_level
         )
 
         self.filtering_second_order_lpf_config: LowPassFilterConfig = (
