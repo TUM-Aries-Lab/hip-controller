@@ -40,11 +40,13 @@ from hip_controller.control.signal_processing.velocity_estimation import (
     VelocityEstimationStrategy,
 )
 from hip_controller.definitions import (
+    AssistMode,
     BasicConfig,
     DriftRemovalMethod,
     FilteringMethod,
     PreprocessorConfig,
     SensorSignal,
+    SogiFllConfig,
     VelocityEstimationMethod,
     VelocityInputAngle,
 )
@@ -135,7 +137,19 @@ class SensorPreprocessor:
         # Tracked so set_locomotion_mode() can detect the DSC -> non-DSC
         # transition specifically and wipe the SOGI's descent-charged
         # in-phase / quadrature -- see set_locomotion_mode() docstring.
-        self._current_mode_id: int = 0
+        self._current_mode_id: int = AssistMode.LEVEL
+
+        # SOGI-FLL parameter set per assist mode. A table rather than a branch
+        # chain so adding a mode is one entry. Anything not listed falls back to
+        # the level config, which is what makes it safe for a caller to pass a
+        # class_id this version does not know about.
+        self._sogi_config_by_mode: dict[int, SogiFllConfig] = {
+            AssistMode.LEVEL: self._config.filtering_sogifll_config_level,
+            AssistMode.ASCEND_STAIRS: self._config.filtering_sogifll_config_ascend,
+            AssistMode.DESCEND_STAIRS: self._config.filtering_sogifll_config_descend,
+            AssistMode.RAMP_2_5: self._config.filtering_sogifll_config_ramp_2_5,
+            AssistMode.RAMP_5: self._config.filtering_sogifll_config_ramp_5,
+        }
 
     def _init_strategies(self) -> None:
         """Construct one strategy per stage from the configured methods.
@@ -393,8 +407,9 @@ class SensorPreprocessor:
     def set_locomotion_mode(self, class_id: int) -> None:
         """Swap the SOGI-FLL config to the variant tuned for this locomotion mode.
 
-        ``class_id`` matches the TCN classifier output: 0=Level, 1=Ascend,
-        2=Descend. The corresponding `filtering_sogifll_config_*` field from
+        ``class_id`` is an :class:`AssistMode` value (0=Level, 1=Ascend,
+        2=Descend, 3=Ramp 2.5%, 4=Ramp 5%); 0-2 match the TCN classifier
+        output. The corresponding `filtering_sogifll_config_*` field from
         :class:`PreprocessorConfig` is selected and pushed into the active
         filter. SOGI state (in-phase, quadrature, omega_est, etc.) is
         preserved; only the parameter values change, so the FLL re-adapts
@@ -414,19 +429,23 @@ class SensorPreprocessor:
         is wiped. See raw-vs-filtered IMU overlays on
         savedData_Thu_Jun_25_15-42-00_2026.csv for the diagnostic.
 
-        :param int class_id: Locomotion class (0=Level, 1=Ascend, 2=Descend).
+        :param int class_id: :class:`AssistMode` value; unknown values apply
+            the level config.
         :return: None
         """
         if not hasattr(self._filtering, "set_config"):
             return
-        if class_id == 1:
-            self._filtering.set_config(self._config.filtering_sogifll_config_ascend)
-        elif class_id == 2:
-            self._filtering.set_config(self._config.filtering_sogifll_config_descend)
-        else:
-            self._filtering.set_config(self._config.filtering_sogifll_config_level)
+        self._filtering.set_config(
+            self._sogi_config_by_mode.get(
+                class_id, self._config.filtering_sogifll_config_level
+            )
+        )
 
-        if self._current_mode_id == 2 and class_id != 2:
+        left_descend = (
+            self._current_mode_id == AssistMode.DESCEND_STAIRS
+            and class_id != AssistMode.DESCEND_STAIRS
+        )
+        if left_descend:
             self._filtering.clear_state_keep_frequency()
 
         self._current_mode_id = class_id

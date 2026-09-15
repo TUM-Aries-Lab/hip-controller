@@ -120,6 +120,36 @@ class DescendStairsMode(ModeStrategy):
         )
 
 
+# Treadmill ramps. No ramp-specific amplitude tuning has been measured yet, so
+# both return the level-ground parameters. They are separate classes rather than
+# a fallback to LevelGroundMode so each inclination has an obvious home for its
+# values once they are tuned, and so a run's selected mode is visible in logs.
+class Ramp2Point5Mode(ModeStrategy):
+    """Mode for walking up a 2.5% treadmill ramp."""
+
+    def get_parameters(self) -> ModeParameters:
+        """Get parameters for a 2.5% ramp (currently the level-ground values)."""
+        return ModeParameters(
+            scale=SCALE_LEVEL_MODE,
+            sigmoid_power=SIGMOID_POWER,
+            gain=AMPLITUDE_GAIN,
+            velocity_weight=VELOCITY_WEIGHT_LEVEL_MODE,
+        )
+
+
+class Ramp5Mode(ModeStrategy):
+    """Mode for walking up a 5% treadmill ramp."""
+
+    def get_parameters(self) -> ModeParameters:
+        """Get parameters for a 5% ramp (currently the level-ground values)."""
+        return ModeParameters(
+            scale=SCALE_LEVEL_MODE,
+            sigmoid_power=SIGMOID_POWER,
+            gain=AMPLITUDE_GAIN,
+            velocity_weight=VELOCITY_WEIGHT_LEVEL_MODE,
+        )
+
+
 class AmplitudeModulation:
     """Amplitude Modulation Class."""
 

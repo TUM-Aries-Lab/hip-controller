@@ -7,6 +7,8 @@ from hip_controller.control.motor_reference_control.amplitude_modulation import 
     DescendStairsMode,
     LevelGroundMode,
     ModeStrategy,
+    Ramp2Point5Mode,
+    Ramp5Mode,
 )
 from hip_controller.control.motor_reference_control.motor_reference_controller import (
     MotionReferenceController,
@@ -14,7 +16,7 @@ from hip_controller.control.motor_reference_control.motor_reference_controller i
 from hip_controller.control.signal_processing.sensor_preprocessor import (
     SensorPreprocessor,
 )
-from hip_controller.definitions import BasicConfig, SensorSignal
+from hip_controller.definitions import AssistMode, BasicConfig, SensorSignal
 
 # Pause-detection thresholds for the SOGI/FLL walking-mode gate. The envelope
 # is an exponential moving average of |raw velocity| with time constant
@@ -29,6 +31,17 @@ from hip_controller.definitions import BasicConfig, SensorSignal
 PAUSE_DETECT_ENVELOPE_ALPHA = 0.10  # EMA weight per sample (= ~100 ms time constant)
 PAUSE_ENTER_THRESHOLD = 0.2  # rad/s -- below this for sustained time = pause
 PAUSE_EXIT_THRESHOLD = 0.5  # rad/s -- above this = walking again
+
+# Amplitude strategy per assist mode. A table rather than a branch chain so a
+# new mode is one entry here plus its parameter set, and so the set of modes is
+# readable in one place. Instances are stateless, hence built once.
+AMPLITUDE_MODES: dict[int, ModeStrategy] = {
+    AssistMode.LEVEL: LevelGroundMode(),
+    AssistMode.ASCEND_STAIRS: AscendStairsMode(),
+    AssistMode.DESCEND_STAIRS: DescendStairsMode(),
+    AssistMode.RAMP_2_5: Ramp2Point5Mode(),
+    AssistMode.RAMP_5: Ramp5Mode(),
+}
 
 
 class WalkOnController:
@@ -172,8 +185,12 @@ class WalkOnController:
     def set_locomotion_mode(self, class_id: int) -> None:
         """Apply per-mode tuning across the whole controller for one limb.
 
-        ``class_id`` is the TCN classifier output: 0=Level, 1=Ascend,
-        2=Descend. Fans out to:
+        ``class_id`` is an :class:`AssistMode` value: 0=Level, 1=Ascend stairs,
+        2=Descend stairs, 3=Ramp 2.5%, 4=Ramp 5%. Values 0-2 are what the TCN
+        classifier emits; 3-4 are treadmill inclinations selected by the
+        operator. One axis, because the contexts are mutually exclusive.
+
+        Fans out to:
 
         * :class:`AmplitudeModulation`: switches the per-mode amplitude
           parameters (scale, sigmoid_power, gain, velocity_weight) via the
@@ -183,15 +200,13 @@ class WalkOnController:
           smoother bandwidths, initial frequency guess). SOGI state is
           preserved so the lock continues smoothly across the boundary.
 
-        Unknown class_ids fall back to Level Ground.
+        Unknown class_ids fall back to Level Ground, in every one of the three
+        consumers -- so a caller may pass an id this version does not know and
+        get level assist rather than an error.
         """
-        mode: ModeStrategy
-        if class_id == 1:
-            mode = AscendStairsMode()
-        elif class_id == 2:
-            mode = DescendStairsMode()
-        else:
-            mode = LevelGroundMode()
+        mode: ModeStrategy = AMPLITUDE_MODES.get(
+            class_id, AMPLITUDE_MODES[AssistMode.LEVEL]
+        )
         self.amplitude_modulation.set_mode(mode)
         self.pre_processor.set_locomotion_mode(class_id)
         # Per-mode motion-mapping table: zeroes the extension-side
