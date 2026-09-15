@@ -20,6 +20,9 @@ zero the SOGI velocity path -- see ``sensor_preprocessor_test.py``.
 
 from __future__ import annotations
 
+from hip_controller.control.signal_processing.baseline_removal import (
+    BaselineRemoval,
+)
 from hip_controller.control.signal_processing.drift_removal import (
     DriftRemovalStrategy,
     LowPassDriftRemoval,
@@ -85,6 +88,12 @@ class SensorPreprocessor:
                 "the angle-stage SOGI-FLL, so filtering_method must also be SOGI "
                 f"(got {basic_config.filtering_method})."
             )
+
+        # Baseline removal, ahead of every filter stage. The offset is zero
+        # until a window completes, so this is a pass-through until something
+        # drives set_baseline_removal_trigger() -- the main switch live, its
+        # recorded value on playback.
+        self._baseline_removal = BaselineRemoval(self._config.baseline_removal_config)
 
         self._drift_removal: DriftRemovalStrategy
         self._filtering: FilteringStrategy
@@ -201,9 +210,22 @@ class SensorPreprocessor:
         :rtype: SensorSignal
         :raises ValueError: if the timestamp did not advance since the last call.
         """
+        # Baseline removal first: every later stage sees an angle whose DC
+        # offset is already gone, so the drift-removal LPF has far less to
+        # settle out at start-up. ``raw_signal`` itself is never modified --
+        # callers keep the raw sample for logging.
+        angle_rad = self._baseline_removal.apply(
+            angle_rad=raw_signal.angle_rad,
+            velocity_rad_per_sec=raw_signal.velocity_rad_per_sec,
+        )
+
         if self._prev_timestamp is None or raw_signal.timestamp is None:
             self._prev_timestamp = raw_signal.timestamp
-            return raw_signal
+            return SensorSignal(
+                timestamp=raw_signal.timestamp,
+                angle_rad=angle_rad,
+                velocity_rad_per_sec=raw_signal.velocity_rad_per_sec,
+            )
 
         time_difference = raw_signal.timestamp - self._prev_timestamp
 
@@ -224,7 +246,7 @@ class SensorPreprocessor:
         self._prev_timestamp = raw_signal.timestamp
 
         angle_no_drift_rad = self._drift_removal.filter(
-            raw_angle=raw_signal.angle_rad, time_difference=time_difference
+            raw_angle=angle_rad, time_difference=time_difference
         )
         self.last_drift_removed_angle_rad = angle_no_drift_rad
 
@@ -240,6 +262,7 @@ class SensorPreprocessor:
 
         velocity_pre_drift_rad_per_sec = self._estimate_velocity(
             raw_signal=raw_signal,
+            baseline_removed_angle_rad=angle_rad,
             angle_no_drift_rad=angle_no_drift_rad,
             angle_out_rad=angle_out_rad,
             time_difference=time_difference,
@@ -267,6 +290,7 @@ class SensorPreprocessor:
     def _estimate_velocity(
         self,
         raw_signal: SensorSignal,
+        baseline_removed_angle_rad: float,
         angle_no_drift_rad: float,
         angle_out_rad: float,
         time_difference: float,
@@ -274,6 +298,7 @@ class SensorPreprocessor:
         """Estimate angular velocity via the SOGI quadrature or a configured strategy.
 
         :param SensorSignal raw_signal: Current raw sample.
+        :param float baseline_removed_angle_rad: Raw angle after baseline removal [rad].
         :param float angle_no_drift_rad: Output of the drift-removal stage [rad].
         :param float angle_out_rad: Output of the filtering stage [rad].
         :param float time_difference: Elapsed time since the previous sample [s].
@@ -289,7 +314,7 @@ class SensorPreprocessor:
         # See PreprocessorConfig.velocity_input_angle for the trade-off between
         # latency / smoothness (more filtering) and freshness (less filtering).
         if self._config.velocity_input_angle == VelocityInputAngle.RAW:
-            velocity_input_angle_rad = raw_signal.angle_rad
+            velocity_input_angle_rad = baseline_removed_angle_rad
         elif self._config.velocity_input_angle == VelocityInputAngle.DRIFT_REMOVED:
             velocity_input_angle_rad = angle_no_drift_rad
         else:
@@ -319,11 +344,37 @@ class SensorPreprocessor:
         self.last_drift_removed_angle_rad = None
         self.last_velocity_pre_drift_removal_rad_per_sec = None
 
+        self._baseline_removal.reset()
         self._drift_removal.reset()
         self._filtering.reset()
         self._velocity_drift_removal.reset()
         if self._velocity_estimation is not None:
             self._velocity_estimation.reset()
+
+    def set_baseline_removal_trigger(self, active: bool) -> None:
+        """Drive the baseline-removal trigger.
+
+        Wired on the exosuit to the main switch (motor enable): pass its current
+        state every loop iteration, or on each edge. Re-triggering takes a fresh
+        offset without touching any filter state, so it is safe mid-session
+        after a strap slips.
+
+        :param bool active: Current trigger state.
+        :return: None
+        """
+        self._baseline_removal.set_trigger(active=active)
+
+    @property
+    def baseline_offset_rad(self) -> float:
+        """Angle offset currently subtracted by the baseline removal [rad].
+
+        Exposed for logging: recording it alongside the trigger is what lets a
+        session be replayed offline with the offset it actually ran with.
+
+        :return: The active offset; 0.0 before the first completed window.
+        :rtype: float
+        """
+        return self._baseline_removal.offset_rad
 
     def set_walking_mode(self, walking: bool) -> None:
         """Tell the SOGI/FLL whether the user is actively walking.

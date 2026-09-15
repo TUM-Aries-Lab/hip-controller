@@ -24,6 +24,7 @@ COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
     "ang_right": (RecordedSensorData.ang_right, "Angle Right Raw [rad]"),
     "vel_left": (RecordedSensorData.vel_left, "Vel Left Raw [rad]"),
     "vel_right": (RecordedSensorData.vel_right, "Vel Right Raw [rad]"),
+    # Also the baseline-removal trigger: see PlayerStep.main_switch.
     "main_switch": (RecordedSensorData.main_switch, "Main Switch"),
     "classification_left": ("classification_left", "Classification Left"),
     "classification_right": ("classification_right", "Classification Right"),
@@ -38,6 +39,8 @@ class PlayerStep:
         plus the timestamp shared by both legs.
     :main_switch: Whether the controller should run this sample (``True``) or
         be held idle (``False``). Defaults to ``True`` when the column is absent.
+        Doubles as the baseline-removal trigger: its rising edge is the moment
+        the operator enabled the motors with the subject standing ready.
     :classification_left: Locomotion-mode classification for the left leg
         (0 = Level Ground, 1 = Ascend Stairs, 2 = Descend Stairs). Defaults to
         :data:`DEFAULT_CLASSIFICATION` when the column is absent.
@@ -122,6 +125,20 @@ class CSVPlayer:
     def has_timestamp(self) -> bool:
         """Whether a timestamp column was found in the CSV."""
         return self._col_timestamp is not None
+
+    @property
+    def has_main_switch(self) -> bool:
+        """Whether a main switch column was found in the CSV.
+
+        Consumers must check this before driving baseline removal from
+        :attr:`PlayerStep.main_switch`: without the column that field falls back
+        to a constant ``True``, which is a default for "run the controller", not
+        a record of the operator ever having flipped anything.
+
+        :return: True when the recording carries a main switch column.
+        :rtype: bool
+        """
+        return self._col_main_switch is not None
 
     def has_next_line(self) -> bool:
         """Check whether more data is available.

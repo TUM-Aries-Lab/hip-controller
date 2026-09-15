@@ -199,6 +199,34 @@ class WalkOnController:
         # between strides on stair modes (the source of cumulative slack).
         self.motion_reference_controller.set_locomotion_mode(class_id)
 
+    def set_baseline_removal_trigger(self, active: bool) -> None:
+        """Drive baseline removal (hip angle offset) for this limb.
+
+        Wire this to the main switch (motor enable): its rising edge opens a
+        baseline window, which closes when it has collected a full window of
+        stand-still samples or when the switch goes low again. The resulting
+        offset is subtracted from the angle ahead of every filter stage and can
+        be re-taken at any time without disturbing the SOGI/FLL lock.
+
+        Has no effect when ``config.filtered`` is True -- that path bypasses the
+        pre-processor entirely, so the incoming signal is expected to be
+        baseline-corrected already.
+
+        :param bool active: Current switch state. Safe to call every loop
+            iteration with an unchanged value; edges are detected internally.
+        :return: None
+        """
+        self.pre_processor.set_baseline_removal_trigger(active=active)
+
+    @property
+    def baseline_offset_rad(self) -> float:
+        """Angle offset currently subtracted from this limb's signal [rad].
+
+        :return: The active offset; 0.0 before the first completed window.
+        :rtype: float
+        """
+        return self.pre_processor.baseline_offset_rad
+
     def set_demo_mode(self) -> None:
         """Apply the demo-mode SOGI tuning to this limb's pre-processor.
 

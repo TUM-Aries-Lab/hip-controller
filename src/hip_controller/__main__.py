@@ -54,6 +54,8 @@ VELOCITY_LPF_ANGLE_LEFT_COLUMN = "Velocity-LPF Angle Left (rad)"
 VELOCITY_LPF_ANGLE_RIGHT_COLUMN = "Velocity-LPF Angle Right (rad)"
 DRIFT_REMOVED_ANGLE_LEFT_COLUMN = "Drift-Removed Angle Left (rad)"
 DRIFT_REMOVED_ANGLE_RIGHT_COLUMN = "Drift-Removed Angle Right (rad)"
+BASELINE_OFFSET_LEFT_COLUMN = "Baseline Offset Left (rad)"
+BASELINE_OFFSET_RIGHT_COLUMN = "Baseline Offset Right (rad)"
 
 # Integer classification -> locomotion mode. Instances are cached so we don't
 # rebuild a ModeStrategy on every sample. Unknown values fall back to Level
@@ -75,12 +77,20 @@ def main(  # noqa: PLR0915, C901
     stderr_level: str = DEFAULT_LOG_LEVEL,
     csv_path: Path = BasicConfig.read_data_from_path,
     fast: bool = False,
+    baseline_removal: bool = True,
 ) -> None:  # pragma: no cover
     """Run the main pipeline.
 
     :param log_level: The log level to use.
     :param stderr_level: The std err level to use.
     :param str csv_path: Path to the CSV file used for simulated real-time playback. The user could pass in the path of a file as well.
+    :param bool baseline_removal: When True (default) the recorded main switch
+        drives baseline removal, reproducing the offset the session ran with.
+        Set False for recordings made before baseline removal existed: their
+        main switch never took a baseline, so replaying it through one would
+        apply an offset that run never had. A recording without a main switch
+        column has no trigger to replay and never removes a baseline, whatever
+        this is set to.
     :param bool fast: When True, skip the live phase-portrait plots, process every CSV
         row as fast as Python can, then open the resulting output CSV in the
         :func:`hip_controller.plotter.csv_inspector.plot` window. When False
@@ -100,6 +110,23 @@ def main(  # noqa: PLR0915, C901
 
     player = CSVPlayer(csv_path)
     plot = not fast
+
+    # Baseline removal replays the recorded main switch. No column means the
+    # recording never captured the operator flipping anything, so there is no
+    # trigger to replay -- and PlayerStep.main_switch's fallback of True is a
+    # default for "run the controller", not evidence of a switch. Taking a
+    # baseline off that fallback would be the start-up grab this design
+    # replaced, arriving through the back door.
+    replay_baseline = baseline_removal and player.has_main_switch
+    if replay_baseline:
+        logger.info("Baseline removal driven by the recorded main switch.")
+    elif not baseline_removal:
+        logger.warning("Baseline removal disabled; replaying with no angle offset.")
+    else:
+        logger.warning(
+            "No main switch column in this recording, so there is no baseline "
+            "trigger to replay; playback runs with no angle offset."
+        )
     config = BasicConfig(filtered=False, left_limb_plot=plot, right_limb_plot=plot)
     controller_left = WalkOnController(left_limb=True, config=config)
     controller_right = WalkOnController(left_limb=False, config=config)
@@ -137,6 +164,12 @@ def main(  # noqa: PLR0915, C901
         step = player.get_sensor_data_from_csv()
         sensor_data = step.sensor_data
         main_switch = step.main_switch
+
+        # The main switch is the baseline-removal trigger: its rising edge is
+        # where the operator enabled the motors with the subject standing ready.
+        if replay_baseline:
+            controller_left.set_baseline_removal_trigger(active=main_switch)
+            controller_right.set_baseline_removal_trigger(active=main_switch)
 
         controller_left.amplitude_modulation.set_mode(
             _mode_for(step.classification_left)
@@ -226,6 +259,10 @@ def main(  # noqa: PLR0915, C901
                 DRIFT_REMOVED_ANGLE_RIGHT_COLUMN: (
                     drift_right if drift_right is not None else nan
                 ),
+                # Logged per sample so the offset a run used is visible in
+                # the output, and a later replay can be checked against it.
+                BASELINE_OFFSET_LEFT_COLUMN: controller_left.baseline_offset_rad,
+                BASELINE_OFFSET_RIGHT_COLUMN: controller_right.baseline_offset_rad,
                 PORTRAIT_RADIUS_LEFT_COLUMN: (
                     amp_left.portrait_radius if amp_left else nan
                 ),
@@ -360,6 +397,20 @@ if __name__ == "__main__":  # pragma: no cover
         type=Path,
     )
     parser.add_argument(
+        "--no-baseline-removal",
+        "-n",
+        action="store_true",
+        help=(
+            "Do not take a baseline (hip angle offset) from the recorded main "
+            "switch. Use this for recordings made before baseline removal "
+            "existed: their main switch never took one, so replaying it through "
+            "one would apply an offset that run never had. Omitted (default), "
+            "the main switch drives baseline removal as it does on the exosuit. "
+            "Recordings with no main switch column never remove a baseline "
+            "either way -- there is no trigger in them to replay."
+        ),
+    )
+    parser.add_argument(
         "--fast",
         "-f",
         action="store_true",
@@ -376,4 +427,5 @@ if __name__ == "__main__":  # pragma: no cover
         stderr_level=args.stderr_level,
         csv_path=args.file_path,
         fast=args.fast,
+        baseline_removal=not args.no_baseline_removal,
     )

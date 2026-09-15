@@ -120,3 +120,31 @@ def test_convert_xlsx_to_csv_file_not_found(tmp_path: Path) -> None:
 
     with raises(FileNotFoundError):
         convert_xlsx_to_csv(missing_file)
+
+
+def test_has_main_switch_reports_the_column(tmp_path):
+    """A recording without the column must not look like one with it.
+
+    The runner gates baseline removal on this: without a main switch column
+    there is no recorded trigger to replay, and ``main_switch`` defaulting to
+    True must not be mistaken for one.
+    """
+    columns = {
+        RecordedSensorData.timestamp: [0.0, 0.1, 0.2],
+        RecordedSensorData.ang_left: [1.0, 2.0, 3.0],
+        RecordedSensorData.ang_right: [4.0, 5.0, 6.0],
+    }
+
+    without_path = tmp_path / "without.csv"
+    pd.DataFrame(columns).to_csv(without_path, index=False)
+    without = CSVPlayer(without_path)
+
+    with_path = tmp_path / "with.csv"
+    pd.DataFrame({**columns, RecordedSensorData.main_switch: [0, 1, 1]}).to_csv(
+        with_path, index=False
+    )
+    present = CSVPlayer(with_path)
+
+    assert without.has_main_switch is False
+    assert without.get_sensor_data_from_csv().main_switch is True
+    assert present.has_main_switch is True
