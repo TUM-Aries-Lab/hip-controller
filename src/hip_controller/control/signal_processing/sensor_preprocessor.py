@@ -5,7 +5,8 @@ parameter sets they are built from live in :class:`PreprocessorConfig`.
 
 The drift removal strategies include: ``LowPassDriftRemoval`` and ``NotchDriftRemoval``.
 
-The filtering strategies include: ``SogiFllFiltering`` and ``LowPassFiltering``.
+The filtering strategies include: ``SogiFllFiltering``, ``LowPassFiltering`` and
+``KalmanFiltering``.
 
 The velocity estimation strategies include the SOGI quadrature path (no separate
 estimator), ``LowPassVelocityEstimation``, ``DiscreteDerivativeVelocityEstimation``,
@@ -30,6 +31,7 @@ from hip_controller.control.signal_processing.drift_removal import (
 )
 from hip_controller.control.signal_processing.filtering import (
     FilteringStrategy,
+    KalmanFiltering,
     LowPassFiltering,
     SogiFllFiltering,
 )
@@ -192,6 +194,8 @@ class SensorPreprocessor:
             return SogiFllFiltering(config=self._config.filtering_sogifll_config)
         if method == FilteringMethod.LOW_PASS:
             return LowPassFiltering(self._config.filtering_second_order_lpf_config)
+        if method == FilteringMethod.KALMAN:
+            return KalmanFiltering(self._config.filtering_kalman_config)
         raise ValueError(f"Unrecognized filtering method: {method}")
 
     def _build_velocity_estimation(self) -> VelocityEstimationStrategy | None:

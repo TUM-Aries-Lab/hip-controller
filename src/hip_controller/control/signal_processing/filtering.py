@@ -10,7 +10,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from hip_controller.definitions import LowPassFilterConfig, SogiFllConfig
+from hip_controller.definitions import (
+    KalmanFilterConfig,
+    LowPassFilterConfig,
+    SogiFllConfig,
+)
+from hip_controller.filters.kalman_filter import KalmanFilter
 from hip_controller.filters.second_order_low_pass_filter import (
     SecondOrderLowPassFilter,
 )
@@ -168,3 +173,45 @@ class LowPassFiltering(FilteringStrategy):
         :return: None
         """
         self._low_pass_filter.reset()
+
+
+class KalmanFiltering(FilteringStrategy):
+    """Angle filtering via a Kalman filter over a constant-velocity model.
+
+    An alternative to the SOGI-FLL and the low-pass filter for the angle stage.
+    Unlike the SOGI it makes no assumption that the signal is periodic, so it
+    keeps working outside steady walking; unlike a fixed low-pass it adapts the
+    smoothing to how well the constant-velocity model is currently explaining
+    the measurements.
+
+    It produces no quadrature, so it cannot feed the SOGI velocity path --
+    :class:`SensorPreprocessor` rejects that combination at construction.
+    """
+
+    def __init__(self, config: KalmanFilterConfig) -> None:
+        """Initialize the Kalman filtering stage.
+
+        :param KalmanFilterConfig config: Model, noise covariances and initial
+            estimate.
+        :return: None
+        """
+        self._kalman_filter = KalmanFilter(config=config)
+
+    def filter(self, angle_rad: float, time_difference: float) -> float:
+        """Execute one Kalman filter step.
+
+        :param float angle_rad: Raw angle [rad].
+        :param float time_difference: Elapsed time since the previous sample [s].
+        :return: Filtered angle [rad].
+        :rtype: float
+        """
+        return self._kalman_filter.filter(
+            angle_rad=angle_rad, time_difference=time_difference
+        )
+
+    def reset(self) -> None:
+        """Reset the filter to a known initial condition.
+
+        :return: None
+        """
+        self._kalman_filter.reset()

@@ -1,44 +1,47 @@
-"""Mid-level control functions."""
+"""Kalman filter for the angle stage of the preprocessing pipeline."""
 
 import numpy as np
 from numpy.typing import NDArray
 
-from hip_controller.definitions import MEASUREMENT_NOISE, PROCESS_NOISE
+from hip_controller.definitions import KalmanFilterConfig
 from hip_controller.utils.math_utils import symmetrize_matrix
 from hip_controller.utils.state_space import StateSpaceLinear
 
 
 class KalmanFilter:
-    """Kalman filter implementation."""
+    """Kalman filter over a constant-velocity model of the hip angle.
 
-    def __init__(
-        self,
-        state_space: StateSpaceLinear,
-        initial_x: np.ndarray,
-        initial_covariance: np.ndarray,
-        process_noise: NDArray | None = None,
-        measurement_noise: NDArray | None = None,
-    ) -> None:
+    The state is ``[angle, angular velocity]`` and only the angle is measured,
+    so the filter smooths the angle while estimating the velocity that explains
+    it. :meth:`filter` wraps one predict/update pair into the
+    ``(angle_rad, time_difference) -> angle_rad`` shape the pipeline's
+    filtering stage expects.
+    """
+
+    def __init__(self, config: KalmanFilterConfig) -> None:
         """Initialize the Kalman Filter.
 
-        :param state_space: linear state space model
-        :param initial_x: Initial state estimate
-        :param initial_covariance: Initial error covariance
-        :param process_noise: Process noise covariance
-        :param measurement_noise: Measurement noise covariance
+        The model and the initial estimate are copied out of ``config``. The
+        filter writes the measured sample period into ``A`` on every step, and
+        configs are shared -- one :class:`BasicConfig` serves both limbs -- so
+        holding the config's own arrays would make the two legs overwrite each
+        other's model.
+
+        :param KalmanFilterConfig config: Model, noise covariances and initial
+            estimate.
         :return: None
         """
-        self.state_space = state_space
-        if process_noise is None:
-            process_noise = PROCESS_NOISE * np.eye(len(state_space.A))
-        self.Q: np.ndarray = process_noise
-
-        if measurement_noise is None:
-            measurement_noise = MEASUREMENT_NOISE * np.eye(len(state_space.C))
-        self.R: np.ndarray = measurement_noise
-
-        self.x: np.ndarray = initial_x
-        self.cov: np.ndarray = initial_covariance
+        self.config = config  # kept so reset() can restore the initial estimate
+        self.state_space = StateSpaceLinear(
+            A=np.array(config.state_space.A, dtype=float),
+            B=np.array(config.state_space.B, dtype=float),
+            C=np.array(config.state_space.C, dtype=float),
+            D=np.array(config.state_space.D, dtype=float),
+        )
+        self.Q: NDArray = np.array(config.process_noise, dtype=float)
+        self.R: NDArray = np.array(config.measurement_noise, dtype=float)
+        self.x: NDArray = np.array(config.initial_state, dtype=float)
+        self.cov: NDArray = np.array(config.initial_covariance, dtype=float)
 
     def predict(self, u: NDArray | None = None) -> None:
         """Predict the next state and error covariance.
@@ -65,3 +68,27 @@ class KalmanFilter:
         self.cov = symmetrize_matrix(cov)
 
         return z - self.state_space.C @ self.x
+
+    def filter(self, angle_rad: float, time_difference: float) -> float:
+        """Execute one filter step: predict, then update with the measurement.
+
+        :param float angle_rad: Raw angle [rad].
+        :param float time_difference: Elapsed time since the previous sample [s].
+        :return: Filtered angle [rad].
+        :rtype: float
+        """
+        # The constant-velocity model propagates angle by velocity * dt, so the
+        # real sample period goes into A before predicting. This writes into
+        # this instance's own copy of A -- see __init__.
+        self.state_space.A[0, 1] = time_difference
+        self.predict(u=None)
+        self.update(z=np.array([angle_rad]))
+        return float(self.x[0])
+
+    def reset(self) -> None:
+        """Reset the filter to its initial condition.
+
+        :return: None
+        """
+        self.x = np.array(self.config.initial_state, dtype=float)
+        self.cov = np.array(self.config.initial_covariance, dtype=float)
