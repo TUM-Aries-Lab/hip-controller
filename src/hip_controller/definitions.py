@@ -17,6 +17,9 @@ from math import pi
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
+
+from hip_controller.utils.state_space import StateSpaceLinear
 
 np.set_printoptions(precision=3, floatmode="fixed", suppress=True)
 
@@ -211,6 +214,7 @@ class FilteringMethod(StrEnum):
 
     SOGI = auto()
     LOW_PASS = auto()
+    KALMAN = auto()
 
 
 class VelocityInputAngle(StrEnum):
@@ -233,6 +237,57 @@ class VelocityEstimationMethod(StrEnum):
     DISCRETE_DERIVATIVE = auto()
     LOW_PASS = auto()
     GYROSCOPE = auto()
+
+
+# Kalman filter definitions. The state is [angle, angular velocity] and the
+# measurement is the angle alone, so the process noise is 2x2 and the
+# measurement noise 1x1.
+PROCESS_NOISE = 2e-2
+MEASUREMENT_NOISE = 0.75
+# Spread of the initial state estimate. Large relative to the noise so the
+# filter trusts the first measurements and converges quickly from a cold start.
+INITIAL_COVARIANCE = 10.0
+# Sample period baked into the default model. PreprocessorConfig builds the
+# config from the real controller rate, and filter() overwrites it per step
+# with the measured dt, so this only applies to a directly constructed
+# default before its first step.
+NOMINAL_SAMPLE_PERIOD_S = 0.01
+
+
+@dataclass(frozen=True)
+class KalmanFilterConfig:
+    """Settings for the Kalman filtering stage.
+
+    The constant-velocity model: the state is ``[angle, angular velocity]`` and
+    ``A`` propagates it over one sample. ``A[0, 1]`` is the sample period, set
+    here to the nominal one and overwritten per step by
+    :meth:`KalmanFilter.filter` with the measured ``dt``.
+
+    :param NDArray process_noise: Q, 2x2, how much the constant-velocity model
+        is expected to be wrong. Raise it to track faster changes at the cost of
+        more noise reaching the output.
+    :param NDArray measurement_noise: R, 1x1, expected variance of the angle
+        measurement. Raise it to smooth harder and trust the model more.
+    :param StateSpaceLinear state_space: Constant-velocity model and the
+        observation matrix selecting the angle.
+    :param NDArray initial_state: Starting estimate of ``[angle, velocity]``.
+    :param NDArray initial_covariance: Starting uncertainty of that estimate.
+    """
+
+    process_noise: NDArray = field(default_factory=lambda: PROCESS_NOISE * np.eye(2))
+    measurement_noise: NDArray = field(
+        default_factory=lambda: MEASUREMENT_NOISE * np.eye(1)
+    )
+    state_space: StateSpaceLinear = field(
+        default_factory=lambda: StateSpaceLinear(
+            A=np.array([[1.0, NOMINAL_SAMPLE_PERIOD_S], [0.0, 1.0]]),
+            C=np.array([[1.0, 0.0]]),
+        )
+    )
+    initial_state: NDArray = field(default_factory=lambda: np.array([0.0, 0.0]))
+    initial_covariance: NDArray = field(
+        default_factory=lambda: INITIAL_COVARIANCE * np.eye(2)
+    )
 
 
 class PreprocessorConfig:
@@ -367,6 +422,17 @@ class PreprocessorConfig:
             sample_rate_hz=sample_rate_hz, center_freq_hz=0.0, bandwidth_3db_hz=0.1
         )
 
+        # Kalman filtering stage. The constant-velocity model's sample period
+        # follows the controller rate; filter() still overwrites it with the
+        # measured dt each step, so this only sets the value used before the
+        # first step.
+        self.filtering_kalman_config: KalmanFilterConfig = KalmanFilterConfig(
+            state_space=StateSpaceLinear(
+                A=np.array([[1.0, 1.0 / sample_rate_hz], [0.0, 1.0]]),
+                C=np.array([[1.0, 0.0]]),
+            )
+        )
+
         # Baseline removal. The averaged window is specified in seconds and
         # converted here, so the same configuration means the same duration at
         # any controller rate.
@@ -455,10 +521,6 @@ AMPLITUDE_GAIN = -6.5  # Motor position desired amplitude (rad)
 # >1  -> velocity contributes more (the sigmoid trips earlier on fast motion).
 # <1  -> velocity contributes less (more sensitive to angle).
 VELOCITY_WEIGHT_LEVEL_MODE = 2.0  # 1.0
-
-# Kalman filter definitions
-PROCESS_NOISE = 2e-2
-MEASUREMENT_NOISE = 0.75
 
 
 # Cubic Spline Interpolation
